@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar, options, pagination %}
+{% block title %}Jelajahi mahasiswa dan alumni{% endblock %}
+{% block content %}
+{% with active = 'orang' %}{% include "_jelajahi_head.html" %}{% endwith %}
+
+<form class="filters" method="get">
+  <div class="field">
+    <label for="q">Nama</label>
+    <input id="q" type="search" name="q" value="{{ request.args.get('q', '') }}">
+  </div>
+  <div class="field">
+    <label for="skill">Skill</label>
+    <input id="skill" name="skill" value="{{ request.args.get('skill', '') }}" placeholder="misalnya Python">
+  </div>
+  <div class="field">
+    <label for="prodi">Program studi</label>
+    <select id="prodi" name="prodi">{{ options(C.PRODI, request.args.get('prodi', ''), 'Semua') }}</select>
+  </div>
+  <div class="field">
+    <label for="angkatan">Angkatan</label>
+    <select id="angkatan" name="angkatan">
+      <option value="">Semua</option>
+      {% for row in angkatan_list %}
+        <option value="{{ row.angkatan }}"{% if request.args.get('angkatan') == row.angkatan|string %} selected{% endif %}>{{ row.angkatan }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="status">Status</label>
+    <select id="status" name="status">{{ options(C.STATUS, request.args.get('status', ''), 'Semua') }}</select>
+  </div>
+  <div class="filters-actions">
+    <button class="btn btn-primary" type="submit">Terapkan</button>
+    <a href="{{ url_for('profiles.index') }}">Hapus filter</a>
+  </div>
+</form>
+
+<div class="result-head">
+  <p><strong>{{ page.total }} orang</strong></p>
+  {% if request.args %}<a href="{{ url_for('profiles.index') }}">Hapus semua filter</a>{% endif %}
+</div>
+
+{% if people %}
+  <ul class="people">
+    {% for p in people %}
+      <li>
+        <a class="person" href="{{ url_for('profiles.detail', user_id=p.id) }}">
+          {{ avatar(p.full_name, p.photo, 'lg') }}
+          <span class="person-body">
+            <span class="person-name">{{ p.full_name }}</span>
+            <span class="muted">{{ p.prodi }} {{ p.angkatan }}, {{ 'alumni' if p.status == 'alumni' else 'mahasiswa aktif' }}</span>
+            <span class="muted">{{ p.n_exp }} pengalaman{% if p.skills %}. {{ p.skills }}{% endif %}</span>
+          </span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+  {{ pagination(page) }}
+{% else %}
+  <p class="empty">Tidak ada orang yang cocok dengan filter ini. Coba longgarkan filter, atau <a href="{{ url_for('profiles.index') }}">lihat semua orang</a>.</p>
+{% endif %}
+{% endblock %}

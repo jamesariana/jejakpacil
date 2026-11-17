@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, icon, cat_icon, switch %}
+{% block title %}{{ 'Ubah thread' if thread else 'Buat thread' }}{% endblock %}
+{% block content %}
+<section class="narrow form-page">
+  <p class="breadcrumb"><a href="{{ url_for('forum.index') }}">Forum</a></p>
+  <div class="form-page-head">
+    <h1>{{ 'Ubah thread' if thread else 'Buat thread' }}</h1>
+    <p class="lede">Pilih kategori, tulis judul yang jelas, lalu ceritakan isinya.</p>
+  </div>
+
+  <form method="post" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <fieldset class="choice-group{% if errors.get('category_id') %} has-error{% endif %}">
+      <legend>Kategori</legend>
+      <div class="choice-grid">
+        {% for cat in categories %}
+          <label class="choice">
+            <input type="radio" name="category_id" value="{{ cat.id }}"{% if (form.get('category_id') or '')|string == cat.id|string %} checked{% endif %}>
+            <span class="choice-body">
+              <span class="choice-title">{{ cat_icon(cat.slug, 16) }}{{ cat.name }}<span class="choice-check" aria-hidden="true">{{ icon('check', 14) }}</span></span>
+              <span class="choice-desc">{{ cat.description }}</span>
+            </span>
+          </label>
+        {% endfor %}
+      </div>
+      {% if errors.get('category_id') %}<p class="error">{{ errors['category_id'] }}</p>{% endif %}
+    </fieldset>
+
+    {% call field('Judul', 'title', errors, hint='Tulis sebagai pertanyaan atau ringkasan, supaya mudah dicari.') %}
+      <input id="title" name="title" value="{{ form.get('title') or '' }}" maxlength="140" placeholder="misalnya Ada yang pernah magang data di Gojek?" required>
+    {% endcall %}
+
+    {% call field('Isi', 'body', errors) %}
+      <textarea id="body" name="body" rows="9" maxlength="8000" placeholder="Ceritakan konteksnya: posisi, tahap seleksi, atau hal yang mau kamu tanyakan." required>{{ form.get('body') or '' }}</textarea>
+    {% endcall %}
+
+    {% call field('Tentang perusahaan', 'company_id', errors, hint='Thread akan muncul juga di halaman perusahaan itu.', optional=True) %}
+      <select id="company_id" name="company_id">
+        <option value="">Tidak spesifik</option>
+        {% for c in companies %}
+          <option value="{{ c.id }}"{% if (form.get('company_id') or '')|string == c.id|string %} selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    {% endcall %}
+
+    <div class="option-card">
+      {{ switch('is_anonymous', 'Terbitkan sebagai anonim', 'Namamu tidak tampil ke pengguna lain. Admin tetap bisa melihatnya untuk moderasi.', checked=form.get('is_anonymous')) }}
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ icon('send', 16) }}{{ 'Simpan thread' if thread else 'Terbitkan thread' }}</button>
+      <a href="{{ url_for('forum.thread', thread_id=thread.id) if thread else url_for('forum.index') }}">Batal</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

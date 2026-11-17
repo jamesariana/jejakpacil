@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, options, status_choice %}
+{% block title %}Daftar{% endblock %}
+{% block content %}
+<section class="auth auth-wide">
+  {% include "auth/_side.html" %}
+
+  <div class="auth-card">
+    <div class="auth-card-head">
+      <h1>Daftar</h1>
+      <p class="muted">Pakai email UI kamu supaya kami tahu kamu memang bagian dari Fasilkom.</p>
+    </div>
+
+    <form method="post" class="form" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      {% call field('Nama lengkap', 'full_name', errors) %}
+        <input id="full_name" name="full_name" value="{{ form.get('full_name', '') }}" autocomplete="name" required>
+      {% endcall %}
+
+      {% call field('Email UI', 'email', errors, hint='Contoh: nama.depan@ui.ac.id') %}
+        <input id="email" type="email" name="email" value="{{ form.get('email', '') }}" autocomplete="email" placeholder="nama.kamu@ui.ac.id" required>
+      {% endcall %}
+
+      <div class="field-row">
+        {% call field('Program studi', 'prodi', errors) %}
+          <select id="prodi" name="prodi" required>{{ options(C.PRODI, form.get('prodi', ''), 'Pilih program studi') }}</select>
+        {% endcall %}
+        {% call field('Angkatan', 'angkatan', errors, hint='Tahun masuk, misalnya 2024') %}
+          <input id="angkatan" name="angkatan" inputmode="numeric" value="{{ form.get('angkatan', '') }}" required>
+        {% endcall %}
+      </div>
+
+      <div class="field-row field-row-center">
+        {{ status_choice(form.get('status', 'aktif'), errors) }}
+        <div id="grad-year-field">
+          {% call field('Tahun lulus', 'grad_year', errors) %}
+            <input id="grad_year" name="grad_year" inputmode="numeric" value="{{ form.get('grad_year', '') }}">
+          {% endcall %}
+        </div>
+      </div>
+
+      <div class="field-row">
+        {% call field('Kata sandi', 'password', errors, hint='Minimal 8 karakter') %}
+          <input id="password" type="password" name="password" autocomplete="new-password" required>
+        {% endcall %}
+        {% call field('Ulangi kata sandi', 'password2', errors) %}
+          <input id="password2" type="password" name="password2" autocomplete="new-password" required>
+        {% endcall %}
+      </div>
+
+      <button class="btn btn-primary btn-block" type="submit">Buat akun</button>
+    </form>
+
+    <div class="auth-foot">
+      <p>Sudah punya akun? <a href="{{ url_for('auth.login') }}">Masuk</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

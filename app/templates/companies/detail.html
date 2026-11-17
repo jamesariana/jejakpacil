@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% from "_macros.html" import logo, exp_item, icon %}
+{% block title %}{{ company.name }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="{{ url_for('companies.index') }}">Perusahaan</a> / {{ company.name }}</p>
+
+<header class="cover-card">
+  <div class="cover" aria-hidden="true"></div>
+  <div class="cover-body">
+    <div class="cover-media">{{ logo(company.name, company.logo, 'xxl') }}</div>
+    <div class="cover-main">
+      <h1>{{ company.name }}</h1>
+      <p class="cover-sub">
+        <span class="tag">{{ company.industry }}</span>
+        {% if company.website %}<a href="{{ company.website }}" rel="noopener noreferrer" target="_blank">{{ company.domain or 'Kunjungi website' }}</a>{% endif %}
+      </p>
+      {% if company.description %}<p class="profile-bio">{{ company.description }}</p>{% endif %}
+      {% if counts.n_orang %}
+        <dl class="stat-row">
+          <div><dd>{{ counts.n_orang }}</dd><dt>orang pernah di sini</dt></div>
+          <div><dd>{{ counts.n_magang }}</dd><dt>magang</dt></div>
+          <div><dd>{{ counts.n_kerja }}</dd><dt>bekerja</dt></div>
+        </dl>
+      {% else %}
+        <p class="muted">Belum ada pengalaman yang dibagikan.</p>
+      {% endif %}
+      {% if not company.is_approved %}<p class="flash flash-info">Perusahaan ini menunggu persetujuan dan belum tampil di direktori.</p>{% endif %}
+    </div>
+    <div class="cover-actions">
+      {% if g.user and company.is_approved %}
+        <a class="btn btn-primary" href="{{ url_for('forum.create', perusahaan=company.id) }}">{{ icon('chat', 18) }}Tanya soal {{ company.name }} di forum</a>
+        <span class="hint">Thread-mu akan muncul di halaman ini juga.</span>
+      {% elif not g.user %}
+        <a class="btn btn-primary" href="{{ url_for('auth.login', next=request.path) }}">Masuk untuk bertanya</a>
+      {% endif %}
+      {% if g.user and g.user.role == 'admin' %}
+        <a class="btn btn-quiet" href="{{ url_for('admin.edit_company', company_id=company.id) }}">Kelola perusahaan</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<div class="two-col">
+  <section>
+    <h2>Siapa yang pernah di sini</h2>
+    <p class="section-lede">Titik merah artinya masih berjalan. Klik nama untuk melihat profilnya.</p>
+    {% if experiences %}
+      <ol class="trail">
+        {% for e in experiences %}
+          {{ exp_item(e, lead='person', show_person=True) }}
+        {% endfor %}
+      </ol>
+    {% endif %}
+    {% if hidden_count > 0 %}
+      <p class="empty"><a href="{{ url_for('auth.login', next=request.path) }}">Masuk</a> untuk melihat {{ hidden_count }} pengalaman lain yang hanya dibagikan ke sivitas.</p>
+    {% elif not experiences %}
+      <p class="empty">Belum ada pengalaman yang bisa ditampilkan.</p>
+    {% endif %}
+  </section>
+
+  <aside class="side">
+    {% if positions %}
+      <section class="side-block">
+        <h2>Posisi yang pernah diisi</h2>
+        <ul class="count-list">
+          {% for p in positions %}<li><span>{{ p.position }}</span><span class="muted">{{ p.n }}</span></li>{% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+    {% if skills %}
+      <section class="side-block">
+        <h2>Skill yang sering dipakai</h2>
+        <ul class="chips">
+          {% for s in skills %}<li>{{ s.name }}</li>{% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+    <section class="side-block">
+      <h2>Diskusi tentang {{ company.name }}</h2>
+      {% if not g.user %}
+        <p class="muted"><a href="{{ url_for('auth.login', next=request.path) }}">Masuk</a> untuk membaca dan ikut berdiskusi.</p>
+      {% else %}
+        {% if threads %}
+          <ul class="plain-list plain-list-small">
+            {% for t in threads %}
+              <li>
+                <a class="plain-list-title" href="{{ url_for('forum.thread', thread_id=t.id) }}">{{ t.title }}</a>
+                <span class="muted">{{ t.n_replies }} balasan, {{ t.created_at|lalu }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">Belum ada diskusi tentang perusahaan ini.</p>
+        {% endif %}
+      {% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

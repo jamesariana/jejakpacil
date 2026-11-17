@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "_macros.html" import exp_card, options, pagination, chip %}
+{% block title %}Jelajahi pengalaman{% endblock %}
+{% block content %}
+{% with active = 'pengalaman' %}{% include "_jelajahi_head.html" %}{% endwith %}
+
+<form class="filter-panel" method="get" role="search">
+  {% if request.args.get('jenis') %}<input type="hidden" name="jenis" value="{{ request.args.get('jenis') }}">{% endif %}
+  <div class="filter-search">
+    <label class="visually-hidden" for="q">Posisi atau perusahaan</label>
+    <input id="q" type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Cari posisi atau perusahaan, misalnya Backend Engineer">
+    <button class="btn btn-primary" type="submit">Cari</button>
+  </div>
+  <div class="chip-row" role="group" aria-label="Jenis pengalaman">
+    <span class="chip-row-label">Jenis</span>
+    {{ chip('Semua', url_with(jenis=None), not request.args.get('jenis')) }}
+    {% for key, label in C.EXP_TYPES.items() %}
+      {{ chip(label, url_with(jenis=key), request.args.get('jenis') == key) }}
+    {% endfor %}
+  </div>
+  <div class="filter-fields">
+    <div class="field">
+      <label for="prodi">Program studi</label>
+      <select id="prodi" name="prodi">{{ options(C.PRODI, request.args.get('prodi', ''), 'Semua') }}</select>
+    </div>
+    <div class="field">
+      <label for="angkatan">Angkatan</label>
+      <select id="angkatan" name="angkatan">
+        <option value="">Semua</option>
+        {% for row in angkatan_list %}
+          <option value="{{ row.angkatan }}"{% if request.args.get('angkatan') == row.angkatan|string %} selected{% endif %}>{{ row.angkatan }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="skill">Skill</label>
+      <input id="skill" name="skill" value="{{ request.args.get('skill', '') }}" placeholder="misalnya SQL">
+    </div>
+    <label class="check check-inline"><input type="checkbox" name="terverifikasi" value="1"{% if request.args.get('terverifikasi') %} checked{% endif %}> Hanya yang terverifikasi</label>
+  </div>
+</form>
+
+<div class="result-head">
+  <p><strong>{{ page.total }} pengalaman{% if request.args.get('q') %} untuk “{{ request.args.get('q') }}”{% endif %}</strong></p>
+  {% if request.args %}<a href="{{ url_for('experiences.index') }}">Hapus semua filter</a>{% endif %}
+</div>
+{% if not g.user %}
+  <p class="notice"><a href="{{ url_for('auth.login', next=request.full_path) }}">Masuk</a> untuk melihat juga pengalaman yang hanya dibagikan ke sivitas.</p>
+{% endif %}
+
+{% if experiences %}
+  <ol class="exp-list">
+    {% for e in experiences %}
+      {{ exp_card(e, show_person=True) }}
+    {% endfor %}
+  </ol>
+  {{ pagination(page) }}
+{% else %}
+  <p class="empty">Tidak ada pengalaman yang cocok. Coba kata kunci lain, atau <a href="{{ url_for('experiences.index') }}">hapus semua filter</a>.</p>
+{% endif %}
+{% endblock %}

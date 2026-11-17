@@ -1,0 +1,266 @@
+"""Perintah terminal: membuat admin dan mengisi data demo.
+
+Contoh pemakaian (dari folder proyek):
+    flask --app app create-admin
+    flask --app app seed-demo --with-logos
+"""
+
+import click
+from werkzeug.security import generate_password_hash
+
+from .db import get_db, query
+from .forms import is_allowed_email
+from .logos import fetch_logo
+from .utils import slugify
+
+DEMO_PASSWORD = "pacil12345"
+
+# (nama, domain, industri, deskripsi singkat)
+DEMO_COMPANIES = [
+    ("Tokopedia", "tokopedia.com", "E-commerce", "Marketplace dan platform belanja daring asal Indonesia."),
+    ("Gojek", "gojek.com", "Teknologi", "Aplikasi transportasi, pesan-antar makanan, dan pembayaran."),
+    ("Traveloka", "traveloka.com", "Teknologi", "Platform pemesanan tiket perjalanan dan penginapan."),
+    ("Shopee", "shopee.co.id", "E-commerce", "Marketplace belanja daring."),
+    ("Bank Central Asia", "bca.co.id", "Perbankan & Keuangan", "Bank swasta nasional."),
+    ("Bank Mandiri", "bankmandiri.co.id", "Perbankan & Keuangan", "Bank milik negara."),
+    ("Telkom Indonesia", "telkom.co.id", "Telekomunikasi", "Perusahaan telekomunikasi milik negara."),
+    ("Bukalapak", "bukalapak.com", "E-commerce", "Marketplace dan layanan untuk warung."),
+    ("Blibli", "blibli.com", "E-commerce", "Platform belanja daring."),
+    ("DANA", "dana.id", "Fintech", "Dompet digital untuk pembayaran dan transfer."),
+    ("Ruangguru", "ruangguru.com", "Pendidikan", "Platform belajar daring untuk pelajar."),
+    ("Grab", "grab.com", "Teknologi", "Aplikasi transportasi dan pesan-antar di Asia Tenggara."),
+    ("Fasilkom UI", "cs.ui.ac.id", "Pendidikan", "Fakultas Ilmu Komputer Universitas Indonesia."),
+]
+
+# (kunci, nama, prodi, angkatan, status, tahun lulus, skill)
+DEMO_USERS = [
+    ("raka", "Raka Pradipta", "Ilmu Komputer", 2019, "alumni", 2023, "Go, Kubernetes, PostgreSQL"),
+    ("nadia", "Nadia Wardani", "Sistem Informasi", 2020, "alumni", 2024, "SQL, Figma, Product Management"),
+    ("bagas", "Bagas Wicaksono", "Ilmu Komputer", 2021, "alumni", 2025, "Java, Spring Boot, MySQL"),
+    ("salsa", "Salsa Hartono", "Sistem Informasi", 2022, "aktif", None, "Python, SQL, Tableau"),
+    ("farhan", "Farhan Maulana", "Ilmu Komputer", 2022, "aktif", None, "Kotlin, Android"),
+    ("putri", "Putri Anindya", "Ilmu Komputer KKI", 2021, "alumni", 2025, "Python, scikit-learn, SQL"),
+    ("yoga", "Yoga Saputra", "Sistem Informasi", 2023, "aktif", None, "Figma, UX Research"),
+    ("citra", "Citra Maharani", "Ilmu Komputer", 2023, "aktif", None, "React, TypeScript"),
+    ("rizky", "Rizky Firmansyah", "Ilmu Komputer", 2020, "alumni", 2024, "Go, React"),
+    ("tiara", "Tiara Nugraha", "Sistem Informasi", 2021, "alumni", 2025, "SQL, Python"),
+    ("fikri", "Fikri Ramadhan", "Ilmu Komputer", 2024, "aktif", None, "Python, PyTorch"),
+    ("anisa", "Anisa Rahmawati", "Sistem Informasi", 2019, "alumni", 2023, "SQL, Product Management"),
+]
+
+# (pemilik, perusahaan, posisi, jenis, mulai, selesai, lokasi, cara kerja, cara dapat, skill, verifikasi, visibilitas)
+DEMO_EXPERIENCES = [
+    ("raka", "Tokopedia", "Software Engineer Intern", "magang", "2022-06", "2022-08", "Jakarta", "hybrid", "portal", "Go, PostgreSQL", "terverifikasi", "publik"),
+    ("raka", "Gojek", "Software Engineer", "fulltime", "2023-09", None, "Jakarta", "hybrid", "referral", "Go, Kubernetes, gRPC", "terverifikasi", "publik"),
+    ("nadia", "Bank Central Asia", "IT Business Analyst Intern", "magang", "2023-01", "2023-06", "Jakarta", "onsite", "kampus", "SQL, Excel", "belum", "sivitas"),
+    ("nadia", "Traveloka", "Associate Product Manager", "fulltime", "2024-10", None, "Jakarta", "hybrid", "portal", "SQL, Figma", "terverifikasi", "publik"),
+    ("bagas", "Shopee", "Backend Engineer Intern", "magang", "2024-02", "2024-07", "Jakarta", "onsite", "portal", "Java, Spring Boot, MySQL", "terverifikasi", "publik"),
+    ("bagas", "Shopee", "Backend Engineer", "fulltime", "2025-09", None, "Jakarta", "onsite", "referral", "Java, Spring Boot, Kafka", "belum", "publik"),
+    ("salsa", "DANA", "Data Analyst Intern", "magang", "2025-06", "2025-08", "Jakarta", "hybrid", "acara", "Python, SQL, Tableau", "terverifikasi", "publik"),
+    ("salsa", "Fasilkom UI", "Asisten Dosen DDP1", "asdos", "2025-08", "2025-12", "Depok", "onsite", "kampus", "Python", "belum", "sivitas"),
+    ("farhan", "Tokopedia", "Android Engineer Intern", "magang", "2025-06", "2025-09", "Jakarta", "remote", "portal", "Kotlin, Android", "belum", "publik"),
+    ("farhan", "Ruangguru", "Content Reviewer", "parttime", "2024-03", "2024-08", "Jakarta", "remote", "web", "", "belum", "privat"),
+    ("putri", "Grab", "Data Science Intern", "magang", "2024-06", "2024-08", "Jakarta", "hybrid", "web", "Python, scikit-learn", "terverifikasi", "publik"),
+    ("putri", "Traveloka", "Data Scientist", "fulltime", "2025-10", None, "Jakarta", "hybrid", "portal", "Python, SQL, scikit-learn", "belum", "sivitas"),
+    ("yoga", "Ruangguru", "UI/UX Design Intern", "magang", "2026-07", "2026-09", "Jakarta", "remote", "portal", "Figma, UX Research", "belum", "sivitas"),
+    ("citra", "Telkom Indonesia", "Frontend Engineer Intern", "magang", "2026-06", "2026-08", "Bandung", "onsite", "jobfair", "React, TypeScript", "terverifikasi", "publik"),
+    ("citra", "Fasilkom UI", "Asisten Dosen DDP1", "asdos", "2026-08", None, "Depok", "onsite", "kampus", "Python", "belum", "sivitas"),
+    ("rizky", "Bukalapak", "Software Engineer Intern", "magang", "2022-07", "2022-12", "Jakarta", "hybrid", "acara", "Go, React", "belum", "publik"),
+    ("rizky", "Tokopedia", "Software Engineer", "fulltime", "2024-08", None, "Jakarta", "hybrid", "referral", "Go, React, PostgreSQL", "terverifikasi", "publik"),
+    ("tiara", "Bank Mandiri", "IT Intern", "magang", "2024-01", "2024-04", "Jakarta", "onsite", "kampus", "SQL", "belum", "sivitas"),
+    ("tiara", "Blibli", "Product Analyst", "fulltime", "2025-08", None, "Jakarta", "hybrid", "portal", "SQL, Python", "belum", "publik"),
+    ("fikri", "Fasilkom UI", "Asisten Riset", "riset", "2026-02", None, "Depok", "onsite", "kampus", "Python, PyTorch", "belum", "sivitas"),
+    ("anisa", "Gojek", "Business Analyst Intern", "magang", "2022-02", "2022-06", "Jakarta", "hybrid", "jobfair", "SQL, Excel", "terverifikasi", "publik"),
+    ("anisa", "Telkom Indonesia", "System Analyst", "fulltime", "2023-10", "2025-03", "Jakarta", "onsite", "portal", "SQL", "belum", "publik"),
+    ("anisa", "DANA", "Product Manager", "fulltime", "2025-04", None, "Jakarta", "hybrid", "referral", "SQL, Product Management", "belum", "publik"),
+]
+
+# (penulis, kategori, perusahaan atau None, judul, isi, anonim, disematkan, [balasan], [pemberi suara])
+# balasan: (penulis, isi, anonim, [balasan anak: (penulis, isi)])
+DEMO_THREADS = [
+    (
+        "admin", "umum", None, "Aturan main forum JejakPacil",
+        "Forum ini untuk saling bantu soal magang dan karier.\n\n"
+        "1. Ceritakan pengalaman sendiri, bukan kabar dari orang ketiga.\n"
+        "2. Jangan bagikan soal tes yang masih dipakai perusahaan atau dokumen rahasia.\n"
+        "3. Mau cerita hal sensitif? Centang opsi anonim.\n"
+        "4. Lihat konten yang melanggar? Pakai tombol Laporkan.",
+        0, 1, [], ["raka", "nadia", "salsa", "yoga"],
+    ),
+    (
+        "yoga", "tanya-alumni", None, "Magang pertama: lebih baik di startup atau korporat?",
+        "Aku angkatan 2023 dan lagi cari magang pertama. Ada yang bilang startup lebih banyak "
+        "belajar karena langsung pegang fitur, ada juga yang bilang korporat lebih rapi "
+        "bimbingannya. Menurut kakak-kakak yang sudah pernah, mana yang lebih cocok untuk pemula?",
+        0, 0,
+        [
+            ("raka", "Menurutku yang paling menentukan itu mentornya, bukan jenis perusahaannya. "
+                     "Waktu wawancara, tanya langsung siapa yang akan membimbing dan seberapa sering review-nya.", 0,
+             [("yoga", "Oh iya, belum kepikiran buat tanya itu. Makasih, Kak!")]),
+            ("anisa", "Aku mulai di korporat. Prosesnya lebih lambat, tapi aku jadi paham cara kerja "
+                      "tim besar dan dokumentasi. Dua-duanya bagus asal kamu aktif bertanya.", 0, []),
+        ],
+        ["salsa", "citra", "fikri", "farhan"],
+    ),
+    (
+        "farhan", "magang", "Tokopedia", "Cerita persiapan magang Android",
+        "Banyak yang tanya cara aku siap-siap, jadi kutulis di sini. Dua bulan sebelum daftar aku "
+        "bikin satu aplikasi kecil sampai rilis, lalu latihan soal struktur data tiap malam. "
+        "Yang paling membantu ternyata proyek pribadi, karena hampir semua pertanyaan wawancara "
+        "berangkat dari situ.",
+        0, 0,
+        [("citra", "Aplikasinya tentang apa, Kak? Aku lagi bingung pilih topik proyek pribadi.", 0,
+          [("farhan", "Pencatat jadwal kuliah sederhana. Pilih masalah yang kamu sendiri alami, biar semangat nyelesainnya.")])],
+        ["yoga", "citra", "fikri"],
+    ),
+    (
+        "tiara", "karier", None, "Gagal di tahap akhir tiga kali, gimana cara bangkit?",
+        "Tiga lamaran terakhirku semuanya berhenti di wawancara akhir. Rasanya capek dan mulai "
+        "ragu sama kemampuan sendiri. Ada yang pernah di posisi ini? Apa yang kalian ubah?",
+        1, 0,
+        [
+            ("rizky", "Pernah. Yang kuubah: selesai wawancara aku langsung catat pertanyaan yang "
+                      "jawabanku lemah, lalu latihan ulang bareng teman. Lolos tahap akhir itu sudah "
+                      "bukti kemampuanmu cukup.", 0, []),
+            ("putri", "Coba minta umpan balik ke rekruternya. Tidak semua membalas, tapi sekali dibalas "
+                      "isinya sangat membantu.", 0, []),
+        ],
+        ["nadia", "anisa", "bagas", "salsa", "raka"],
+    ),
+    (
+        "salsa", "magang", "DANA", "Tips latihan SQL untuk posisi data analyst intern",
+        "Yang kupakai latihan: JOIN beberapa tabel, GROUP BY dengan HAVING, dan window function "
+        "seperti ROW_NUMBER. Biasakan juga menjelaskan alur berpikir sambil menulis query, "
+        "karena itu yang dinilai.",
+        0, 0, [("tiara", "Setuju. Window function sering banget keluar.", 0, [])], ["yoga", "tiara"],
+    ),
+    (
+        "raka", "lowongan", "Gojek", "Mau direferensikan? Kirim CV lewat thread ini",
+        "Kalau ada yang tertarik melamar magang backend, balas thread ini dan pastikan CV di "
+        "profil JejakPacil-mu sudah yang terbaru. Aku bantu teruskan kalau profilnya cocok.",
+        0, 0, [("fikri", "Tertarik, Kak. CV sudah kuperbarui di profil.", 0, [])], ["fikri", "farhan", "citra"],
+    ),
+]
+
+
+def register_commands(app):
+    @app.cli.command("create-admin")
+    @click.option("--email", prompt="Email admin (@ui.ac.id)")
+    @click.option("--name", prompt="Nama lengkap")
+    @click.password_option("--password", prompt="Kata sandi (min. 8 karakter)")
+    def create_admin(email, name, password):
+        """Buat akun admin, atau jadikan akun yang sudah ada sebagai admin."""
+        email = email.strip().lower()
+        if not is_allowed_email(email):
+            raise click.ClickException("Email harus berakhiran @ui.ac.id.")
+        if len(password) < 8:
+            raise click.ClickException("Kata sandi minimal 8 karakter.")
+        db = get_db()
+        if query("SELECT 1 FROM users WHERE email = ?", (email,), one=True):
+            db.execute("UPDATE users SET role = 'admin', is_verified = 1 WHERE email = ?", (email,))
+            click.echo(f"{email} sekarang admin.")
+        else:
+            db.execute(
+                "INSERT INTO users (email, password_hash, full_name, role, is_verified, prodi, angkatan)"
+                " VALUES (?, ?, ?, 'admin', 1, 'Ilmu Komputer', 2024)",
+                (email, generate_password_hash(password), name.strip()),
+            )
+            click.echo(f"Admin {email} dibuat. Lengkapi profilnya setelah masuk.")
+        db.commit()
+
+    @app.cli.command("seed-demo")
+    @click.option("--with-logos", is_flag=True, help="Ambil logo perusahaan dari internet.")
+    def seed_demo(with_logos):
+        """Isi database dengan data contoh (semua orang dan ceritanya fiktif)."""
+        db = get_db()
+        if query("SELECT 1 FROM users WHERE email = 'admin@ui.ac.id'", one=True):
+            raise click.ClickException("Data demo sudah ada. Hapus folder instance/ jika ingin mengulang.")
+
+        users = {}
+        cursor = db.execute(
+            "INSERT INTO users (email, password_hash, full_name, role, is_verified, prodi, angkatan, bio)"
+            " VALUES ('admin@ui.ac.id', ?, 'Admin JejakPacil', 'admin', 1, 'Ilmu Komputer', 2022, ?)",
+            (generate_password_hash("admin12345"), "Akun admin untuk demo."),
+        )
+        users["admin"] = cursor.lastrowid
+        password_hash = generate_password_hash(DEMO_PASSWORD)
+        for key, name, prodi, angkatan, status, grad_year, skills in DEMO_USERS:
+            cursor = db.execute(
+                "INSERT INTO users (email, password_hash, full_name, is_verified, prodi, angkatan, status,"
+                " grad_year, bio) VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?)",
+                (f"{key}.demo@ui.ac.id", password_hash, name, prodi, angkatan, status, grad_year,
+                 "Akun demo. Orang dan riwayat di profil ini fiktif."),
+            )
+            users[key] = cursor.lastrowid
+            _add_skills(db, "user_skills", "user_id", users[key], skills)
+
+        companies = {}
+        for name, domain, industry, description in DEMO_COMPANIES:
+            logo = None
+            if with_logos:
+                logo = fetch_logo(domain)
+                click.echo(f"  logo {name}: {'ok' if logo else 'tidak ditemukan'}")
+            cursor = db.execute(
+                "INSERT INTO companies (name, slug, domain, website, industry, description, logo, is_approved,"
+                " created_by) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)",
+                (name, slugify(name), domain, f"https://{domain}", industry, description, logo, users["admin"]),
+            )
+            companies[name] = cursor.lastrowid
+        # Satu perusahaan ganda yang belum disetujui, untuk mencoba fitur "gabungkan" di panel admin.
+        cursor = db.execute(
+            "INSERT INTO companies (name, slug, is_approved, created_by) VALUES (?, ?, 0, ?)",
+            ("PT Gojek Indonesia", "pt-gojek-indonesia", users["bagas"]),
+        )
+        db.execute(
+            "INSERT INTO experiences (user_id, company_id, position, type, start_date, end_date, location,"
+            " work_mode, how_obtained, visibility) VALUES (?, ?, 'Data Engineer Intern', 'magang',"
+            " '2023-06', '2023-08', 'Jakarta', 'hybrid', 'portal', 'sivitas')",
+            (users["bagas"], cursor.lastrowid),
+        )
+
+        for (owner, company, position, kind, start, end, location, mode, channel, skills,
+             verification, visibility) in DEMO_EXPERIENCES:
+            cursor = db.execute(
+                "INSERT INTO experiences (user_id, company_id, position, type, start_date, end_date,"
+                " location, work_mode, how_obtained, verification, visibility)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (users[owner], companies[company], position, kind, start, end, location, mode, channel,
+                 verification, visibility),
+            )
+            _add_skills(db, "experience_skills", "experience_id", cursor.lastrowid, skills)
+
+        categories = {row["slug"]: row["id"] for row in query("SELECT id, slug FROM categories")}
+        for author, category, company, title, body, anonymous, pinned, replies, voters in DEMO_THREADS:
+            cursor = db.execute(
+                "INSERT INTO threads (author_id, category_id, company_id, title, body, is_anonymous, is_pinned)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (users[author], categories[category], companies.get(company), title, body, anonymous, pinned),
+            )
+            thread_id = cursor.lastrowid
+            for reply_author, reply_body, reply_anonymous, children in replies:
+                cursor = db.execute(
+                    "INSERT INTO replies (thread_id, author_id, body, is_anonymous) VALUES (?, ?, ?, ?)",
+                    (thread_id, users[reply_author], reply_body, reply_anonymous),
+                )
+                parent_id = cursor.lastrowid
+                for child_author, child_body in children:
+                    db.execute(
+                        "INSERT INTO replies (thread_id, author_id, parent_id, body) VALUES (?, ?, ?, ?)",
+                        (thread_id, users[child_author], parent_id, child_body),
+                    )
+            for voter in voters:
+                db.execute("INSERT INTO votes (user_id, thread_id) VALUES (?, ?)", (users[voter], thread_id))
+
+        db.commit()
+        click.echo("Data demo siap.")
+        click.echo("  Admin : admin@ui.ac.id / admin12345")
+        click.echo(f"  Contoh: salsa.demo@ui.ac.id / {DEMO_PASSWORD} (semua akun demo memakai kata sandi ini)")
+
+
+def _add_skills(db, table, owner_column, owner_id, skills_text):
+    for name in [part.strip() for part in skills_text.split(",") if part.strip()]:
+        db.execute("INSERT OR IGNORE INTO skills (name) VALUES (?)", (name,))
+        skill_id = db.execute("SELECT id FROM skills WHERE name = ?", (name,)).fetchone()["id"]
+        db.execute(
+            f"INSERT OR IGNORE INTO {table} ({owner_column}, skill_id) VALUES (?, ?)", (owner_id, skill_id)
+        )

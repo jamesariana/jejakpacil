@@ -1,0 +1,10 @@
+{# Kepala halaman Jelajahi, dipakai oleh experiences/index.html dan profiles/index.html.
+   Variabel `active` berisi 'pengalaman' atau 'orang'. #}
+<div class="page-head">
+  <h1>Jelajahi</h1>
+  <p class="lede">Cari siapa yang pernah mengisi posisi tertentu, atau cari orangnya langsung.</p>
+</div>
+<nav class="tabs" aria-label="Jenis pencarian">
+  <a href="{{ url_for('experiences.index') }}"{% if active == 'pengalaman' %} aria-current="page"{% endif %}>Pengalaman</a>
+  <a href="{{ url_for('profiles.index') }}"{% if active == 'orang' %} aria-current="page"{% endif %}>Mahasiswa dan alumni{% if not g.user %} <span class="tag tag-muted">perlu masuk</span>{% endif %}</a>
+</nav>

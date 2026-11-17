@@ -1,0 +1,293 @@
+{# Potongan tampilan yang dipakai berulang di banyak halaman. #}
+
+{# Ikon garis sederhana. Selalu dekoratif, jadi disembunyikan dari pembaca layar. #}
+{% macro icon(name, size=20) -%}
+<svg class="icon" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  {%- if name == 'building' -%}<path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16"/><path d="M15 9h4a1 1 0 0 1 1 1v11"/><path d="M3 21h18M8 8h3M8 12h3M8 16h3"/>
+  {%- elif name == 'search' -%}<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+  {%- elif name == 'chat' -%}<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>
+  {%- elif name == 'chart' -%}<path d="M3 21h18"/><path d="M6 17v-5M11 17V6M16 17v-8M21 17v-3"/>
+  {%- elif name == 'plus' -%}<path d="M12 5v14M5 12h14"/>
+  {%- elif name == 'check' -%}<path d="m5 12 5 5 9-10"/>
+  {%- elif name == 'briefcase' -%}<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>
+  {%- elif name == 'trending' -%}<path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/>
+  {%- elif name == 'help' -%}<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.9.7c0 1.7-2.4 2.3-2.4 3.8"/><path d="M12 17h.01"/>
+  {%- elif name == 'megaphone' -%}<path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1Z"/><path d="M17 9a4 4 0 0 1 0 6"/>
+  {%- elif name == 'globe' -%}<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>
+  {%- elif name == 'users' -%}<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>
+  {%- elif name == 'lock' -%}<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+  {%- elif name == 'arrow-up' -%}<path d="M12 19V5M5 12l7-7 7 7"/>
+  {%- elif name == 'reply' -%}<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v4"/>
+  {%- elif name == 'send' -%}<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/>
+  {%- elif name == 'flag' -%}<path d="M4 22V4M4 4h12l-2 4 2 4H4"/>
+  {%- elif name == 'pin' -%}<path d="M12 17v5M8 3h8l-1 7 3 3H6l3-3-1-7Z"/>
+  {%- elif name == 'trash' -%}<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>
+  {%- elif name == 'edit' -%}<path d="M4 20h4L19 9l-4-4L4 16v4Z"/>
+  {%- elif name == 'chevron' -%}<path d="m9 6 6 6-6 6"/>
+  {%- elif name == 'eye-off' -%}<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6 0 9.5 7 9.5 7a17 17 0 0 1-3 3.9M6.5 6.6A17 17 0 0 0 2.5 12S6 19 12 19a9.6 9.6 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+  {%- endif -%}
+</svg>
+{%- endmacro %}
+
+{% macro avatar(name, photo=None, size='md') %}
+  {%- if photo -%}
+    <img class="avatar avatar-{{ size }}" src="{{ media_url('photos', photo) }}" alt="">
+  {%- else -%}
+    <span class="avatar avatar-{{ size }}" style="background: {{ name|warna }}" aria-hidden="true">{{ name|inisial }}</span>
+  {%- endif -%}
+{% endmacro %}
+
+{# Logo perusahaan; jika belum ada file logo, tampilkan kotak berisi inisial. #}
+{% macro logo(name, file=None, size='md') %}
+  {%- if file -%}
+    <img class="logo logo-{{ size }}" src="{{ media_url('logos', file) }}" alt="Logo {{ name }}">
+  {%- else -%}
+    <span class="logo logo-{{ size }} logo-empty" style="background: {{ name|warna }}" aria-hidden="true">{{ name|inisial }}</span>
+  {%- endif -%}
+{% endmacro %}
+
+{# Pembungkus satu isian form: label, isian (dari caller), petunjuk, dan pesan error. #}
+{% macro field(label, name, errors, hint='', optional=False) %}
+  <div class="field{% if errors.get(name) %} has-error{% endif %}">
+    <label for="{{ name }}">{{ label }}{% if optional %} <span class="optional">(opsional)</span>{% endif %}</label>
+    {{ caller() }}
+    {% if hint %}<p class="hint">{{ hint }}</p>{% endif %}
+    {% if errors.get(name) %}<p class="error">{{ errors[name] }}</p>{% endif %}
+  </div>
+{% endmacro %}
+
+{# Daftar <option>. `choices` boleh dict {nilai: label} atau list. #}
+{% macro options(choices, selected, placeholder=None) %}
+  {% if placeholder %}<option value="">{{ placeholder }}</option>{% endif %}
+  {% if choices is mapping %}
+    {% for value, label in choices.items() %}
+      <option value="{{ value }}"{% if value|string == selected|string %} selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  {% else %}
+    {% for value in choices %}
+      <option value="{{ value }}"{% if value|string == selected|string %} selected{% endif %}>{{ value }}</option>
+    {% endfor %}
+  {% endif %}
+{% endmacro %}
+
+{# Satu titik di "jejak": sebuah pengalaman.
+   lead = 'company' menonjolkan perusahaan (dipakai di profil),
+   lead = 'person' menonjolkan orangnya (dipakai di halaman perusahaan). #}
+{% macro exp_item(e, lead='company', show_person=True, can_edit=False) %}
+  <li class="trail-item{% if not e.end_date %} is-current{% endif %}">
+    <div class="trail-lead">
+      {% if lead == 'person' %}{{ avatar(e.full_name, e.user_photo, 'md') }}{% else %}{{ logo(e.company_name, e.company_logo, 'md') }}{% endif %}
+    </div>
+    <div class="trail-body">
+      <h3 class="trail-title">{{ e.position }}</h3>
+      <p class="trail-where">
+        {% if lead != 'person' or not show_person %}
+          {% if e.company_approved %}
+            <a href="{{ url_for('companies.detail', slug=e.company_slug) }}">{{ e.company_name }}</a>
+          {% else %}
+            {{ e.company_name }} <span class="tag tag-muted">perusahaan menunggu persetujuan</span>
+          {% endif %}
+        {% endif %}
+        <span class="tag">{{ C.EXP_TYPES.get(e.type, e.type) }}</span>
+        {% if e.verification == 'terverifikasi' %}
+          <span class="tag tag-ok"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Terverifikasi</span>
+        {% elif can_edit and e.verification == 'menunggu' %}
+          <span class="tag tag-muted">menunggu verifikasi</span>
+        {% elif can_edit and e.verification == 'ditolak' %}
+          <span class="tag tag-warn">bukti ditolak</span>
+        {% endif %}
+        {% if can_edit %}<span class="tag tag-muted">{{ e.visibility }}</span>{% endif %}
+      </p>
+      <p class="trail-meta">
+        <span>{{ periode(e.start_date, e.end_date) }}{% if durasi(e.start_date, e.end_date) %} ({{ durasi(e.start_date, e.end_date) }}){% endif %}</span>
+        {% if e.location %}<span>{{ e.location }}</span>{% endif %}
+        <span>{{ C.WORK_MODES.get(e.work_mode, e.work_mode) }}</span>
+      </p>
+      {% if show_person %}
+        <p class="trail-person">
+          {% if lead != 'person' %}{{ avatar(e.full_name, e.user_photo, 'xs') }}{% endif %}
+          {% if g.user %}<a href="{{ url_for('profiles.detail', user_id=e.user_id) }}">{{ e.full_name }}</a>{% else %}{{ e.full_name }}{% endif %}
+          <span class="muted">{{ e.prodi }} {{ e.angkatan }}</span>
+        </p>
+      {% endif %}
+      {% if e.description %}<p class="trail-desc">{{ e.description }}</p>{% endif %}
+      {% if e.skills %}
+        <ul class="chips" aria-label="Skill yang dipakai">
+          {% for skill in e.skills.split(', ') %}<li>{{ skill }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+      <p class="trail-channel"><span class="muted">Didapat lewat</span> <strong>{{ C.HOW_OBTAINED.get(e.how_obtained, 'Lainnya') }}</strong></p>
+      {% if can_edit %}
+        <div class="row-actions">
+          <a href="{{ url_for('experiences.edit', experience_id=e.id) }}">Ubah</a>
+          <form method="post" action="{{ url_for('experiences.delete', experience_id=e.id) }}" data-confirm="Hapus pengalaman ini? Tindakan ini tidak bisa dibatalkan.">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="link-danger">Hapus</button>
+          </form>
+        </div>
+      {% endif %}
+    </div>
+  </li>
+{% endmacro %}
+
+{% macro pagination(page) %}
+  {% if page.pages > 1 %}
+    <nav class="pagination" aria-label="Halaman">
+      {% if page.has_prev %}<a class="btn btn-quiet btn-small" href="{{ page_url(page.number - 1) }}">Sebelumnya</a>{% endif %}
+      <span class="muted">Halaman {{ page.number }} dari {{ page.pages }}</span>
+      {% if page.has_next %}<a class="btn btn-quiet btn-small" href="{{ page_url(page.number + 1) }}">Berikutnya</a>{% endif %}
+    </nav>
+  {% endif %}
+{% endmacro %}
+
+{# Nama penulis di forum, dengan dukungan posting anonim. #}
+{% macro author(row) %}
+  {% if row.is_anonymous %}
+    <span class="avatar avatar-sm avatar-anon" aria-hidden="true">?</span>
+    <span class="author-name">Anonim{% if g.user and g.user.id == row.author_id %} (kamu){% endif %}</span>
+  {% else %}
+    {{ avatar(row.full_name, row.photo, 'sm') }}
+    <a class="author-name" href="{{ url_for('profiles.detail', user_id=row.author_id) }}">{{ row.full_name }}</a>
+    <span class="muted">{{ 'Alumni' if row.user_status == 'alumni' else 'Angkatan' }} {{ row.angkatan }}</span>
+  {% endif %}
+{% endmacro %}
+
+{# Kartu pengalaman untuk halaman Jelajahi dan profil.
+   can_edit = True menampilkan siapa yang bisa melihat, status verifikasi, dan tombol ubah/hapus. #}
+{% macro exp_card(e, show_person=True, can_edit=False) %}
+  <li class="exp-card">
+    {{ logo(e.company_name, e.company_logo, 'md') }}
+    <div class="exp-card-body">
+      <p class="exp-card-title">
+        <span class="exp-position">{{ e.position }}</span>
+        <span class="tag">{{ C.EXP_TYPES.get(e.type, e.type) }}</span>
+        {% if e.verification == 'terverifikasi' %}<span class="tag tag-ok">{{ icon('check', 12) }}Terverifikasi</span>{% endif %}
+        {% if not e.end_date %}<span class="tag tag-live"><span class="live-dot" aria-hidden="true"></span>Masih berjalan</span>{% endif %}
+      </p>
+      <p class="exp-company">
+        {% if e.company_approved %}
+          <a href="{{ url_for('companies.detail', slug=e.company_slug) }}">{{ e.company_name }}</a>
+        {% else %}
+          {{ e.company_name }} <span class="tag tag-muted">perusahaan menunggu persetujuan admin</span>
+        {% endif %}
+      </p>
+      <p class="exp-meta">
+        {{ periode(e.start_date, e.end_date) }}{% if durasi(e.start_date, e.end_date) %} ({{ durasi(e.start_date, e.end_date) }}){% endif %}{% if e.location %}, {{ e.location }}{% endif %}, {{ C.WORK_MODES.get(e.work_mode, e.work_mode)|lower }}
+      </p>
+      {% if show_person %}
+        <p class="exp-person">
+          {{ avatar(e.full_name, e.user_photo, 'xs') }}
+          {% if g.user %}<a href="{{ url_for('profiles.detail', user_id=e.user_id) }}">{{ e.full_name }}</a>{% else %}<strong>{{ e.full_name }}</strong>{% endif %}
+          <span class="muted">{{ e.prodi }} {{ e.angkatan }}{% if e.user_status == 'alumni' %}, alumni{% endif %}</span>
+        </p>
+      {% endif %}
+      {% if e.description %}<p class="exp-desc">{{ e.description }}</p>{% endif %}
+      {% if e.skills %}
+        <ul class="chips" aria-label="Skill yang dipakai">
+          {% for skill in e.skills.split(', ') %}<li>{{ skill }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+      {% if can_edit %}
+        <dl class="exp-status">
+          <div><dt>Siapa yang bisa melihat</dt><dd>{{ C.VISIBILITY.get(e.visibility, e.visibility) }}</dd></div>
+          <div><dt>Verifikasi</dt><dd>
+            {% if e.verification == 'terverifikasi' %}Terverifikasi
+            {% elif e.verification == 'menunggu' %}Menunggu pemeriksaan admin
+            {% elif e.verification == 'ditolak' %}Bukti ditolak. <a href="{{ url_for('experiences.edit', experience_id=e.id) }}">Unggah bukti lain</a>
+            {% else %}Belum ada bukti. <a href="{{ url_for('experiences.edit', experience_id=e.id) }}">Unggah bukti</a>{% endif %}
+          </dd></div>
+        </dl>
+      {% endif %}
+    </div>
+    <div class="exp-card-side">
+      <span class="muted">Didapat lewat</span>
+      <strong>{{ C.HOW_OBTAINED.get(e.how_obtained, 'Lainnya') }}</strong>
+      {% if can_edit %}
+        <div class="exp-card-actions">
+          <a class="btn btn-quiet btn-small" href="{{ url_for('experiences.edit', experience_id=e.id) }}">Ubah</a>
+          <form method="post" action="{{ url_for('experiences.delete', experience_id=e.id) }}" data-confirm="Hapus pengalaman ini? Tindakan ini tidak bisa dibatalkan.">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="link-danger">Hapus</button>
+          </form>
+        </div>
+      {% endif %}
+    </div>
+  </li>
+{% endmacro %}
+
+{# Tombol pilihan (chip) untuk filter. Pilihan yang aktif diberi aria-current. #}
+{% macro chip(label, href, active) -%}
+  <a class="chip" href="{{ href }}"{% if active %} aria-current="true"{% endif %}>{{ label }}</a>
+{%- endmacro %}
+
+{# Daftar cek kelengkapan profil. #}
+{% macro checklist_list(checklist) %}
+  <ul class="checklist">
+    {% for item in checklist['items'] %}
+      <li class="{{ 'is-done' if item.done else 'is-todo' }}">
+        <span class="check-mark" aria-hidden="true">{% if item.done %}{{ icon('check', 14) }}{% endif %}</span>
+        <span class="checklist-label">{{ item.label }}<span class="visually-hidden">{{ ', sudah' if item.done else ', belum' }}</span></span>
+        {% if not item.done %}<a href="{{ item.url }}">{{ item.action }}</a>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% endmacro %}
+
+{# Bilah kemajuan. #}
+{% macro progress(percent, label) -%}
+  <div class="progress" role="progressbar" aria-label="{{ label }}" aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ percent }}%"></span></div>
+{%- endmacro %}
+
+{# Ikon dan warna tiap kategori forum. #}
+{% macro cat_icon_name(slug) -%}
+  {{ {'magang': 'briefcase', 'karier': 'trending', 'tanya-alumni': 'help', 'lowongan': 'megaphone'}.get(slug, 'chat') }}
+{%- endmacro %}
+
+{% macro cat_badge(slug, name) -%}
+  <span class="cat-badge cat-{{ slug }}">{{ icon(cat_icon_name(slug)|trim, 14) }}{{ name }}</span>
+{%- endmacro %}
+
+{% macro cat_icon(slug, size=18) -%}
+  <span class="cat-icon cat-{{ slug }}" aria-hidden="true">{{ icon(cat_icon_name(slug)|trim, size) }}</span>
+{%- endmacro %}
+
+{# Saklar (pengganti kotak centang). #}
+{% macro switch(name, title, desc='', checked=False, id=None, attrs='') -%}
+  <label class="switch">
+    <input type="checkbox" role="switch" name="{{ name }}" value="1" id="{{ id or name }}"{% if checked %} checked{% endif %} {{ attrs|safe }}>
+    <span class="switch-track" aria-hidden="true"></span>
+    <span class="switch-text"><strong>{{ title }}</strong>{% if desc %}<span>{{ desc }}</span>{% endif %}</span>
+  </label>
+{%- endmacro %}
+
+{# Kelompok pilihan berbentuk tombol bulat (pill). `choices` berupa dict {nilai: label}. #}
+{% macro pills(name, choices, selected, legend, errors, style='pill') %}
+  <fieldset class="choice-group{% if errors.get(name) %} has-error{% endif %}">
+    <legend>{{ legend }}</legend>
+    <div class="{{ 'segmented' if style == 'segmented' else 'pill-group' }}">
+      {% for value, label in choices.items() %}
+        <label class="{{ 'seg' if style == 'segmented' else 'pill' }}">
+          <input type="radio" name="{{ name }}" value="{{ value }}"{% if value|string == selected|string %} checked{% endif %}>
+          <span class="{{ 'seg-body' if style == 'segmented' else 'pill-body' }}">{{ label }}</span>
+        </label>
+      {% endfor %}
+    </div>
+    {% if errors.get(name) %}<p class="error">{{ errors[name] }}</p>{% endif %}
+  </fieldset>
+{% endmacro %}
+
+{# Pilihan status mahasiswa aktif / alumni. Isian tahun lulus hanya tampil untuk alumni (lihat app.js). #}
+{% macro status_choice(selected, errors) %}
+  <fieldset class="choice-group{% if errors.get('status') %} has-error{% endif %}" data-toggle-target="grad-year-field" data-toggle-value="alumni">
+    <legend>Status</legend>
+    <div class="segmented">
+      {% for value, label in C.STATUS.items() %}
+        <label class="seg">
+          <input type="radio" name="status" value="{{ value }}"{% if value == (selected or 'aktif') %} checked{% endif %}>
+          <span class="seg-body">{{ label }}</span>
+        </label>
+      {% endfor %}
+    </div>
+    {% if errors.get('status') %}<p class="error">{{ errors['status'] }}</p>{% endif %}
+  </fieldset>
+{% endmacro %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Minta tautan verifikasi{% endblock %}
+{% block content %}
+<section class="auth">
+  {% include "auth/_side.html" %}
+
+  <div class="auth-card">
+    <div class="auth-card-head">
+      <h1>Minta tautan verifikasi</h1>
+      <p class="muted">Masukkan email UI yang kamu pakai saat mendaftar. Tautan berlaku 24 jam.</p>
+    </div>
+    <form method="post" class="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="email">Email UI</label>
+        <input id="email" type="email" name="email" autocomplete="email" placeholder="nama.kamu@ui.ac.id" required>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Kirim tautan baru</button>
+    </form>
+    <div class="auth-foot">
+      <p><a href="{{ url_for('auth.login') }}">Kembali ke halaman masuk</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

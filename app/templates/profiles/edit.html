@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, options, icon, avatar, status_choice %}
+{% block title %}Edit profil{% endblock %}
+{% block content %}
+<section class="narrow form-page">
+  <div class="form-page-head">
+    <h1>Edit profil</h1>
+    <p class="lede">Profil yang lengkap memudahkan kakak tingkat dan teman seangkatan mengenalmu.</p>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <section class="form-section" aria-labelledby="bagian-foto">
+      <h2 id="bagian-foto" class="form-section-title"><span class="icon-tile">{{ icon('users', 18) }}</span>Foto dan data diri</h2>
+
+      <div class="photo-field{% if errors.get('photo') %} has-error{% endif %}">
+        {{ avatar(user.full_name, user.photo, 'xl') }}
+        <div class="field">
+          <label for="photo">Foto profil <span class="optional">(opsional)</span></label>
+          <input id="photo" type="file" name="photo" accept="image/png,image/jpeg,image/webp">
+          <p class="hint">PNG, JPG, atau WEBP. Maksimal 5 MB.</p>
+          {% if errors.get('photo') %}<p class="error">{{ errors['photo'] }}</p>{% endif %}
+          {% if user.photo %}<label class="check"><input type="checkbox" name="remove_photo" value="1"> Hapus foto sekarang</label>{% endif %}
+        </div>
+      </div>
+
+      {% call field('Nama lengkap', 'full_name', errors) %}
+        <input id="full_name" name="full_name" value="{{ form.get('full_name') or '' }}" required>
+      {% endcall %}
+
+      <div class="field-row">
+        {% call field('Program studi', 'prodi', errors) %}
+          <select id="prodi" name="prodi">{{ options(C.PRODI, form.get('prodi') or '') }}</select>
+        {% endcall %}
+        {% call field('Angkatan', 'angkatan', errors) %}
+          <input id="angkatan" name="angkatan" inputmode="numeric" value="{{ form.get('angkatan') or '' }}">
+        {% endcall %}
+      </div>
+
+      <div class="field-row field-row-center">
+        {{ status_choice(form.get('status') or 'aktif', errors) }}
+        <div id="grad-year-field">
+          {% call field('Tahun lulus', 'grad_year', errors) %}
+            <input id="grad_year" name="grad_year" inputmode="numeric" value="{{ form.get('grad_year') or '' }}">
+          {% endcall %}
+        </div>
+      </div>
+    </section>
+
+    <section class="form-section" aria-labelledby="bagian-tentang">
+      <h2 id="bagian-tentang" class="form-section-title"><span class="icon-tile">{{ icon('chat', 18) }}</span>Tentang kamu</h2>
+
+      {% call field('Bio singkat', 'bio', errors, hint='Maksimal 600 karakter.', optional=True) %}
+        <textarea id="bio" name="bio" rows="4" maxlength="600" placeholder="misalnya: Suka mengolah data. Sedang mencari magang data analyst.">{{ form.get('bio') or '' }}</textarea>
+      {% endcall %}
+
+      {% call field('Skill', 'skills', errors, hint='Pisahkan dengan koma, misalnya: Python, SQL, Figma', optional=True) %}
+        <input id="skills" name="skills" value="{{ form.get('skills') or '' }}">
+      {% endcall %}
+    </section>
+
+    <section class="form-section" aria-labelledby="bagian-tautan">
+      <h2 id="bagian-tautan" class="form-section-title"><span class="icon-tile">{{ icon('globe', 18) }}</span>Tautan dan CV</h2>
+
+      <div class="field-row">
+        {% call field('GitHub', 'github_url', errors, optional=True) %}
+          <input id="github_url" type="url" name="github_url" value="{{ form.get('github_url') or '' }}" placeholder="https://github.com/namakamu">
+        {% endcall %}
+        {% call field('LinkedIn', 'linkedin_url', errors, optional=True) %}
+          <input id="linkedin_url" type="url" name="linkedin_url" value="{{ form.get('linkedin_url') or '' }}" placeholder="https://linkedin.com/in/namakamu">
+        {% endcall %}
+      </div>
+
+      {% call field('Portofolio', 'portfolio_url', errors, optional=True) %}
+        <input id="portfolio_url" type="url" name="portfolio_url" value="{{ form.get('portfolio_url') or '' }}" placeholder="https://">
+      {% endcall %}
+
+      {% call field('CV', 'cv', errors, hint='PDF, maksimal 5 MB. Hanya pengguna yang masuk yang bisa melihatnya.', optional=True) %}
+        <input id="cv" type="file" name="cv" accept="application/pdf">
+        {% if user.cv %}
+          <p class="hint">CV sudah diunggah. <a href="{{ media_url('cv', user.cv) }}" target="_blank">Lihat CV</a>. Unggah file baru untuk menggantinya.</p>
+          <label class="check"><input type="checkbox" name="remove_cv" value="1"> Hapus CV sekarang</label>
+        {% endif %}
+      {% endcall %}
+    </section>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ icon('check', 16) }}Simpan profil</button>
+      <a href="{{ url_for('profiles.detail', user_id=user.id) }}">Batal</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

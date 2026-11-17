@@ -1,0 +1,8 @@
+<nav class="tabs" aria-label="Menu admin">
+  {% set ep = request.endpoint %}
+  <a href="{{ url_for('admin.dashboard') }}"{% if ep == 'admin.dashboard' %} aria-current="true"{% endif %}>Ringkasan</a>
+  <a href="{{ url_for('admin.experiences') }}"{% if ep == 'admin.experiences' %} aria-current="true"{% endif %}>Verifikasi pengalaman</a>
+  <a href="{{ url_for('admin.companies') }}"{% if ep in ('admin.companies', 'admin.edit_company') %} aria-current="true"{% endif %}>Perusahaan</a>
+  <a href="{{ url_for('admin.reports') }}"{% if ep == 'admin.reports' %} aria-current="true"{% endif %}>Laporan forum</a>
+  <a href="{{ url_for('admin.users') }}"{% if ep == 'admin.users' %} aria-current="true"{% endif %}>Pengguna</a>
+</nav>

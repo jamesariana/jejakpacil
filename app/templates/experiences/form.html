@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, icon, pills, switch %}
+{% block title %}{{ 'Ubah pengalaman' if experience else 'Tambah pengalaman' }}{% endblock %}
+{% block content %}
+<section class="narrow form-page">
+  <div class="form-page-head">
+    <h1>{{ 'Ubah pengalaman' if experience else 'Tambah pengalaman' }}</h1>
+    <p class="lede">Magang, kerja, asdos, riset, dan kerja lepas semuanya boleh dicatat.</p>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {# Bagian 1 #}
+    <section class="form-section" aria-labelledby="bagian-tempat">
+      <h2 id="bagian-tempat" class="form-section-title"><span class="icon-tile">{{ icon('building', 18) }}</span>Tempat dan posisi</h2>
+
+      {% call field('Perusahaan atau instansi', 'company_name', errors, hint='Pilih dari saran jika sudah ada, supaya tidak tercatat ganda.') %}
+        <input id="company_name" name="company_name" list="daftar-perusahaan" value="{{ form.get('company_name') or '' }}" autocomplete="off" placeholder="misalnya Tokopedia" required>
+        <datalist id="daftar-perusahaan">
+          {% for name in company_names %}<option value="{{ name }}">{% endfor %}
+        </datalist>
+      {% endcall %}
+
+      {% call field('Website perusahaan', 'company_website', errors, hint='Hanya untuk perusahaan yang belum terdaftar, supaya logonya bisa diambil otomatis.', optional=True) %}
+        <input id="company_website" name="company_website" value="{{ form.get('company_website') or '' }}" placeholder="misalnya tokopedia.com">
+      {% endcall %}
+
+      {% call field('Posisi', 'position', errors) %}
+        <input id="position" name="position" value="{{ form.get('position') or '' }}" placeholder="misalnya Software Engineer Intern" required>
+      {% endcall %}
+
+      {{ pills('type', C.EXP_TYPES, form.get('type') or '', 'Jenis', errors) }}
+    </section>
+
+    {# Bagian 2 #}
+    <section class="form-section" aria-labelledby="bagian-waktu">
+      <h2 id="bagian-waktu" class="form-section-title"><span class="icon-tile">{{ icon('trending', 18) }}</span>Waktu dan tempat kerja</h2>
+
+      <div class="field-row">
+        {% call field('Bulan mulai', 'start_date', errors) %}
+          <input id="start_date" type="month" name="start_date" value="{{ form.get('start_date') or '' }}" placeholder="2025-06" required>
+        {% endcall %}
+        {% call field('Bulan selesai', 'end_date', errors) %}
+          <input id="end_date" type="month" name="end_date" value="{{ form.get('end_date') or '' }}" placeholder="2025-08">
+        {% endcall %}
+      </div>
+      {{ switch('is_current', 'Masih berjalan', 'Nyalakan jika kamu masih di posisi ini. Bulan selesai tidak perlu diisi.', checked=form.get('is_current'), attrs='data-disables="end_date"') }}
+
+      {% call field('Lokasi', 'location', errors, optional=True) %}
+        <input id="location" name="location" value="{{ form.get('location') or '' }}" placeholder="misalnya Jakarta">
+      {% endcall %}
+
+      {{ pills('work_mode', C.WORK_MODES, form.get('work_mode') or '', 'Cara kerja', errors, style='segmented') }}
+    </section>
+
+    {# Bagian 3 #}
+    <section class="form-section" aria-labelledby="bagian-cerita">
+      <h2 id="bagian-cerita" class="form-section-title"><span class="icon-tile">{{ icon('chat', 18) }}</span>Ceritakan pengalamanmu</h2>
+
+      {% call field('Apa yang kamu kerjakan', 'description', errors, hint='Ceritakan tugas dan hasilnya. Jangan tulis hal yang dirahasiakan perusahaan.', optional=True) %}
+        <textarea id="description" name="description" rows="5" maxlength="2000">{{ form.get('description') or '' }}</textarea>
+      {% endcall %}
+
+      {% call field('Skill yang dipakai', 'skills', errors, hint='Pisahkan dengan koma, misalnya: Python, Django, PostgreSQL', optional=True) %}
+        <input id="skills" name="skills" value="{{ form.get('skills') or '' }}">
+      {% endcall %}
+
+      {{ pills('how_obtained', C.HOW_OBTAINED, form.get('how_obtained') or '', 'Dapat dari mana? Info ini paling dicari adik tingkat.', errors) }}
+    </section>
+
+    {# Bagian 4 #}
+    <section class="form-section" aria-labelledby="bagian-privasi">
+      <h2 id="bagian-privasi" class="form-section-title"><span class="icon-tile">{{ icon('lock', 18) }}</span>Privasi dan bukti</h2>
+
+      {% set vis_options = [
+        ('publik', 'globe', 'Publik', 'Siapa saja, termasuk pengunjung yang belum masuk.'),
+        ('sivitas', 'users', 'Sivitas', 'Hanya pengguna yang masuk dengan email UI.'),
+        ('privat', 'lock', 'Privat', 'Hanya kamu dan admin. Tidak dihitung di statistik.'),
+      ] %}
+      <fieldset class="choice-group{% if errors.get('visibility') %} has-error{% endif %}">
+        <legend>Siapa yang boleh melihat</legend>
+        <div class="choice-grid choice-grid-3">
+          {% for value, icon_name, title, desc in vis_options %}
+            <label class="choice">
+              <input type="radio" name="visibility" value="{{ value }}"{% if (form.get('visibility') or '') == value %} checked{% endif %}>
+              <span class="choice-body">
+                <span class="choice-title"><span class="choice-icon" aria-hidden="true">{{ icon(icon_name, 16) }}</span>{{ title }}<span class="choice-check" aria-hidden="true">{{ icon('check', 14) }}</span></span>
+                <span class="choice-desc">{{ desc }}</span>
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+        {% if errors.get('visibility') %}<p class="error">{{ errors['visibility'] }}</p>{% endif %}
+      </fieldset>
+
+      {% call field('Bukti', 'proof', errors, hint='Surat penerimaan atau surat keterangan (PDF atau gambar, maksimal 5 MB). Hanya admin yang melihatnya, untuk memberi tanda terverifikasi.', optional=True) %}
+        <input id="proof" type="file" name="proof" accept="application/pdf,image/png,image/jpeg,image/webp">
+        {% if experience and experience.proof %}
+          <p class="hint">Bukti sudah diunggah. <a href="{{ media_url('proofs', experience.proof) }}" target="_blank">Lihat bukti</a>. Unggah file baru untuk menggantinya.</p>
+        {% endif %}
+      {% endcall %}
+    </section>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ icon('check', 16) }}{{ 'Simpan pengalaman' if experience else 'Tambah pengalaman' }}</button>
+      <a href="{{ url_for('profiles.detail', user_id=(experience.user_id if experience else g.user.id)) }}">Batal</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

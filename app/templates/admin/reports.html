@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Laporan forum{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Laporan forum</h1></div>
+{% include "admin/_nav.html" %}
+
+{% if reports %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Konten yang dilaporkan</th><th>Penulis asli</th><th>Alasan</th><th>Pelapor</th><th>Tindakan</th></tr>
+      </thead>
+      <tbody>
+        {% for r in reports %}
+          <tr>
+            <td>
+              {% if r.reply_id %}
+                <span class="muted">Balasan di</span>
+                <a href="{{ url_for('forum.thread', thread_id=r.target_thread_id) }}#balasan-{{ r.reply_id }}">{{ r.thread_title }}</a>
+                <br>{{ r.reply_body|truncate(160) }}
+              {% else %}
+                <span class="muted">Thread</span>
+                <a href="{{ url_for('forum.thread', thread_id=r.target_thread_id) }}">{{ r.thread_title }}</a>
+              {% endif %}
+            </td>
+            <td>{{ r.author_name }}</td>
+            <td>{{ r.reason }}</td>
+            <td>{{ r.reporter_name }}<br><span class="muted">{{ r.created_at|lalu }}</span></td>
+            <td>
+              <form method="post" action="{{ url_for('admin.resolve_report', report_id=r.id) }}" class="row-actions">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-primary btn-small" name="action" value="sembunyikan" type="submit">Sembunyikan konten</button>
+                <button class="btn btn-quiet btn-small" name="action" value="tutup" type="submit">Tutup laporan</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="empty">Tidak ada laporan yang perlu ditangani.</p>
+{% endif %}
+{% endblock %}

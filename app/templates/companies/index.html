@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "_macros.html" import logo, options, pagination, chip, icon %}
+{% block title %}Perusahaan{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Perusahaan</h1>
+  <p class="lede">{{ page.total }} tempat mahasiswa dan alumni Fasilkom pernah magang atau bekerja. Pilih salah satu untuk melihat siapa saja yang pernah di sana.</p>
+</div>
+
+<form class="filter-bare" method="get" role="search">
+  {% if request.args.get('industri') %}<input type="hidden" name="industri" value="{{ request.args.get('industri') }}">{% endif %}
+  <div class="filter-search">
+    <label class="visually-hidden" for="q">Cari nama perusahaan</label>
+    <input id="q" type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Cari nama perusahaan">
+    <label class="visually-hidden" for="jenis">Pernah ada yang</label>
+    <select id="jenis" name="jenis">{{ options({'magang': 'Pernah ada yang magang', 'kerja': 'Pernah ada yang bekerja'}, request.args.get('jenis', ''), 'Magang atau bekerja') }}</select>
+    <label class="visually-hidden" for="urut">Urutkan</label>
+    <select id="urut" name="urut">{{ options({'az': 'Urut nama A sampai Z'}, request.args.get('urut', ''), 'Urut orang terbanyak') }}</select>
+    <button class="btn btn-primary" type="submit">Terapkan</button>
+  </div>
+  <div class="chip-row" role="group" aria-label="Industri">
+    {{ chip('Semua', url_with(industri=None), not request.args.get('industri')) }}
+    {% for industry in C.INDUSTRIES %}
+      {{ chip(industry, url_with(industri=industry), request.args.get('industri') == industry) }}
+    {% endfor %}
+  </div>
+</form>
+
+{% if companies %}
+  <ul class="company-rows">
+    {% for c in companies %}
+      <li class="company-row">
+        {{ logo(c.name, c.logo, 'lg') }}
+        <div class="company-row-main">
+          <h2 class="company-row-name"><a href="{{ url_for('companies.detail', slug=c.slug) }}">{{ c.name }}</a></h2>
+          <p class="company-row-meta">
+            <span class="tag tag-muted">{{ c.industry }}</span>
+            {% if c.domain %}<span class="muted">{{ c.domain }}</span>{% endif %}
+          </p>
+          <p class="company-row-desc">
+            {% if c.description %}{{ c.description|truncate(160) }}{% else %}{{ c.n_orang }} anak Fasilkom pernah magang atau bekerja di sini.{% endif %}
+          </p>
+          {% if c.position_list %}
+            <p class="company-row-positions">
+              <span class="muted">Posisi yang pernah diisi:</span>
+              {{ c.position_list[:3]|join(', ') }}{% if c.position_list|length > 3 %}, dan {{ c.position_list|length - 3 }} lainnya{% endif %}
+            </p>
+          {% endif %}
+        </div>
+        <div class="company-row-side">
+          <span class="company-row-total">{{ c.n_orang }} orang</span>
+          <span class="company-row-split">
+            {% if c.n_magang %}<span class="tag">{{ c.n_magang }} magang</span>{% endif %}
+            {% if c.n_kerja %}<span class="tag tag-ok">{{ c.n_kerja }} bekerja</span>{% endif %}
+          </span>
+        </div>
+        <span class="company-row-arrow" aria-hidden="true">{{ icon('chevron', 20) }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+  {{ pagination(page) }}
+{% else %}
+  <p class="empty">Tidak ada perusahaan yang cocok. <a href="{{ url_for('companies.index') }}">Lihat semua perusahaan</a>, atau tambahkan pengalamanmu supaya perusahaannya ikut tercatat.</p>
+{% endif %}
+{% endblock %}

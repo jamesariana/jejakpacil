@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<section class="error-page">
+  <div class="error-trail" aria-hidden="true">
+    <svg viewBox="0 0 220 120">
+      <path d="M14 104 C 60 104, 70 30, 120 40 S 190 30, 206 16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10"/>
+      <circle cx="14" cy="104" r="9" fill="#1f4fd8"/>
+      <circle cx="206" cy="16" r="9" fill="#c81e36"/>
+    </svg>
+  </div>
+  <p class="error-code">Kode {{ code }}</p>
+  <h1>{{ title }}</h1>
+  <p class="lede">{{ message }}</p>
+  <div class="form-actions">
+    <a class="btn btn-primary" href="{{ url_for('main.home') }}">Kembali ke beranda</a>
+    <a href="{{ url_for('companies.index') }}">Lihat daftar perusahaan</a>
+  </div>
+</section>
+{% endblock %}

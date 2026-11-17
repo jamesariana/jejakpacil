@@ -1,0 +1,15 @@
+# Lingkungan virtual
+venv/
+.venv/
+
+# Data lokal: database, file unggahan, dan kunci rahasia. Jangan di-commit.
+instance/
+
+# Python
+__pycache__/
+*.pyc
+
+# Editor
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, options, logo %}
+{% block title %}Ubah {{ company.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Ubah {{ company.name }}</h1></div>
+{% include "admin/_nav.html" %}
+
+<section class="narrow narrow-left">
+  <div class="logo-editor">
+    {{ logo(company.name, company.logo, 'xxl') }}
+    <form method="post" action="{{ url_for('admin.auto_logo', company_id=company.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-quiet" type="submit">Ambil logo otomatis</button>
+      <p class="hint">Logo dicari berdasarkan domain{% if company.domain %} ({{ company.domain }}){% endif %} dan butuh koneksi internet. Simpan dulu perubahan domain sebelum menekan tombol ini.</p>
+    </form>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% call field('Nama', 'name', errors) %}
+      <input id="name" name="name" value="{{ form.get('name') or '' }}" required>
+    {% endcall %}
+
+    <div class="field-row">
+      {% call field('Domain', 'domain', errors, hint='Contoh: tokopedia.com') %}
+        <input id="domain" name="domain" value="{{ form.get('domain') or '' }}">
+      {% endcall %}
+      {% call field('Industri', 'industry', errors) %}
+        <select id="industry" name="industry">{{ options(C.INDUSTRIES, form.get('industry') or 'Lainnya') }}</select>
+      {% endcall %}
+    </div>
+
+    {% call field('Website', 'website', errors, optional=True) %}
+      <input id="website" type="url" name="website" value="{{ form.get('website') or '' }}" placeholder="https://">
+    {% endcall %}
+
+    {% call field('Deskripsi singkat', 'description', errors, optional=True) %}
+      <textarea id="description" name="description" rows="4" maxlength="1000">{{ form.get('description') or '' }}</textarea>
+    {% endcall %}
+
+    {% call field('Unggah logo sendiri', 'logo', errors, hint='PNG, JPG, atau WEBP. Pakai file resmi dari perusahaan.', optional=True) %}
+      <input id="logo" type="file" name="logo" accept="image/png,image/jpeg,image/webp">
+      {% if company.logo %}<label class="check"><input type="checkbox" name="remove_logo" value="1"> Hapus logo sekarang</label>{% endif %}
+    {% endcall %}
+
+    <label class="check"><input type="checkbox" name="is_approved" value="1"{% if form.get('is_approved') %} checked{% endif %}> Disetujui, tampil di direktori perusahaan</label>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Simpan perusahaan</button>
+      <a href="{{ url_for('admin.companies') }}">Batal</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

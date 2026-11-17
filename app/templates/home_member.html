@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{# Beranda untuk pengguna yang sudah masuk. #}
+{% from "_macros.html" import logo, icon, checklist_list, progress %}
+{% block title %}Beranda{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Halo, {{ g.user.full_name.split(' ')[0] }}</h1>
+  <p class="lede">{{ g.user.prodi }} angkatan {{ g.user.angkatan }}, {{ 'alumni' if g.user.status == 'alumni' else 'mahasiswa aktif' }}.</p>
+</div>
+
+<div class="split">
+  <div class="split-main">
+    {% if checklist.done < checklist.total %}
+      <section class="panel" aria-labelledby="lengkapi">
+        <div class="panel-head">
+          <h2 id="lengkapi">Lengkapi profilmu</h2>
+          <span class="panel-count">{{ checklist.done }} dari {{ checklist.total }} selesai</span>
+        </div>
+        <p class="muted">Profil yang lengkap lebih mudah ditemukan kakak tingkat yang mau membantu.</p>
+        {{ progress(checklist.percent, 'Kelengkapan profil') }}
+        {{ checklist_list(checklist) }}
+      </section>
+    {% endif %}
+
+    <section aria-labelledby="diskusi">
+      <div class="section-head">
+        <h2 id="diskusi">Diskusi terbaru di forum</h2>
+        <a href="{{ url_for('forum.index') }}">Buka forum</a>
+      </div>
+      {% if threads %}
+        <ul class="plain-list">
+          {% for t in threads %}
+            <li>
+              <a class="plain-list-title" href="{{ url_for('forum.thread', thread_id=t.id) }}">{{ t.title }}</a>
+              <span class="meta-row"><span class="tag">{{ t.category_name }}</span><span class="muted">{{ t.n_replies }} balasan</span><span class="muted">{{ t.created_at|lalu }}</span></span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">Forum masih sepi. <a href="{{ url_for('forum.create') }}">Mulai diskusi pertama</a>.</p>
+      {% endif %}
+    </section>
+
+    {% if latest %}
+      <section aria-labelledby="jejak">
+        <div class="section-head">
+          <h2 id="jejak">Jejak terbaru</h2>
+          <a href="{{ url_for('experiences.index') }}">Jelajahi semua pengalaman</a>
+        </div>
+        <ol class="trail trail-compact">
+          {% for e in latest %}
+            <li class="trail-item{% if not e.end_date %} is-current{% endif %}">
+              <div class="trail-lead">{{ logo(e.company_name, e.company_logo, 'sm') }}</div>
+              <div class="trail-body">
+                <h3 class="trail-title">{{ e.position }}</h3>
+                <p class="trail-where"><a href="{{ url_for('companies.detail', slug=e.company_slug) }}">{{ e.company_name }}</a></p>
+                <p class="trail-meta"><span><a href="{{ url_for('profiles.detail', user_id=e.user_id) }}">{{ e.full_name }}</a>, {{ e.prodi }} {{ e.angkatan }}</span><span>{{ periode(e.start_date, e.end_date) }}</span></p>
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+      </section>
+    {% endif %}
+  </div>
+
+  <aside class="split-side">
+    <section aria-labelledby="aksi">
+      <h2 id="aksi" class="side-title">Mau melakukan apa?</h2>
+      <ul class="action-list">
+        <li><a href="{{ url_for('experiences.create') }}"><span class="icon-tile">{{ icon('plus') }}</span><span><strong>Tambah pengalaman</strong><span class="muted">Catat magang, kerja, asdos, atau riset.</span></span></a></li>
+        <li><a href="{{ url_for('forum.create') }}"><span class="icon-tile">{{ icon('chat') }}</span><span><strong>Tanya di forum</strong><span class="muted">Mulai thread baru, bisa anonim.</span></span></a></li>
+        <li><a href="{{ url_for('experiences.index') }}"><span class="icon-tile">{{ icon('search') }}</span><span><strong>Cari kakak tingkat</strong><span class="muted">Berdasarkan posisi, perusahaan, atau skill.</span></span></a></li>
+        <li><a href="{{ url_for('companies.index') }}"><span class="icon-tile">{{ icon('building') }}</span><span><strong>Lihat perusahaan</strong><span class="muted">Siapa saja yang pernah di sana.</span></span></a></li>
+      </ul>
+    </section>
+
+    {% if top_companies %}
+      <section aria-labelledby="populer">
+        <h2 id="populer" class="side-title">Perusahaan terpopuler</h2>
+        <ul class="company-list">
+          {% for c in top_companies %}
+            <li><a href="{{ url_for('companies.detail', slug=c.slug) }}">{{ logo(c.name, c.logo, 'sm') }}<span class="company-list-name">{{ c.name }}</span><span class="muted">{{ c.n_orang }} orang</span></a></li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}
