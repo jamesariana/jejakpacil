@@ -4,6 +4,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  {# Tema dipasang sebelum halaman digambar, supaya tidak berkedip putih saat mode gelap. #}
+  <script>
+    (function () {
+      var theme = null;
+      try { theme = localStorage.getItem("jejakpacil-theme"); } catch (e) {}
+      if (theme !== "dark" && theme !== "light") {
+        theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
   <title>{% block title %}{% endblock %}{% if self.title() %} | {% endif %}JejakPacil</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,6 +50,9 @@
       </nav>
 
       <div class="account">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Ganti ke mode gelap" title="Ganti ke mode gelap">
+          {{ icon('moon', 19) }}{{ icon('sun', 19) }}
+        </button>
         {% if g.user %}
           <a class="btn btn-primary btn-small" href="{{ url_for('experiences.create') }}">{{ icon('plus', 16) }}<span>Tambah<span class="hide-small"> pengalaman</span></span></a>
           <details class="menu">

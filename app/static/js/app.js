@@ -152,3 +152,27 @@ if (sliderNav) {
   // Ukuran huruf bisa berubah setelah font selesai dimuat.
   if (document.fonts) document.fonts.ready.then(() => place(activePill, current));
 }
+
+// 6. Tombol mode gelap / mode terang.
+//    Pilihan disimpan di localStorage supaya tetap dipakai di halaman berikutnya.
+//    Tema awal sudah dipasang oleh skrip kecil di <head> (base.html).
+const themeButton = document.querySelector("[data-theme-toggle]");
+if (themeButton) {
+  const root = document.documentElement;
+  const updateButton = () => {
+    const dark = root.getAttribute("data-theme") === "dark";
+    const label = dark ? "Ganti ke mode terang" : "Ganti ke mode gelap";
+    themeButton.setAttribute("aria-label", label);
+    themeButton.setAttribute("title", label);
+  };
+  updateButton();
+
+  themeButton.addEventListener("click", () => {
+    const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    root.classList.add("theme-switching");
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("jejakpacil-theme", next); } catch (e) { /* mode privat: abaikan */ }
+    updateButton();
+    setTimeout(() => root.classList.remove("theme-switching"), 350);
+  });
+}
