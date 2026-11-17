@@ -26,7 +26,10 @@
       </a>
 
       {# Menu utama hanya empat bagian. "Jelajahi" menggabungkan pencarian pengalaman dan orang. #}
-      <nav class="mainnav" aria-label="Menu utama">
+      {# Dua "pil" di belakang menu digeser oleh app.js: satu mengikuti kursor, satu menandai menu aktif. #}
+      <nav class="mainnav" aria-label="Menu utama" data-slider>
+        <span class="nav-pill nav-pill-hover" aria-hidden="true"></span>
+        <span class="nav-pill nav-pill-active" aria-hidden="true"></span>
         {% set ep = request.endpoint or '' %}
         <a href="{{ url_for('companies.index') }}" {% if ep.startswith('companies.') %}aria-current="page"{% endif %}>Perusahaan</a>
         <a href="{{ url_for('experiences.index') }}" {% if ep in ('experiences.index', 'profiles.index') %}aria-current="page"{% endif %}>Jelajahi</a>
