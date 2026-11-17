@@ -170,17 +170,3 @@ semua halaman yang menampilkan pengalaman.
 - Isi profil otomatis dari CV dengan membaca PDF
 - Rekomendasi perusahaan berdasarkan kemiripan skill
 
-## Saran pembagian kerja
-
-| Anggota | Bagian | File utama |
-| --- | --- | --- |
-| 1 | Akun, keamanan, profil | `auth.py`, `security.py`, `profiles.py` |
-| 2 | Pengalaman dan perusahaan, logo | `experiences.py`, `companies.py`, `logos.py`, `queries.py` |
-| 3 | Forum | `forum.py`, `templates/forum/` |
-| 4 | Statistik, panel admin, tes | `stats.py`, `admin.py`, `tests/` |
-
-## Penggunaan AI
-
-Kerangka awal kode proyek ini dibuat dengan bantuan AI (Claude), sesuai aturan proyek yang
-mengizinkannya. (Lengkapi bagian ini: bagian mana yang kalian ubah atau tulis sendiri, dan bagaimana
-tiap anggota mempelajari kode yang dipegangnya.)
