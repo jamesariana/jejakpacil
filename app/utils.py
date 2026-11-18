@@ -15,7 +15,9 @@ WIB = timezone(timedelta(hours=7))
 BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
 
 # Warna latar untuk avatar/logo pengganti. Dipilih dari nama supaya selalu sama.
-TILE_COLORS = ["#1f4fd8", "#0e7c5a", "#8a3ffc", "#b4500b", "#0b6e8f", "#a8234a", "#3d4763"]
+# Diselaraskan dengan palet utama (biru batu, koral) dan turunannya. Arang #222831 tidak
+# dipakai karena sama dengan latar mode gelap.
+TILE_COLORS = ["#3f6a9e", "#7a4f5a", "#c2413f", "#4f6d8a", "#2f6b62", "#6d5a8e", "#8a5a44"]
 
 MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 DOMAIN_RE = re.compile(r"^(?=.{4,100}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$")
