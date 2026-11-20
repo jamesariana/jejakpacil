@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% from "_macros.html" import field, options, status_choice %}
-{% block title %}Daftar{% endblock %}
+{% block title %}{{ _("Daftar") }}{% endblock %}
 {% block content %}
 <section class="auth auth-wide">
   {% include "auth/_side.html" %}
 
   <div class="auth-card">
     <div class="auth-card-head">
-      <h1>Daftar</h1>
-      <p class="muted">Pakai email UI kamu supaya kami tahu kamu memang bagian dari Fasilkom.</p>
+      <h1>{{ _("Daftar") }}</h1>
+      <p class="muted">{{ _("Pakai email UI kamu supaya kami tahu kamu memang bagian dari Fasilkom.") }}</p>
     </div>
 
     <form method="post" class="form" novalidate>
@@ -19,12 +19,12 @@
       {% endcall %}
 
       {% call field('Email UI', 'email', errors, hint='Contoh: nama.depan@ui.ac.id') %}
-        <input id="email" type="email" name="email" value="{{ form.get('email', '') }}" autocomplete="email" placeholder="nama.kamu@ui.ac.id" required>
+        <input id="email" type="email" name="email" value="{{ form.get('email', '') }}" autocomplete="email" placeholder="{{ _("nama.kamu@ui.ac.id") }}" required>
       {% endcall %}
 
       <div class="field-row">
         {% call field('Program studi', 'prodi', errors) %}
-          <select id="prodi" name="prodi" required>{{ options(C.PRODI, form.get('prodi', ''), 'Pilih program studi') }}</select>
+          <select id="prodi" name="prodi" required>{{ options(C.PRODI, form.get('prodi', ''), _('Pilih program studi')) }}</select>
         {% endcall %}
         {% call field('Angkatan', 'angkatan', errors, hint='Tahun masuk, misalnya 2024') %}
           <input id="angkatan" name="angkatan" inputmode="numeric" value="{{ form.get('angkatan', '') }}" required>
@@ -49,11 +49,11 @@
         {% endcall %}
       </div>
 
-      <button class="btn btn-primary btn-block" type="submit">Buat akun</button>
+      <button class="btn btn-primary btn-block" type="submit">{{ _("Buat akun") }}</button>
     </form>
 
     <div class="auth-foot">
-      <p>Sudah punya akun? <a href="{{ url_for('auth.login') }}">Masuk</a></p>
+      <p>{{ _("Sudah punya akun?") }} <a href="{{ url_for('auth.login') }}">{{ _("Masuk") }}</a></p>
     </div>
   </div>
 </section>

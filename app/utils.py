@@ -13,6 +13,14 @@ from PIL import Image
 
 WIB = timezone(timedelta(hours=7))
 BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def _month_name(number):
+    """Nama bulan singkat sesuai bahasa yang dipilih (1 = Januari)."""
+    from .i18n import pick  # impor di dalam fungsi untuk menghindari impor melingkar
+
+    return pick(BULAN, MONTHS)[number - 1]
 
 # Warna latar untuk avatar/logo pengganti. Dipilih dari nama supaya selalu sama.
 # Diselaraskan dengan palet utama (biru batu, koral) dan turunannya. Arang #222831 tidak
@@ -63,11 +71,13 @@ def format_month(value):
     if not valid_month(value):
         return ""
     year, month = value.split("-")
-    return f"{BULAN[int(month) - 1]} {year}"
+    return f"{_month_name(int(month))} {year}"
 
 
 def format_period(start, end):
-    return f"{format_month(start)} – {format_month(end) if end else 'sekarang'}"
+    from .i18n import _
+
+    return f"{format_month(start)} – {format_month(end) if end else _('sekarang')}"
 
 
 def format_duration(start, end):
@@ -80,12 +90,14 @@ def format_duration(start, end):
     months = (end_year - start_year) * 12 + (end_month - start_month) + 1
     if months < 1:
         return ""
+    from .i18n import _
+
     years, rest = divmod(months, 12)
     parts = []
     if years:
-        parts.append(f"{years} thn")
+        parts.append(_("{n} thn", n=years))
     if rest:
-        parts.append(f"{rest} bln")
+        parts.append(_("{n} bln", n=rest))
     return " ".join(parts)
 
 
@@ -102,26 +114,28 @@ def format_date(value):
     if moment is None:
         return ""
     local = moment.astimezone(WIB)
-    return f"{local.day} {BULAN[local.month - 1]} {local.year}"
+    return f"{local.day} {_month_name(local.month)} {local.year}"
 
 
 def time_ago(value):
     """Waktu relatif: "5 menit lalu", "kemarin", atau tanggal untuk yang sudah lama."""
+    from .i18n import _
+
     moment = _parse_timestamp(value)
     if moment is None:
         return ""
     seconds = int((datetime.now(timezone.utc) - moment).total_seconds())
     if seconds < 60:
-        return "baru saja"
+        return _("baru saja")
     if seconds < 3600:
-        return f"{seconds // 60} menit lalu"
+        return _("{n} menit lalu", n=seconds // 60)
     if seconds < 86400:
-        return f"{seconds // 3600} jam lalu"
+        return _("{n} jam lalu", n=seconds // 3600)
     days = seconds // 86400
     if days == 1:
-        return "kemarin"
+        return _("kemarin")
     if days < 30:
-        return f"{days} hari lalu"
+        return _("{n} hari lalu", n=days)
     return format_date(value)
 
 

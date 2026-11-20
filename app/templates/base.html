@@ -1,6 +1,6 @@
 {% from "_macros.html" import avatar, icon %}
 <!doctype html>
-<html lang="id">
+<html lang="{{ current_language() }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  <a class="skip-link" href="#isi">Langsung ke isi</a>
+  <a class="skip-link" href="#isi">{{ _("Langsung ke isi") }}</a>
 
   <header class="topbar">
     <div class="wrap topbar-row">
@@ -39,44 +39,51 @@
 
       {# Menu utama hanya empat bagian. "Jelajahi" menggabungkan pencarian pengalaman dan orang. #}
       {# Dua "pil" di belakang menu digeser oleh app.js: satu mengikuti kursor, satu menandai menu aktif. #}
-      <nav class="mainnav" aria-label="Menu utama" data-slider>
+      <nav class="mainnav" aria-label="{{ _("Menu utama") }}" data-slider>
         <span class="nav-pill nav-pill-hover" aria-hidden="true"></span>
         <span class="nav-pill nav-pill-active" aria-hidden="true"></span>
         {% set ep = request.endpoint or '' %}
-        <a href="{{ url_for('companies.index') }}" {% if ep.startswith('companies.') %}aria-current="page"{% endif %}>Perusahaan</a>
-        <a href="{{ url_for('experiences.index') }}" {% if ep in ('experiences.index', 'profiles.index') %}aria-current="page"{% endif %}>Jelajahi</a>
-        <a href="{{ url_for('forum.index') }}" {% if ep.startswith('forum.') %}aria-current="page"{% endif %}>Forum</a>
-        <a href="{{ url_for('stats.index') }}" {% if ep.startswith('stats.') %}aria-current="page"{% endif %}>Statistik</a>
+        <a href="{{ url_for('companies.index') }}" {% if ep.startswith('companies.') %}aria-current="page"{% endif %}>{{ _("Perusahaan") }}</a>
+        <a href="{{ url_for('experiences.index') }}" {% if ep in ('experiences.index', 'profiles.index') %}aria-current="page"{% endif %}>{{ _("Jelajahi") }}</a>
+        <a href="{{ url_for('forum.index') }}" {% if ep.startswith('forum.') %}aria-current="page"{% endif %}>{{ _("Forum") }}</a>
+        <a href="{{ url_for('stats.index') }}" {% if ep.startswith('stats.') %}aria-current="page"{% endif %}>{{ _("Statistik") }}</a>
       </nav>
 
       <div class="account">
-        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Ganti ke mode gelap" title="Ganti ke mode gelap">
+        {# Tombol bahasa: dua pilihan, yang aktif diberi aria-current. #}
+        {% set here = request.full_path.rstrip('?') %}
+        <span class="lang-switch" role="group" aria-label="{{ _('Bahasa') }}">
+          {% for code in LANGUAGES %}
+            <a href="{{ url_for('i18n.switch', code=code, next=here) }}" hreflang="{{ code }}" lang="{{ code }}" title="{{ LANGUAGES[code] }}"{% if current_language() == code %} aria-current="true"{% endif %}>{{ code|upper }}</a>
+          {% endfor %}
+        </span>
+        <button class="theme-toggle" type="button" data-theme-toggle data-label-dark="{{ _('Ganti ke mode gelap') }}" data-label-light="{{ _('Ganti ke mode terang') }}" aria-label="{{ _("Ganti ke mode gelap") }}" title="{{ _("Ganti ke mode gelap") }}">
           {{ icon('moon', 19) }}{{ icon('sun', 19) }}
         </button>
         {% if g.user %}
-          <a class="btn btn-primary btn-small" href="{{ url_for('experiences.create') }}">{{ icon('plus', 16) }}<span>Tambah<span class="hide-small"> pengalaman</span></span></a>
+          <a class="btn btn-primary btn-small" href="{{ url_for('experiences.create') }}">{{ icon('plus', 16) }}<span>{{ _("Tambah") }}<span class="hide-small"> {{ _("pengalaman") }}</span></span></a>
           <details class="menu">
             <summary>
               {{ avatar(g.user.full_name, g.user.photo, 'sm') }}
               <span class="menu-name">{{ g.user.full_name.split(' ')[0] }}</span>
-              {% if admin_pending %}<span class="count" title="Pekerjaan admin menunggu">{{ admin_pending }}</span>{% endif %}
+              {% if admin_pending %}<span class="count" title="{{ _("Pekerjaan admin menunggu") }}">{{ admin_pending }}</span>{% endif %}
             </summary>
             <div class="menu-list">
-              <a href="{{ url_for('main.home') }}">Beranda saya</a>
-              <a href="{{ url_for('profiles.detail', user_id=g.user.id) }}">Profil saya</a>
-              <a href="{{ url_for('profiles.edit') }}">Edit profil</a>
+              <a href="{{ url_for('main.home') }}">{{ _("Beranda saya") }}</a>
+              <a href="{{ url_for('profiles.detail', user_id=g.user.id) }}">{{ _("Profil saya") }}</a>
+              <a href="{{ url_for('profiles.edit') }}">{{ _("Edit profil") }}</a>
               {% if g.user.role == 'admin' %}
-                <a href="{{ url_for('admin.dashboard') }}">Panel admin{% if admin_pending %} ({{ admin_pending }}){% endif %}</a>
+                <a href="{{ url_for('admin.dashboard') }}">{{ _("Panel admin") }}{% if admin_pending %} ({{ admin_pending }}){% endif %}</a>
               {% endif %}
               <form method="post" action="{{ url_for('auth.logout') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit">Keluar</button>
+                <button type="submit">{{ _("Keluar") }}</button>
               </form>
             </div>
           </details>
         {% else %}
-          <a class="btn btn-quiet btn-small" href="{{ url_for('auth.login') }}">Masuk</a>
-          <a class="btn btn-primary btn-small" href="{{ url_for('auth.register') }}">Daftar</a>
+          <a class="btn btn-quiet btn-small" href="{{ url_for('auth.login') }}">{{ _("Masuk") }}</a>
+          <a class="btn btn-primary btn-small" href="{{ url_for('auth.register') }}">{{ _("Daftar") }}</a>
         {% endif %}
       </div>
     </div>
@@ -87,7 +94,7 @@
       {% if messages %}
         <div class="flashes" role="status">
           {% for category, message in messages %}
-            <p class="flash flash-{{ category }}">{{ message }}</p>
+            <p class="flash flash-{{ category }}">{{ message|t }}</p>
           {% endfor %}
         </div>
       {% endif %}
@@ -106,15 +113,15 @@
           </svg>
           JejakPacil
         </span>
-        <p>Riwayat magang dan kerja mahasiswa serta alumni Fasilkom UI, di satu tempat.</p>
+        <p>{{ _("Riwayat magang dan kerja mahasiswa serta alumni Fasilkom UI, di satu tempat.") }}</p>
       </div>
-      <nav class="footer-links" aria-label="Menu di kaki halaman">
-        <a href="{{ url_for('companies.index') }}">Perusahaan</a>
-        <a href="{{ url_for('experiences.index') }}">Jelajahi</a>
-        <a href="{{ url_for('forum.index') }}">Forum</a>
-        <a href="{{ url_for('stats.index') }}">Statistik</a>
+      <nav class="footer-links" aria-label="{{ _("Menu di kaki halaman") }}">
+        <a href="{{ url_for('companies.index') }}">{{ _("Perusahaan") }}</a>
+        <a href="{{ url_for('experiences.index') }}">{{ _("Jelajahi") }}</a>
+        <a href="{{ url_for('forum.index') }}">{{ _("Forum") }}</a>
+        <a href="{{ url_for('stats.index') }}">{{ _("Statistik") }}</a>
       </nav>
-      <p class="footer-note">Proyek kelompok Dasar-Dasar Pemrograman 1, Fasilkom UI. Logo perusahaan adalah milik pemiliknya masing-masing dan dipakai hanya sebagai penanda.</p>
+      <p class="footer-note">{{ _("Proyek kelompok Dasar-Dasar Pemrograman 1, Fasilkom UI. Logo perusahaan adalah milik pemiliknya masing-masing dan dipakai hanya sebagai penanda.") }}</p>
     </div>
   </footer>
 

@@ -2,12 +2,13 @@
 
 from flask import Blueprint, abort, flash, g, redirect, render_template, request, url_for
 
+from ..i18n import _
 from ..constants import EXP_TYPES, PRODI
 from ..db import execute, query
 from ..forms import validate_experience
 from ..queries import EXP_SELECT, get_or_create_company, set_experience_skills, visibility_sql
 from ..security import is_admin, login_required
-from ..utils import Page, delete_upload, save_proof
+from ..utils import Page, delete_upload, save_proof, url_with
 
 bp = Blueprint("experiences", __name__)
 
@@ -54,8 +55,37 @@ def index():
         params + [page.per_page, page.offset],
     )
     angkatan_list = query("SELECT DISTINCT angkatan FROM users WHERE is_verified = 1 ORDER BY angkatan DESC")
+
+    # Skill yang paling sering muncul di pengalaman yang boleh dilihat, untuk pilihan cepat.
+    vis_only, vis_params = visibility_sql("e")
+    popular_skills = query(
+        f"""SELECT s.name, COUNT(*) AS n FROM experience_skills es
+              JOIN skills s ON s.id = es.skill_id JOIN experiences e ON e.id = es.experience_id
+             WHERE {vis_only} GROUP BY s.id ORDER BY n DESC, s.name COLLATE NOCASE LIMIT 8""",
+        vis_params,
+    )
+
+    # Filter yang sedang aktif, ditampilkan sebagai label yang bisa dihapus satu per satu.
+    active_filters = []
+    if args.get("jenis") in EXP_TYPES:
+        active_filters.append((EXP_TYPES[args["jenis"]], "jenis"))
+    if args.get("prodi") in PRODI:
+        active_filters.append((args["prodi"], "prodi"))
+    if args.get("angkatan", "").isdigit():
+        active_filters.append((_("Angkatan {n}", n=args["angkatan"]), "angkatan"))
+    if args.get("skill", "").strip():
+        active_filters.append((_("Skill: {name}", name=args["skill"].strip()), "skill"))
+    if args.get("terverifikasi"):
+        active_filters.append(("Terverifikasi", "terverifikasi"))
+    active_filters = [(label, url_with(**{key: None})) for label, key in active_filters]
+
     return render_template(
-        "experiences/index.html", experiences=experiences, page=page, angkatan_list=angkatan_list
+        "experiences/index.html",
+        experiences=experiences,
+        page=page,
+        angkatan_list=angkatan_list,
+        popular_skills=popular_skills,
+        active_filters=active_filters,
     )
 
 

@@ -9,12 +9,12 @@
       <circle cx="206" cy="16" r="9" fill="#769fcd"/>
     </svg>
   </div>
-  <p class="error-code">Kode {{ code }}</p>
+  <p class="error-code">{{ _("Kode") }} {{ code }}</p>
   <h1>{{ title }}</h1>
-  <p class="lede">{{ message }}</p>
+  <p class="lede">{{ message|t }}</p>
   <div class="form-actions">
-    <a class="btn btn-primary" href="{{ url_for('main.home') }}">Kembali ke beranda</a>
-    <a href="{{ url_for('companies.index') }}">Lihat daftar perusahaan</a>
+    <a class="btn btn-primary" href="{{ url_for('main.home') }}">{{ _("Kembali ke beranda") }}</a>
+    <a href="{{ url_for('companies.index') }}">{{ _("Lihat daftar perusahaan") }}</a>
   </div>
 </section>
 {% endblock %}

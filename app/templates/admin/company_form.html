@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% from "_macros.html" import field, options, logo %}
-{% block title %}Ubah {{ company.name }}{% endblock %}
+{% block title %}{{ _("Ubah") }} {{ company.name }}{% endblock %}
 {% block content %}
-<div class="page-head"><h1>Ubah {{ company.name }}</h1></div>
+<div class="page-head"><h1>{{ _("Ubah") }} {{ company.name }}</h1></div>
 {% include "admin/_nav.html" %}
 
 <section class="narrow narrow-left">
@@ -10,8 +10,8 @@
     {{ logo(company.name, company.logo, 'xxl') }}
     <form method="post" action="{{ url_for('admin.auto_logo', company_id=company.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn btn-quiet" type="submit">Ambil logo otomatis</button>
-      <p class="hint">Logo dicari berdasarkan domain{% if company.domain %} ({{ company.domain }}){% endif %} dan butuh koneksi internet. Simpan dulu perubahan domain sebelum menekan tombol ini.</p>
+      <button class="btn btn-quiet" type="submit">{{ _("Ambil logo otomatis") }}</button>
+      <p class="hint">{{ _("Logo dicari berdasarkan domain") }}{% if company.domain %} ({{ company.domain }}){% endif %} {{ _("dan butuh koneksi internet. Simpan dulu perubahan domain sebelum menekan tombol ini.") }}</p>
     </form>
   </div>
 
@@ -32,7 +32,7 @@
     </div>
 
     {% call field('Website', 'website', errors, optional=True) %}
-      <input id="website" type="url" name="website" value="{{ form.get('website') or '' }}" placeholder="https://">
+      <input id="website" type="url" name="website" value="{{ form.get('website') or '' }}" placeholder="{{ _("https://") }}">
     {% endcall %}
 
     {% call field('Deskripsi singkat', 'description', errors, optional=True) %}
@@ -41,14 +41,14 @@
 
     {% call field('Unggah logo sendiri', 'logo', errors, hint='PNG, JPG, atau WEBP. Pakai file resmi dari perusahaan.', optional=True) %}
       <input id="logo" type="file" name="logo" accept="image/png,image/jpeg,image/webp">
-      {% if company.logo %}<label class="check"><input type="checkbox" name="remove_logo" value="1"> Hapus logo sekarang</label>{% endif %}
+      {% if company.logo %}<label class="check"><input type="checkbox" name="remove_logo" value="1"> {{ _("Hapus logo sekarang") }}</label>{% endif %}
     {% endcall %}
 
-    <label class="check"><input type="checkbox" name="is_approved" value="1"{% if form.get('is_approved') %} checked{% endif %}> Disetujui, tampil di direktori perusahaan</label>
+    <label class="check"><input type="checkbox" name="is_approved" value="1"{% if form.get('is_approved') %} checked{% endif %}> {{ _("Disetujui, tampil di direktori perusahaan") }}</label>
 
     <div class="form-actions">
-      <button class="btn btn-primary" type="submit">Simpan perusahaan</button>
-      <a href="{{ url_for('admin.companies') }}">Batal</a>
+      <button class="btn btn-primary" type="submit">{{ _("Simpan perusahaan") }}</button>
+      <a href="{{ url_for('admin.companies') }}">{{ _("Batal") }}</a>
     </div>
   </form>
 </section>

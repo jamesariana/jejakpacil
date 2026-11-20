@@ -326,6 +326,29 @@ class CompanyAndAdminTest(BaseTest):
         self.assertEqual(self.client.get("/admin/").status_code, 403)
         self.assertEqual(self.client.post("/admin/perusahaan/1/setujui").status_code, 403)
 
+    def test_filter_dan_urutan_perusahaan(self):
+        self.login(email="admin@ui.ac.id")
+        self.client.post("/admin/perusahaan/1/setujui")
+        self.logout()
+        semua = self.client.get("/perusahaan").get_data(as_text=True)
+        self.assertIn("Tokopedia", semua)
+        self.assertIn("dir-chip-n", semua)  # jumlah per industri tampil
+        for urut in ("populer", "terbaru", "az", "ngawur"):
+            self.assertEqual(self.client.get(f"/perusahaan?urut={urut}").status_code, 200)
+        lain = self.client.get("/perusahaan?industri=Kesehatan").get_data(as_text=True)
+        self.assertNotIn("Tokopedia", lain)
+        self.assertIn("Hapus filter", lain)
+
+    def test_filter_jelajahi(self):
+        self.login(email="admin@ui.ac.id")
+        self.client.post("/admin/perusahaan/1/setujui")
+        semua = self.client.get("/pengalaman").get_data(as_text=True)
+        self.assertIn("Software Engineer Intern", semua)
+        self.assertNotIn("dir-active", semua)  # belum ada filter aktif
+        hasil = self.client.get("/pengalaman?jenis=fulltime&terverifikasi=1").get_data(as_text=True)
+        self.assertNotIn("Software Engineer Intern", hasil)
+        self.assertIn("Hapus filter Terverifikasi", hasil)  # label filter bisa dihapus satu per satu
+
     def test_gabung_perusahaan(self):
         self.login(email="admin@ui.ac.id")
         self.client.post("/admin/perusahaan/gabung", data={"source_id": "2", "target_id": "1"})
@@ -483,3 +506,44 @@ class ForumTest(BaseTest):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LanguageTest(BaseTest):
+    """Tombol bahasa: Indonesia bawaan, Inggris lewat /bahasa/en, tetap setelah masuk."""
+
+    def test_bahasa_bawaan_indonesia(self):
+        page = self.client.get("/perusahaan").get_data(as_text=True)
+        self.assertIn('lang="id"', page)
+        self.assertIn("Cari nama perusahaan", page)
+
+    def test_ganti_ke_inggris_lalu_kembali(self):
+        response = self.client.get("/bahasa/en?next=/perusahaan")
+        self.assertEqual(response.headers["Location"], "/perusahaan")
+        page = self.client.get("/perusahaan").get_data(as_text=True)
+        self.assertIn('lang="en"', page)
+        self.assertIn("Search company name", page)
+        self.client.get("/bahasa/id?next=/")
+        self.assertIn("Cari nama perusahaan", self.client.get("/perusahaan").get_data(as_text=True))
+
+    def test_next_luar_situs_ditolak(self):
+        response = self.client.get("/bahasa/en?next=https://contoh.com")
+        self.assertEqual(response.headers["Location"], "/")
+
+    def test_bahasa_tetap_setelah_masuk(self):
+        self.register()
+        self.client.get("/bahasa/en?next=/")
+        self.login()
+        self.assertIn("Sign out", self.client.get("/").get_data(as_text=True))
+
+    def test_semua_teks_halaman_utama_punya_terjemahan(self):
+        from app import i18n
+
+        self.register()
+        self.client.get("/bahasa/en?next=/")
+        self.login()
+        i18n.MISSING.clear()
+        for url in ("/", "/perusahaan", "/pengalaman", "/mahasiswa", "/forum/", "/statistik",
+                    "/pengalaman/tambah", "/profil/edit", "/forum/buat"):
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+        self.assertEqual(sorted(i18n.MISSING), [])
+

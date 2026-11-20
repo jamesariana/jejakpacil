@@ -10,21 +10,21 @@
 
 {# Nama pengirim. Nama asli tidak pernah ditampilkan untuk tulisan anonim. #}
 {% macro sender_name(row) -%}
-  {%- if row.is_anonymous -%}<span class="msg-name">Anonim</span>
+  {%- if row.is_anonymous -%}<span class="msg-name">{{ _("Anonim") }}</span>
   {%- else -%}<a class="msg-name" href="{{ url_for('profiles.detail', user_id=row.author_id) }}">{{ row.full_name }}</a>
-  <span class="msg-role">{{ 'Alumni' if row.user_status == 'alumni' else 'Angkatan' }} {{ row.angkatan }}</span>{%- endif -%}
+  <span class="msg-role">{{ _('Alumni') if row.user_status == 'alumni' else _('Angkatan') }} {{ row.angkatan }}</span>{%- endif -%}
 {%- endmacro %}
 
 {# Tombol laporan yang membuka form kecil. #}
 {% macro report_form(field_name, target_id) %}
   <details class="pop">
-    <summary class="ghost-btn">{{ icon('flag', 15) }}Laporkan</summary>
+    <summary class="ghost-btn">{{ icon('flag', 15) }}{{ _("Laporkan") }}</summary>
     <form method="post" action="{{ url_for('forum.report') }}" class="pop-panel">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="{{ field_name }}" value="{{ target_id }}">
-      <label for="alasan-{{ field_name }}-{{ target_id }}">Kenapa dilaporkan?</label>
-      <input id="alasan-{{ field_name }}-{{ target_id }}" name="reason" maxlength="300" placeholder="misalnya promosi atau kata kasar" required>
-      <button class="btn btn-primary btn-small" type="submit">Kirim laporan</button>
+      <label for="alasan-{{ field_name }}-{{ target_id }}">{{ _("Kenapa dilaporkan?") }}</label>
+      <input id="alasan-{{ field_name }}-{{ target_id }}" name="reason" maxlength="300" placeholder="{{ _("misalnya promosi atau kata kasar") }}" required>
+      <button class="btn btn-primary btn-small" type="submit">{{ _("Kirim laporan") }}</button>
     </form>
   </details>
 {% endmacro %}
@@ -37,13 +37,13 @@
   <article class="msg{% if mine %} msg-mine{% endif %}{% if is_op and not mine %} msg-op{% endif %}" id="balasan-{{ r.id }}">
     {% if r.is_hidden %}
       <span class="avatar avatar-md avatar-anon" aria-hidden="true">!</span>
-      <div class="msg-content"><p class="bubble bubble-hidden">Balasan ini disembunyikan moderator.</p></div>
+      <div class="msg-content"><p class="bubble bubble-hidden">{{ _("Balasan ini disembunyikan moderator.") }}</p></div>
     {% else %}
       {{ sender_avatar(r) }}
       <div class="msg-content">
         <p class="msg-head">
           {{ sender_name(r) }}
-          {% if mine %}<span class="msg-badge">Kamu</span>{% elif is_op %}<span class="msg-badge">Penulis thread</span>{% endif %}
+          {% if mine %}<span class="msg-badge">{{ _("Kamu") }}</span>{% elif is_op %}<span class="msg-badge">{{ _("Penulis thread") }}</span>{% endif %}
           <span class="msg-time">{{ r.created_at|lalu }}</span>
         </p>
         <p class="bubble">{{ r.body }}</p>
@@ -52,7 +52,7 @@
           {% if mine or g.user.role == 'admin' %}
             <form method="post" action="{{ url_for('forum.delete_reply', reply_id=r.id) }}" data-confirm="Hapus balasan ini?">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="ghost-btn ghost-danger">{{ icon('trash', 15) }}Hapus</button>
+              <button type="submit" class="ghost-btn ghost-danger">{{ icon('trash', 15) }}{{ _("Hapus") }}</button>
             </form>
           {% endif %}
         </div>
@@ -67,36 +67,36 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {% if parent %}<input type="hidden" name="parent_id" value="{{ parent.id }}">{% endif %}
     {% set field_id = 'balas-' ~ parent.id if parent else 'balasan-baru' %}
-    <label class="visually-hidden" for="{{ field_id }}">{{ 'Balasanmu' if parent else 'Tulis balasan' }}</label>
-    <textarea id="{{ field_id }}" name="body" rows="2" maxlength="4000" required placeholder="{{ 'Tulis balasanmu' if parent else 'Tulis balasan untuk thread ini' }}"></textarea>
+    <label class="visually-hidden" for="{{ field_id }}">{{ _('Balasanmu') if parent else _('Tulis balasan') }}</label>
+    <textarea id="{{ field_id }}" name="body" rows="2" maxlength="4000" required placeholder="{{ _('Tulis balasanmu') if parent else _('Tulis balasan untuk thread ini') }}"></textarea>
     <div class="composer-bar">
       <label class="mini-switch">
         <input type="checkbox" role="switch" name="is_anonymous" value="1">
         <span class="switch-track" aria-hidden="true"></span>
-        Kirim sebagai anonim
+        {{ _("Kirim sebagai anonim") }}
       </label>
-      <button class="btn btn-primary" type="submit">{{ icon('send', 16) }}Kirim</button>
+      <button class="btn btn-primary" type="submit">{{ icon('send', 16) }}{{ _("Kirim") }}</button>
     </div>
   </form>
 {% endmacro %}
 
 {% block content %}
-<p class="breadcrumb"><a href="{{ url_for('forum.index') }}">Forum</a> / <a href="{{ url_for('forum.index', kategori=thread.category_slug) }}">{{ thread.category_name }}</a></p>
+<p class="breadcrumb"><a href="{{ url_for('forum.index') }}">{{ _("Forum") }}</a> / <a href="{{ url_for('forum.index', kategori=thread.category_slug) }}">{{ thread.category_name|t }}</a></p>
 
 <div class="thread-page">
   <article class="op-card">
     <div class="op-tags">
       {{ cat_badge(thread.category_slug, thread.category_name) }}
       {% if thread.company_name %}<a class="tag tag-company" href="{{ url_for('companies.detail', slug=thread.company_slug) }}">{{ icon('building', 13) }}{{ thread.company_name }}</a>{% endif %}
-      {% if thread.is_pinned %}<span class="tag tag-pin">{{ icon('pin', 12) }}Disematkan</span>{% endif %}
-      {% if thread.is_hidden %}<span class="tag tag-warn">Disembunyikan</span>{% endif %}
+      {% if thread.is_pinned %}<span class="tag tag-pin">{{ icon('pin', 12) }}{{ _("Disematkan") }}</span>{% endif %}
+      {% if thread.is_hidden %}<span class="tag tag-warn">{{ _("Disembunyikan") }}</span>{% endif %}
     </div>
     <h1>{{ thread.title }}</h1>
     <div class="op-author">
       {{ sender_avatar(thread) }}
       <p>
         <span class="op-author-name">{{ sender_name(thread) }}</span>
-        <span class="msg-time">Diterbitkan {{ thread.created_at|lalu }}{% if thread.updated_at %}, diubah {{ thread.updated_at|lalu }}{% endif %}</span>
+        <span class="msg-time">{{ _("Diterbitkan") }} {{ thread.created_at|lalu }}{% if thread.updated_at %}{{ _(", diubah") }} {{ thread.updated_at|lalu }}{% endif %}</span>
       </p>
     </div>
     <p class="op-body">{{ thread.body }}</p>
@@ -105,35 +105,35 @@
       <form method="post" action="{{ url_for('forum.vote', thread_id=thread.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="vote-btn" aria-pressed="{{ 'true' if voted else 'false' }}">
-          {{ icon('arrow-up', 16) }}<span>{{ 'Kamu memberi suara' if voted else 'Beri suara' }}</span><span class="vote-count">{{ thread.n_votes }}</span>
+          {{ icon('arrow-up', 16) }}<span>{{ _('Kamu memberi suara') if voted else _('Beri suara') }}</span><span class="vote-count">{{ thread.n_votes }}</span>
         </button>
       </form>
-      <a class="ghost-btn" href="#tulis">{{ icon('reply', 15) }}Balas</a>
+      <a class="ghost-btn" href="#tulis">{{ icon('reply', 15) }}{{ _("Balas") }}</a>
       {% if thread.author_id == g.user.id %}
-        <a class="ghost-btn" href="{{ url_for('forum.edit', thread_id=thread.id) }}">{{ icon('edit', 15) }}Ubah</a>
+        <a class="ghost-btn" href="{{ url_for('forum.edit', thread_id=thread.id) }}">{{ icon('edit', 15) }}{{ _("Ubah") }}</a>
       {% endif %}
       {% if thread.author_id == g.user.id or g.user.role == 'admin' %}
         <form method="post" action="{{ url_for('forum.delete', thread_id=thread.id) }}" data-confirm="Hapus thread ini beserta semua balasannya?">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="ghost-btn ghost-danger">{{ icon('trash', 15) }}Hapus</button>
+          <button type="submit" class="ghost-btn ghost-danger">{{ icon('trash', 15) }}{{ _("Hapus") }}</button>
         </form>
       {% endif %}
       {{ report_form('thread_id', thread.id) }}
       {% if g.user.role == 'admin' %}
         <form method="post" action="{{ url_for('admin.moderate_thread', thread_id=thread.id, action='semat') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="ghost-btn">{{ icon('pin', 15) }}{{ 'Lepas semat' if thread.is_pinned else 'Sematkan' }}</button>
+          <button type="submit" class="ghost-btn">{{ icon('pin', 15) }}{{ _('Lepas semat') if thread.is_pinned else _('Sematkan') }}</button>
         </form>
         <form method="post" action="{{ url_for('admin.moderate_thread', thread_id=thread.id, action='sembunyi') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="ghost-btn">{{ icon('eye-off', 15) }}{{ 'Tampilkan lagi' if thread.is_hidden else 'Sembunyikan' }}</button>
+          <button type="submit" class="ghost-btn">{{ icon('eye-off', 15) }}{{ _('Tampilkan lagi') if thread.is_hidden else _('Sembunyikan') }}</button>
         </form>
       {% endif %}
     </div>
   </article>
 
   <section class="chat" aria-labelledby="judul-balasan">
-    <h2 id="judul-balasan" class="chat-title">{{ icon('chat', 20) }}{{ thread.n_replies }} balasan</h2>
+    <h2 id="judul-balasan" class="chat-title">{{ icon('chat', 20) }}{{ jumlah(thread.n_replies, "balasan") }}</h2>
 
     {% for r in top_level %}
       <div class="chat-group">
@@ -145,7 +145,7 @@
             {% endfor %}
             {% if not r.is_hidden %}
               <details class="reply-toggle">
-                <summary class="ghost-btn">{{ icon('reply', 15) }}Balas {{ 'Anonim' if r.is_anonymous else r.full_name.split(' ')[0] }}</summary>
+                <summary class="ghost-btn">{{ icon('reply', 15) }}{{ _("Balas") }} {{ _('Anonim') if r.is_anonymous else r.full_name.split(' ')[0] }}</summary>
                 {{ composer(parent=r) }}
               </details>
             {% endif %}
@@ -155,7 +155,7 @@
     {% else %}
       <div class="chat-empty">
         <span class="icon-tile">{{ icon('chat', 22) }}</span>
-        <p><strong>Belum ada balasan.</strong> Bagikan pengalaman atau pendapatmu lewat kotak di bawah.</p>
+        <p><strong>{{ _("Belum ada balasan.") }}</strong> {{ _("Bagikan pengalaman atau pendapatmu lewat kotak di bawah.") }}</p>
       </div>
     {% endfor %}
 

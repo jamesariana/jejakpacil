@@ -9,35 +9,35 @@
     <div class="cover-main">
       <h1>{{ person.full_name }}</h1>
       <p class="cover-sub">
-        <span class="tag">{{ 'Alumni' if person.status == 'alumni' else 'Mahasiswa aktif' }}</span>
-        {{ person.prodi }} angkatan {{ person.angkatan }}{% if person.status == 'alumni' and person.grad_year %}, lulus {{ person.grad_year }}{% endif %}
+        <span class="tag">{{ _('Alumni') if person.status == 'alumni' else _('Mahasiswa aktif') }}</span>
+        {{ person.prodi|t }} {{ _("angkatan") }} {{ person.angkatan }}{% if person.status == 'alumni' and person.grad_year %}{{ _(", lulus") }} {{ person.grad_year }}{% endif %}
       </p>
       {% if person.bio %}<p class="profile-bio">{{ person.bio }}</p>{% endif %}
       {% if person.github_url or person.linkedin_url or person.portfolio_url or person.cv %}
         <p class="link-pills">
-          {% if person.github_url %}<a href="{{ person.github_url }}" rel="noopener noreferrer" target="_blank">{{ icon('globe', 15) }}GitHub</a>{% endif %}
-          {% if person.linkedin_url %}<a href="{{ person.linkedin_url }}" rel="noopener noreferrer" target="_blank">{{ icon('users', 15) }}LinkedIn</a>{% endif %}
-          {% if person.portfolio_url %}<a href="{{ person.portfolio_url }}" rel="noopener noreferrer" target="_blank">{{ icon('globe', 15) }}Portofolio</a>{% endif %}
-          {% if person.cv %}<a href="{{ media_url('cv', person.cv) }}" target="_blank">{{ icon('briefcase', 15) }}Lihat CV</a>{% endif %}
+          {% if person.github_url %}<a href="{{ person.github_url }}" rel="noopener noreferrer" target="_blank">{{ icon('globe', 15) }}{{ _("GitHub") }}</a>{% endif %}
+          {% if person.linkedin_url %}<a href="{{ person.linkedin_url }}" rel="noopener noreferrer" target="_blank">{{ icon('users', 15) }}{{ _("LinkedIn") }}</a>{% endif %}
+          {% if person.portfolio_url %}<a href="{{ person.portfolio_url }}" rel="noopener noreferrer" target="_blank">{{ icon('globe', 15) }}{{ _("Portofolio") }}</a>{% endif %}
+          {% if person.cv %}<a href="{{ media_url('cv', person.cv) }}" target="_blank">{{ icon('briefcase', 15) }}{{ _("Lihat CV") }}</a>{% endif %}
         </p>
       {% endif %}
     </div>
     {% if is_owner %}
-      <a class="btn btn-quiet cover-action" href="{{ url_for('profiles.edit') }}">{{ icon('edit', 16) }}Edit profil</a>
+      <a class="btn btn-quiet cover-action" href="{{ url_for('profiles.edit') }}">{{ icon('edit', 16) }}{{ _("Edit profil") }}</a>
     {% endif %}
   </div>
 </header>
 
 {% if checklist and checklist.done < checklist.total %}
   <div class="banner">
-    {{ progress(checklist.percent, 'Kelengkapan profil') }}
-    <p><strong>Profilmu {{ checklist.done }} dari {{ checklist.total }} lengkap.</strong> Yang belum: {{ checklist.missing|join(', ') }}. Bagian ini hanya terlihat olehmu.</p>
-    <a href="{{ url_for('main.home') }}">Lihat daftar cek</a>
+    {{ progress(checklist.percent, _('Kelengkapan profil')) }}
+    <p><strong>{{ _("Profilmu") }} {{ checklist.done }} {{ _("dari") }} {{ checklist.total }} {{ _("lengkap.") }}</strong> {{ _("Yang belum:") }} {{ checklist.missing|map('t')|join(', ') }}{{ _(". Bagian ini hanya terlihat olehmu.") }}</p>
+    <a href="{{ url_for('main.home') }}">{{ _("Lihat daftar cek") }}</a>
   </div>
 {% endif %}
 
 {% if skills %}
-  <section class="section-tight" aria-label="Skill">
+  <section class="section-tight" aria-label="{{ _("Skill") }}">
     <ul class="chips chips-large">
       {% for skill in skills %}<li>{{ skill }}</li>{% endfor %}
     </ul>
@@ -46,8 +46,8 @@
 
 <section class="section">
   <div class="section-head">
-    <h2>Jejak pengalaman</h2>
-    {% if is_owner %}<a class="btn btn-primary btn-small" href="{{ url_for('experiences.create') }}">{{ icon('plus', 16) }}Tambah pengalaman</a>{% endif %}
+    <h2>{{ _("Jejak pengalaman") }}</h2>
+    {% if is_owner %}<a class="btn btn-primary btn-small" href="{{ url_for('experiences.create') }}">{{ icon('plus', 16) }}{{ _("Tambah pengalaman") }}</a>{% endif %}
   </div>
   {% if experiences %}
     <ol class="exp-list">
@@ -56,9 +56,9 @@
       {% endfor %}
     </ol>
   {% elif is_owner %}
-    <p class="empty">Jejakmu masih kosong. <a href="{{ url_for('experiences.create') }}">Tambahkan pengalaman pertamamu</a>, termasuk asdos, riset, atau kerja lepas.</p>
+    <p class="empty">{{ _("Jejakmu masih kosong.") }} <a href="{{ url_for('experiences.create') }}">{{ _("Tambahkan pengalaman pertamamu") }}</a>{{ _(", termasuk asdos, riset, atau kerja lepas.") }}</p>
   {% else %}
-    <p class="empty">{{ person.full_name.split(' ')[0] }} belum menambahkan pengalaman yang bisa kamu lihat.</p>
+    <p class="empty">{{ person.full_name.split(' ')[0] }} {{ _("belum menambahkan pengalaman yang bisa kamu lihat.") }}</p>
   {% endif %}
 </section>
 {% endblock %}

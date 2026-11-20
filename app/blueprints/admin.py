@@ -5,6 +5,7 @@ import io
 
 from flask import Blueprint, Response, abort, flash, g, redirect, render_template, request, url_for
 
+from ..i18n import _
 from ..constants import INDUSTRIES
 from ..db import execute, get_db, query
 from ..logos import fetch_logo
@@ -162,7 +163,7 @@ def merge_companies():
     db.execute("DELETE FROM companies WHERE id = ?", (source["id"],))
     db.commit()
     delete_upload("logos", source["logo"])
-    flash(f"{source['name']} digabung ke {target['name']}.", "success")
+    flash(_("{a} digabung ke {b}.", a=source["name"], b=target["name"]), "success")
     return redirect(url_for("admin.companies"))
 
 
@@ -234,14 +235,14 @@ def update_user(user_id, action):
         abort(404)
     if action == "verifikasi":
         execute("UPDATE users SET is_verified = 1 WHERE id = ?", (user_id,))
-        flash(f"Email {user['full_name']} ditandai terverifikasi.", "success")
+        flash(_("Email {name} ditandai terverifikasi.", name=user["full_name"]), "success")
     elif action == "peran":
         if user_id == g.user["id"]:
             flash("Kamu tidak bisa mengubah peranmu sendiri.", "error")
         else:
             new_role = "member" if user["role"] == "admin" else "admin"
             execute("UPDATE users SET role = ? WHERE id = ?", (new_role, user_id))
-            flash(f"Peran {user['full_name']} sekarang {new_role}.", "success")
+            flash(_("Peran {name} sekarang {role}.", name=user["full_name"], role=_(new_role)), "success")
     else:
         abort(404)
     return redirect(url_for("admin.users"))

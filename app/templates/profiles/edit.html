@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 {% from "_macros.html" import field, options, icon, avatar, status_choice %}
-{% block title %}Edit profil{% endblock %}
+{% block title %}{{ _("Edit profil") }}{% endblock %}
 {% block content %}
 <section class="narrow form-page">
   <div class="form-page-head">
-    <h1>Edit profil</h1>
-    <p class="lede">Profil yang lengkap memudahkan kakak tingkat dan teman seangkatan mengenalmu.</p>
+    <h1>{{ _("Edit profil") }}</h1>
+    <p class="lede">{{ _("Profil yang lengkap memudahkan kakak tingkat dan teman seangkatan mengenalmu.") }}</p>
   </div>
 
   <form method="post" enctype="multipart/form-data" class="form" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <section class="form-section" aria-labelledby="bagian-foto">
-      <h2 id="bagian-foto" class="form-section-title"><span class="icon-tile">{{ icon('users', 18) }}</span>Foto dan data diri</h2>
+      <h2 id="bagian-foto" class="form-section-title"><span class="icon-tile">{{ icon('users', 18) }}</span>{{ _("Foto dan data diri") }}</h2>
 
       <div class="photo-field{% if errors.get('photo') %} has-error{% endif %}">
         {{ avatar(user.full_name, user.photo, 'xl') }}
         <div class="field">
-          <label for="photo">Foto profil <span class="optional">(opsional)</span></label>
+          <label for="photo">{{ _("Foto profil") }} <span class="optional">{{ _("(opsional)") }}</span></label>
           <input id="photo" type="file" name="photo" accept="image/png,image/jpeg,image/webp">
-          <p class="hint">PNG, JPG, atau WEBP. Maksimal 5 MB.</p>
-          {% if errors.get('photo') %}<p class="error">{{ errors['photo'] }}</p>{% endif %}
-          {% if user.photo %}<label class="check"><input type="checkbox" name="remove_photo" value="1"> Hapus foto sekarang</label>{% endif %}
+          <p class="hint">{{ _("PNG, JPG, atau WEBP. Maksimal 5 MB.") }}</p>
+          {% if errors.get('photo') %}<p class="error">{{ errors['photo']|t }}</p>{% endif %}
+          {% if user.photo %}<label class="check"><input type="checkbox" name="remove_photo" value="1"> {{ _("Hapus foto sekarang") }}</label>{% endif %}
         </div>
       </div>
 
@@ -49,10 +49,10 @@
     </section>
 
     <section class="form-section" aria-labelledby="bagian-tentang">
-      <h2 id="bagian-tentang" class="form-section-title"><span class="icon-tile">{{ icon('chat', 18) }}</span>Tentang kamu</h2>
+      <h2 id="bagian-tentang" class="form-section-title"><span class="icon-tile">{{ icon('chat', 18) }}</span>{{ _("Tentang kamu") }}</h2>
 
       {% call field('Bio singkat', 'bio', errors, hint='Maksimal 600 karakter.', optional=True) %}
-        <textarea id="bio" name="bio" rows="4" maxlength="600" placeholder="misalnya: Suka mengolah data. Sedang mencari magang data analyst.">{{ form.get('bio') or '' }}</textarea>
+        <textarea id="bio" name="bio" rows="4" maxlength="600" placeholder="{{ _("misalnya: Suka mengolah data. Sedang mencari magang data analyst.") }}">{{ form.get('bio') or '' }}</textarea>
       {% endcall %}
 
       {% call field('Skill', 'skills', errors, hint='Pisahkan dengan koma, misalnya: Python, SQL, Figma', optional=True) %}
@@ -61,33 +61,33 @@
     </section>
 
     <section class="form-section" aria-labelledby="bagian-tautan">
-      <h2 id="bagian-tautan" class="form-section-title"><span class="icon-tile">{{ icon('globe', 18) }}</span>Tautan dan CV</h2>
+      <h2 id="bagian-tautan" class="form-section-title"><span class="icon-tile">{{ icon('globe', 18) }}</span>{{ _("Tautan dan CV") }}</h2>
 
       <div class="field-row">
         {% call field('GitHub', 'github_url', errors, optional=True) %}
-          <input id="github_url" type="url" name="github_url" value="{{ form.get('github_url') or '' }}" placeholder="https://github.com/namakamu">
+          <input id="github_url" type="url" name="github_url" value="{{ form.get('github_url') or '' }}" placeholder="{{ _("https://github.com/namakamu") }}">
         {% endcall %}
         {% call field('LinkedIn', 'linkedin_url', errors, optional=True) %}
-          <input id="linkedin_url" type="url" name="linkedin_url" value="{{ form.get('linkedin_url') or '' }}" placeholder="https://linkedin.com/in/namakamu">
+          <input id="linkedin_url" type="url" name="linkedin_url" value="{{ form.get('linkedin_url') or '' }}" placeholder="{{ _("https://linkedin.com/in/namakamu") }}">
         {% endcall %}
       </div>
 
       {% call field('Portofolio', 'portfolio_url', errors, optional=True) %}
-        <input id="portfolio_url" type="url" name="portfolio_url" value="{{ form.get('portfolio_url') or '' }}" placeholder="https://">
+        <input id="portfolio_url" type="url" name="portfolio_url" value="{{ form.get('portfolio_url') or '' }}" placeholder="{{ _("https://") }}">
       {% endcall %}
 
       {% call field('CV', 'cv', errors, hint='PDF, maksimal 5 MB. Hanya pengguna yang masuk yang bisa melihatnya.', optional=True) %}
         <input id="cv" type="file" name="cv" accept="application/pdf">
         {% if user.cv %}
-          <p class="hint">CV sudah diunggah. <a href="{{ media_url('cv', user.cv) }}" target="_blank">Lihat CV</a>. Unggah file baru untuk menggantinya.</p>
-          <label class="check"><input type="checkbox" name="remove_cv" value="1"> Hapus CV sekarang</label>
+          <p class="hint">{{ _("CV sudah diunggah.") }} <a href="{{ media_url('cv', user.cv) }}" target="_blank">{{ _("Lihat CV") }}</a>{{ _(". Unggah file baru untuk menggantinya.") }}</p>
+          <label class="check"><input type="checkbox" name="remove_cv" value="1"> {{ _("Hapus CV sekarang") }}</label>
         {% endif %}
       {% endcall %}
     </section>
 
     <div class="form-actions">
-      <button class="btn btn-primary" type="submit">{{ icon('check', 16) }}Simpan profil</button>
-      <a href="{{ url_for('profiles.detail', user_id=user.id) }}">Batal</a>
+      <button class="btn btn-primary" type="submit">{{ icon('check', 16) }}{{ _("Simpan profil") }}</button>
+      <a href="{{ url_for('profiles.detail', user_id=user.id) }}">{{ _("Batal") }}</a>
     </div>
   </form>
 </section>

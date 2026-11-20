@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 {% from "_macros.html" import avatar, pagination, icon, cat_badge, cat_icon %}
-{% block title %}Forum{% endblock %}
+{% block title %}{{ _("Forum") }}{% endblock %}
 {% block content %}
 <div class="page-head page-head-split">
   <div>
-    <h1>Forum</h1>
-    <p class="lede">Tanya, jawab, dan cerita seputar magang dan karier. Hanya sivitas Fasilkom yang bisa membaca.</p>
+    <h1>{{ _("Forum") }}</h1>
+    <p class="lede">{{ _("Tanya, jawab, dan cerita seputar magang dan karier. Hanya sivitas Fasilkom yang bisa membaca.") }}</p>
   </div>
-  <a class="btn btn-primary" href="{{ url_for('forum.create', kategori_id=(categories|selectattr('slug', 'equalto', request.args.get('kategori'))|map(attribute='id')|first) or '') }}">{{ icon('plus', 18) }}Buat thread</a>
+  <a class="btn btn-primary" href="{{ url_for('forum.create', kategori_id=(categories|selectattr('slug', 'equalto', request.args.get('kategori'))|map(attribute='id')|first) or '') }}">{{ icon('plus', 18) }}{{ _("Buat thread") }}</a>
 </div>
 
 {% set active = request.args.get('kategori', '') %}
 <div class="split split-left">
   <aside class="split-side">
-    <nav aria-label="Kategori forum">
-      <h2 class="side-title side-title-small">Kategori</h2>
+    <nav aria-label="{{ _("Kategori forum") }}">
+      <h2 class="side-title side-title-small">{{ _("Kategori") }}</h2>
       <ul class="category-list">
         <li>
           <a href="{{ url_with(kategori=None) }}"{% if not active %} aria-current="true"{% endif %}>
             {{ cat_icon('semua') }}
             <span class="category-text">
-              <span class="category-name"><span>Semua</span><span class="category-count">{{ total_threads }}</span></span>
-              <span class="category-desc">Semua thread dari setiap kategori.</span>
+              <span class="category-name"><span>{{ _("Semua") }}</span><span class="category-count">{{ total_threads }}</span></span>
+              <span class="category-desc">{{ _("Semua thread dari setiap kategori.") }}</span>
             </span>
           </a>
         </li>
@@ -30,8 +30,8 @@
             <a href="{{ url_with(kategori=cat.slug) }}"{% if active == cat.slug %} aria-current="true"{% endif %}>
               {{ cat_icon(cat.slug) }}
               <span class="category-text">
-                <span class="category-name"><span>{{ cat.name }}</span><span class="category-count">{{ cat.n_threads }}</span></span>
-                <span class="category-desc">{{ cat.description }}</span>
+                <span class="category-name"><span>{{ cat.name|t }}</span><span class="category-count">{{ cat.n_threads }}</span></span>
+                <span class="category-desc">{{ cat.description|t }}</span>
               </span>
             </a>
           </li>
@@ -40,21 +40,21 @@
     </nav>
     <div class="info-box">
       <span class="avatar avatar-md avatar-anon" aria-hidden="true">?</span>
-      <p><strong>Boleh anonim.</strong> Nyalakan “Terbitkan sebagai anonim” saat menulis. Namamu tidak tampil ke pengguna lain, tapi admin tetap bisa melihatnya untuk moderasi.</p>
+      <p><strong>{{ _("Boleh anonim.") }}</strong> {{ _("Nyalakan “Terbitkan sebagai anonim” saat menulis. Namamu tidak tampil ke pengguna lain, tapi admin tetap bisa melihatnya untuk moderasi.") }}</p>
     </div>
   </aside>
 
-  <section class="split-main" aria-label="Daftar thread">
+  <section class="split-main" aria-label="{{ _("Daftar thread") }}">
     <form class="filter-search" method="get" role="search">
       {% if active %}<input type="hidden" name="kategori" value="{{ active }}">{% endif %}
-      <label class="visually-hidden" for="q">Cari di forum</label>
-      <input id="q" type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Cari di forum">
-      <label class="visually-hidden" for="urut">Urutkan</label>
+      <label class="visually-hidden" for="q">{{ _("Cari di forum") }}</label>
+      <input id="q" type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="{{ _("Cari di forum") }}">
+      <label class="visually-hidden" for="urut">{{ _("Urutkan") }}</label>
       <select id="urut" name="urut">
-        <option value="">Terbaru</option>
-        <option value="populer"{% if request.args.get('urut') == 'populer' %} selected{% endif %}>Suara terbanyak</option>
+        <option value="">{{ _("Terbaru") }}</option>
+        <option value="populer"{% if request.args.get('urut') == 'populer' %} selected{% endif %}>{{ _("Suara terbanyak") }}</option>
       </select>
-      <button class="btn btn-quiet" type="submit">Terapkan</button>
+      <button class="btn btn-quiet" type="submit">{{ _("Terapkan") }}</button>
     </form>
 
     {% if threads %}
@@ -62,7 +62,7 @@
         {% for t in threads %}
           <li class="thread-card{% if t.is_pinned %} is-pinned{% endif %}">
             <div class="thread-card-tags">
-              {% if t.is_pinned %}<span class="tag tag-pin">{{ icon('pin', 12) }}Disematkan</span>{% endif %}
+              {% if t.is_pinned %}<span class="tag tag-pin">{{ icon('pin', 12) }}{{ _("Disematkan") }}</span>{% endif %}
               {{ cat_badge(t.category_slug, t.category_name) }}
               {% if t.company_name %}<a class="tag tag-company" href="{{ url_for('companies.detail', slug=t.company_slug) }}">{{ icon('building', 13) }}{{ t.company_name }}</a>{% endif %}
             </div>
@@ -72,10 +72,10 @@
               <p class="preview-bubble">{{ t.body|truncate(170) }}</p>
             </div>
             <p class="thread-card-foot">
-              <span class="foot-author">{{ 'Anonim' if t.is_anonymous else t.full_name }}, {{ t.created_at|lalu }}</span>
+              <span class="foot-author">{{ _('Anonim') if t.is_anonymous else t.full_name }}, {{ t.created_at|lalu }}</span>
               <span class="foot-stats">
-                <span class="stat{% if t.n_replies %} stat-on{% endif %}">{{ icon('chat', 15) }}{{ t.n_replies }} balasan</span>
-                <span class="stat{% if t.n_votes %} stat-on{% endif %}">{{ icon('arrow-up', 15) }}{{ t.n_votes }} suara</span>
+                <span class="stat{% if t.n_replies %} stat-on{% endif %}">{{ icon('chat', 15) }}{{ jumlah(t.n_replies, "balasan") }}</span>
+                <span class="stat{% if t.n_votes %} stat-on{% endif %}">{{ icon('arrow-up', 15) }}{{ jumlah(t.n_votes, "suara") }}</span>
               </span>
             </p>
           </li>
@@ -85,7 +85,7 @@
     {% else %}
       <div class="chat-empty">
         <span class="icon-tile">{{ icon('chat', 22) }}</span>
-        <p><strong>Belum ada thread di sini.</strong> <a href="{{ url_for('forum.create') }}">Buat thread pertama</a> dan mulai diskusinya.</p>
+        <p><strong>{{ _("Belum ada thread di sini.") }}</strong> <a href="{{ url_for('forum.create') }}">{{ _("Buat thread pertama") }}</a> {{ _("dan mulai diskusinya.") }}</p>
       </div>
     {% endif %}
   </section>

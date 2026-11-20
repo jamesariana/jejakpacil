@@ -27,6 +27,8 @@ JejakPacil mengumpulkan riwayat itu di satu tempat yang khusus untuk sivitas Fas
 | Forum | Kategori, thread, balasan dua tingkat, suara, posting anonim, tag perusahaan, laporan |
 | Statistik | Perusahaan terbanyak, jenis pengalaman, jalur mendapatkan, skill, per angkatan |
 | Panel admin | Verifikasi, setujui dan gabungkan perusahaan, moderasi forum, kelola pengguna, ekspor CSV |
+| Dua bahasa | Tombol ID / EN di navbar mengganti seluruh tampilan ke bahasa Inggris dan kembali, tanpa library tambahan |
+| Mode gelap | Tombol di navbar, pilihan disimpan di browser |
 
 ## Teknologi
 
@@ -95,6 +97,83 @@ python -m unittest -v
 Ada 45 tes yang mencakup pendaftaran, login, CSRF, pengalaman dan aturan privasinya, unggahan,
 perusahaan dan panel admin, pengambilan logo (dengan balasan tiruan), serta forum.
 
+## Struktur folder
+
+```
+jejakpacil/
+├── run.py                  titik masuk: python run.py
+├── requirements.txt
+├── app/
+│   ├── __init__.py         create_app(): merakit aplikasi
+│   ├── schema.sql          struktur tabel database
+│   ├── db.py               koneksi SQLite, query(), execute()
+│   ├── constants.py        pilihan tetap (prodi, jenis pengalaman, industri, ...)
+│   ├── security.py         sesi login, login_required, CSRF, token verifikasi
+│   ├── forms.py            validasi masukan form
+│   ├── queries.py          query bersama: aturan privasi, skill, perusahaan
+│   ├── logos.py            ambil logo dari layanan luar
+│   ├── utils.py            slug, tanggal, unggahan file, paginasi
+│   ├── cli.py              perintah create-admin dan seed-demo
+│   ├── blueprints/         satu file per fitur
+│   │   ├── main.py         beranda, penyajian file unggahan
+│   │   ├── auth.py         daftar, verifikasi, masuk, keluar
+│   │   ├── profiles.py     profil dan direktori orang
+│   │   ├── experiences.py  riwayat pengalaman
+│   │   ├── companies.py    direktori perusahaan
+│   │   ├── forum.py        forum
+│   │   ├── stats.py        statistik
+│   │   └── admin.py        panel admin
+│   ├── templates/          HTML (Jinja2), satu folder per fitur
+│   │   ├── home.html          beranda sebelum masuk
+│   │   ├── home_member.html   beranda setelah masuk
+│   │   ├── _macros.html       potongan tampilan yang dipakai ulang (kartu, ikon, chip)
+│   │   └── _jelajahi_head.html  judul dan tab halaman Jelajahi
+│   └── static/             CSS, JavaScript, ikon
+├── tests/test_app.py       tes otomatis
+└── instance/               database, unggahan, kunci rahasia (tidak masuk Git)
+```
+
+## Cara kerja singkat
+
+1. Browser meminta sebuah alamat, misalnya `/perusahaan/tokopedia`.
+2. Sebelum masuk ke fungsi halaman, Flask menjalankan dua pemeriksaan di `security.py`:
+   memuat pengguna dari sesi (`g.user`) dan mencocokkan token CSRF untuk setiap POST.
+3. Flask mencocokkan alamat dengan fungsi di salah satu blueprint, di sini `companies.detail`.
+4. Fungsi itu mengambil data lewat `query()` dengan SQL berparameter (`?`).
+5. Hasilnya dikirim ke template di `templates/companies/detail.html`, yang menghasilkan HTML.
+
+Aturan privasi pengalaman ada di satu tempat, `visibility_sql()` di `queries.py`, dan dipakai oleh
+semua halaman yang menampilkan pengalaman.
+
+### Dua bahasa (`i18n.py`)
+
+Semua teks ditulis dalam bahasa Indonesia dan dibungkus `_()`, misalnya `{{ _('Perusahaan') }}`
+di template atau `_("Profil disimpan.")` di Python. Kalau pengguna memilih EN, `_()` mencari
+terjemahannya di kamus `translations_en.py`. Bagian yang berubah ditulis `{nama}`, misalnya
+`_("{n} perusahaan", n=12)`. Pilihan bahasa disimpan di sesi dan tetap dipakai setelah masuk.
+Saat menambah teks baru, bungkus dengan `_()` lalu tambahkan terjemahannya di `translations_en.py`.
+Tes `LanguageTest` gagal kalau ada teks di halaman utama yang belum punya terjemahan.
+
+## Keamanan dan privasi
+
+- Kata sandi disimpan sebagai hash (`werkzeug.security`), tidak pernah apa adanya.
+- Semua query memakai parameter `?`, jadi masukan pengguna tidak bisa mengubah SQL.
+- Jinja2 meng-escape semua teks dari pengguna, jadi HTML atau skrip sisipan tampil sebagai teks.
+- Setiap form POST membawa token CSRF.
+- Gambar unggahan dibuka dan ditulis ulang dengan Pillow; PDF diperiksa tanda awalnya; nama file
+  diganti dengan nama acak.
+- File bukti hanya bisa dibuka pemiliknya dan admin. CV hanya untuk pengguna yang masuk.
+- Gaji sengaja tidak dikumpulkan.
+- Statistik hanya menampilkan angka gabungan dan tidak menghitung pengalaman privat.
+
+## Batasan saat ini
+
+- Belum ada pengiriman email sungguhan (lihat `send_verification` di `auth.py`).
+- Belum ada pembatasan percobaan login, fitur lupa kata sandi, dan hapus akun.
+- Untuk dipasang di internet: jalankan di belakang HTTPS, setel `SESSION_COOKIE_SECURE=True` dan
+  `SHOW_VERIFY_LINK=False`, pakai server WSGI seperti gunicorn atau waitress, bukan `python run.py`.
+- Logo adalah merek dagang pemiliknya. Di sini logo dipakai hanya sebagai penanda perusahaan.
+
 ## Ide pengembangan
 
 - Cerita proses seleksi per perusahaan dengan format terstruktur
@@ -102,3 +181,17 @@ perusahaan dan panel admin, pengambilan logo (dengan balasan tiruan), serta foru
 - Isi profil otomatis dari CV dengan membaca PDF
 - Rekomendasi perusahaan berdasarkan kemiripan skill
 
+## Saran pembagian kerja
+
+| Anggota | Bagian | File utama |
+| --- | --- | --- |
+| 1 | Akun, keamanan, profil | `auth.py`, `security.py`, `profiles.py` |
+| 2 | Pengalaman dan perusahaan, logo | `experiences.py`, `companies.py`, `logos.py`, `queries.py` |
+| 3 | Forum | `forum.py`, `templates/forum/` |
+| 4 | Statistik, panel admin, tes | `stats.py`, `admin.py`, `tests/` |
+
+## Penggunaan AI
+
+Kerangka awal kode proyek ini dibuat dengan bantuan AI (Claude), sesuai aturan proyek yang
+mengizinkannya. (Lengkapi bagian ini: bagian mana yang kalian ubah atau tulis sendiri, dan bagaimana
+tiap anggota mempelajari kode yang dipegangnya.)

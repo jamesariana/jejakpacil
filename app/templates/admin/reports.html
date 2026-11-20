@@ -1,25 +1,25 @@
 {% extends "base.html" %}
-{% block title %}Laporan forum{% endblock %}
+{% block title %}{{ _("Laporan forum") }}{% endblock %}
 {% block content %}
-<div class="page-head"><h1>Laporan forum</h1></div>
+<div class="page-head"><h1>{{ _("Laporan forum") }}</h1></div>
 {% include "admin/_nav.html" %}
 
 {% if reports %}
   <div class="table-wrap">
     <table class="table">
       <thead>
-        <tr><th>Konten yang dilaporkan</th><th>Penulis asli</th><th>Alasan</th><th>Pelapor</th><th>Tindakan</th></tr>
+        <tr><th>{{ _("Konten yang dilaporkan") }}</th><th>{{ _("Penulis asli") }}</th><th>{{ _("Alasan") }}</th><th>{{ _("Pelapor") }}</th><th>{{ _("Tindakan") }}</th></tr>
       </thead>
       <tbody>
         {% for r in reports %}
           <tr>
             <td>
               {% if r.reply_id %}
-                <span class="muted">Balasan di</span>
+                <span class="muted">{{ _("Balasan di") }}</span>
                 <a href="{{ url_for('forum.thread', thread_id=r.target_thread_id) }}#balasan-{{ r.reply_id }}">{{ r.thread_title }}</a>
                 <br>{{ r.reply_body|truncate(160) }}
               {% else %}
-                <span class="muted">Thread</span>
+                <span class="muted">{{ _("Thread") }}</span>
                 <a href="{{ url_for('forum.thread', thread_id=r.target_thread_id) }}">{{ r.thread_title }}</a>
               {% endif %}
             </td>
@@ -29,8 +29,8 @@
             <td>
               <form method="post" action="{{ url_for('admin.resolve_report', report_id=r.id) }}" class="row-actions">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button class="btn btn-primary btn-small" name="action" value="sembunyikan" type="submit">Sembunyikan konten</button>
-                <button class="btn btn-quiet btn-small" name="action" value="tutup" type="submit">Tutup laporan</button>
+                <button class="btn btn-primary btn-small" name="action" value="sembunyikan" type="submit">{{ _("Sembunyikan konten") }}</button>
+                <button class="btn btn-quiet btn-small" name="action" value="tutup" type="submit">{{ _("Tutup laporan") }}</button>
               </form>
             </td>
           </tr>
@@ -39,6 +39,6 @@
     </table>
   </div>
 {% else %}
-  <p class="empty">Tidak ada laporan yang perlu ditangani.</p>
+  <p class="empty">{{ _("Tidak ada laporan yang perlu ditangani.") }}</p>
 {% endif %}
 {% endblock %}

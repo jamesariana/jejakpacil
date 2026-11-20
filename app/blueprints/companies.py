@@ -11,36 +11,58 @@ from ..utils import Page
 bp = Blueprint("companies", __name__)
 
 
+# Pilihan urutan daftar perusahaan. Kuncinya dipakai di URL (?urut=...).
+SORTS = {
+    "populer": ("Paling banyak anak Fasilkom", "n_orang DESC, c.name COLLATE NOCASE"),
+    "terbaru": ("Baru saja ada yang masuk", "last_start DESC, n_orang DESC, c.name COLLATE NOCASE"),
+    "az": ("Nama A sampai Z", "c.name COLLATE NOCASE"),
+}
+JENIS = {"magang": "Magang", "kerja": "Bekerja"}
+
+
 @bp.route("/perusahaan")
 def index():
     """Daftar perusahaan beserta jumlah orang yang pernah magang dan bekerja di sana.
 
     Jumlah dihitung dari pengalaman yang tidak privat. Yang ditampilkan hanya
     angka gabungan, jadi tidak membuka data siapa pun.
+
+    Filter industri diterapkan di Python setelah query supaya jumlah per industri
+    (angka di samping tiap pilihan industri) tetap bisa dihitung dari hasil yang sama.
     """
     args = request.args
+    keyword = args.get("q", "").strip()
+    jenis = args.get("jenis") if args.get("jenis") in JENIS else ""
+    urut = args.get("urut") if args.get("urut") in SORTS else "populer"
+    industri = args.get("industri") if args.get("industri") in INDUSTRIES else ""
+
     where, params = ["c.is_approved = 1"], []
-    if args.get("q", "").strip():
+    if keyword:
         where.append("c.name LIKE ?")
-        params.append(f"%{args['q'].strip()}%")
-    if args.get("industri") in INDUSTRIES:
-        where.append("c.industry = ?")
-        params.append(args["industri"])
-    having = {"magang": "n_magang > 0", "kerja": "n_kerja > 0"}.get(args.get("jenis"), "n_orang > 0")
-    order = "c.name COLLATE NOCASE" if args.get("urut") == "az" else "n_orang DESC, c.name COLLATE NOCASE"
+        params.append(f"%{keyword}%")
+    having = {"magang": "n_magang > 0", "kerja": "n_kerja > 0"}.get(jenis, "n_orang > 0")
 
     rows = query(
         f"""SELECT c.*,
                    COUNT(DISTINCT e.user_id) AS n_orang,
                    COUNT(DISTINCT CASE WHEN e.type = 'magang' THEN e.user_id END) AS n_magang,
                    COUNT(DISTINCT CASE WHEN e.type != 'magang' THEN e.user_id END) AS n_kerja,
+                   MAX(e.start_date) AS last_start,
                    GROUP_CONCAT(DISTINCT e.position) AS positions
               FROM companies c
               LEFT JOIN experiences e ON e.company_id = c.id AND e.visibility != 'privat'
              WHERE {' AND '.join(where)}
-             GROUP BY c.id HAVING {having} ORDER BY {order}""",
+             GROUP BY c.id HAVING {having} ORDER BY {SORTS[urut][1]}""",
         params,
     )
+    industry_counts = {name: 0 for name in INDUSTRIES}
+    for row in rows:
+        if row["industry"] in industry_counts:
+            industry_counts[row["industry"]] += 1
+    all_count = len(rows)
+    if industri:
+        rows = [row for row in rows if row["industry"] == industri]
+
     page = Page(len(rows), per_page=20)
     companies = []
     for row in rows[page.offset:page.offset + page.per_page]:
@@ -48,7 +70,17 @@ def index():
         # GROUP_CONCAT memisahkan dengan koma; ubah jadi daftar posisi.
         company["position_list"] = sorted(set((row["positions"] or "").split(","))) if row["positions"] else []
         companies.append(company)
-    return render_template("companies/index.html", companies=companies, page=page)
+    return render_template(
+        "companies/index.html",
+        companies=companies,
+        page=page,
+        sorts=SORTS,
+        jenis_choices={"": "Semua", **JENIS},
+        current={"q": keyword, "jenis": jenis, "urut": urut, "industri": industri},
+        industry_counts=industry_counts,
+        all_count=all_count,
+        filtered=bool(keyword or jenis or industri),
+    )
 
 
 @bp.route("/perusahaan/<slug>")

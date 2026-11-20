@@ -1,30 +1,71 @@
 {% extends "base.html" %}
 {% from "_macros.html" import logo, options, pagination, chip, icon %}
-{% block title %}Perusahaan{% endblock %}
+{% block title %}{{ _("Perusahaan") }}{% endblock %}
 {% block content %}
 <div class="page-head">
-  <h1>Perusahaan</h1>
-  <p class="lede">{{ page.total }} tempat mahasiswa dan alumni Fasilkom pernah magang atau bekerja. Pilih salah satu untuk melihat siapa saja yang pernah di sana.</p>
+  <h1>{{ _("Perusahaan") }}</h1>
+  <p class="lede">{{ _("Tempat mahasiswa dan alumni Fasilkom pernah magang atau bekerja. Pilih salah satu untuk melihat siapa saja yang pernah di sana dan lewat jalur apa.") }}</p>
 </div>
 
-<form class="filter-bare" method="get" role="search">
-  {% if request.args.get('industri') %}<input type="hidden" name="industri" value="{{ request.args.get('industri') }}">{% endif %}
-  <div class="filter-search">
-    <label class="visually-hidden" for="q">Cari nama perusahaan</label>
-    <input id="q" type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Cari nama perusahaan">
-    <label class="visually-hidden" for="jenis">Pernah ada yang</label>
-    <select id="jenis" name="jenis">{{ options({'magang': 'Pernah ada yang magang', 'kerja': 'Pernah ada yang bekerja'}, request.args.get('jenis', ''), 'Magang atau bekerja') }}</select>
-    <label class="visually-hidden" for="urut">Urutkan</label>
-    <select id="urut" name="urut">{{ options({'az': 'Urut nama A sampai Z'}, request.args.get('urut', ''), 'Urut orang terbanyak') }}</select>
-    <button class="btn btn-primary" type="submit">Terapkan</button>
+<form class="dir-filter" method="get" role="search" data-autosubmit>
+  {% if current.industri %}<input type="hidden" name="industri" value="{{ current.industri }}">{% endif %}
+
+  <div class="dir-search">
+    <span class="dir-search-icon" aria-hidden="true">{{ icon('search', 20) }}</span>
+    <label class="visually-hidden" for="q">{{ _("Cari nama perusahaan") }}</label>
+    <input id="q" type="search" name="q" value="{{ current.q }}" placeholder="{{ _("Cari nama perusahaan, misalnya Gojek") }}">
+    <button class="btn btn-primary dir-search-btn" type="submit">{{ _("Cari") }}</button>
   </div>
-  <div class="chip-row" role="group" aria-label="Industri">
-    {{ chip('Semua', url_with(industri=None), not request.args.get('industri')) }}
-    {% for industry in C.INDUSTRIES %}
-      {{ chip(industry, url_with(industri=industry), request.args.get('industri') == industry) }}
-    {% endfor %}
+
+  <div class="dir-controls">
+    <fieldset class="dir-group">
+      <legend>{{ _("Tampilkan yang pernah ada") }}</legend>
+      <div class="segmented">
+        {% for value, label in jenis_choices.items() %}
+          <label class="seg">
+            <input type="radio" name="jenis" value="{{ value }}"{% if current.jenis == value %} checked{% endif %}>
+            <span class="seg-body">{{ label|t }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <div class="dir-group dir-sort">
+      <label for="urut">{{ _("Urutkan") }}</label>
+      <div class="dir-select">
+        {{ icon('sort', 18) }}
+        <select id="urut" name="urut">
+          {% for value, (label, _) in sorts.items() %}
+            <option value="{{ value }}"{% if current.urut == value %} selected{% endif %}>{{ label|t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="dir-industries">
+    <span class="dir-label" id="label-industri">{{ _("Industri") }}</span>
+    <div class="dir-chips" role="group" aria-labelledby="label-industri">
+      <a class="dir-chip" href="{{ url_with(industri=None) }}"{% if not current.industri %} aria-current="true"{% endif %}>{{ _("Semua") }} <span class="dir-chip-n">{{ all_count }}</span></a>
+      {% for industry in C.INDUSTRIES %}
+        {% set n = industry_counts[industry] %}
+        {% if n or current.industri == industry %}
+          <a class="dir-chip" href="{{ url_with(industri=industry) }}"{% if current.industri == industry %} aria-current="true"{% endif %}>{{ industry|t }} <span class="dir-chip-n">{{ n }}</span></a>
+        {% endif %}
+      {% endfor %}
+    </div>
   </div>
 </form>
+
+<div class="dir-summary">
+  <p>
+    <strong>{{ jumlah(page.total, "perusahaan") }}</strong>
+    {%- if current.urut == 'populer' %}{{ _(", dari yang paling banyak anak Fasilkom-nya.") }}
+    {%- elif current.urut == 'terbaru' %}{{ _(", dari yang paling baru menerima anak Fasilkom.") }}
+    {%- else %}{{ _(", urut nama.") }}{% endif %}
+  </p>
+  {% if filtered %}<a class="dir-reset" href="{{ url_for('companies.index', urut=current.urut if current.urut != 'populer' else None) }}">{{ _("Hapus filter") }}</a>{% endif %}
+</div>
 
 {% if companies %}
   <ul class="company-rows">
@@ -34,24 +75,25 @@
         <div class="company-row-main">
           <h2 class="company-row-name"><a href="{{ url_for('companies.detail', slug=c.slug) }}">{{ c.name }}</a></h2>
           <p class="company-row-meta">
-            <span class="tag tag-muted">{{ c.industry }}</span>
+            <span class="tag tag-muted">{{ c.industry|t }}</span>
             {% if c.domain %}<span class="muted">{{ c.domain }}</span>{% endif %}
           </p>
           <p class="company-row-desc">
-            {% if c.description %}{{ c.description|truncate(160) }}{% else %}{{ c.n_orang }} anak Fasilkom pernah magang atau bekerja di sini.{% endif %}
+            {% if c.description %}{{ c.description|truncate(160) }}{% else %}{{ c.n_orang }} {{ _("anak Fasilkom pernah magang atau bekerja di sini.") }}{% endif %}
           </p>
           {% if c.position_list %}
             <p class="company-row-positions">
-              <span class="muted">Posisi yang pernah diisi:</span>
-              {{ c.position_list[:3]|join(', ') }}{% if c.position_list|length > 3 %}, dan {{ c.position_list|length - 3 }} lainnya{% endif %}
+              <span class="muted">{{ _("Posisi yang pernah diisi:") }}</span>
+              {{ c.position_list[:3]|join(', ') }}{% if c.position_list|length > 3 %}{{ _(", dan") }} {{ c.position_list|length - 3 }} {{ _("lainnya") }}{% endif %}
             </p>
           {% endif %}
         </div>
         <div class="company-row-side">
-          <span class="company-row-total">{{ c.n_orang }} orang</span>
+          <span class="company-row-total">{{ jumlah(c.n_orang, "orang") }}</span>
+          {% if current.urut == 'terbaru' and c.last_start %}<span class="company-row-recent">{{ _("terakhir masuk") }} {{ c.last_start|bulan }}</span>{% endif %}
           <span class="company-row-split">
-            {% if c.n_magang %}<span class="tag">{{ c.n_magang }} magang</span>{% endif %}
-            {% if c.n_kerja %}<span class="tag tag-ok">{{ c.n_kerja }} bekerja</span>{% endif %}
+            {% if c.n_magang %}<span class="tag">{{ jumlah(c.n_magang, "magang") }}</span>{% endif %}
+            {% if c.n_kerja %}<span class="tag tag-ok">{{ jumlah(c.n_kerja, "bekerja") }}</span>{% endif %}
           </span>
         </div>
         <span class="company-row-arrow" aria-hidden="true">{{ icon('chevron', 20) }}</span>
@@ -60,6 +102,6 @@
   </ul>
   {{ pagination(page) }}
 {% else %}
-  <p class="empty">Tidak ada perusahaan yang cocok. <a href="{{ url_for('companies.index') }}">Lihat semua perusahaan</a>, atau tambahkan pengalamanmu supaya perusahaannya ikut tercatat.</p>
+  <p class="empty">{{ _("Tidak ada perusahaan yang cocok.") }} <a href="{{ url_for('companies.index') }}">{{ _("Lihat semua perusahaan") }}</a>{{ _(", atau tambahkan pengalamanmu supaya perusahaannya ikut tercatat.") }}</p>
 {% endif %}
 {% endblock %}

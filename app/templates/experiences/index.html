@@ -1,51 +1,92 @@
 {% extends "base.html" %}
 {% from "_macros.html" import exp_card, options, pagination, chip %}
-{% block title %}Jelajahi pengalaman{% endblock %}
+{% block title %}{{ _("Jelajahi pengalaman") }}{% endblock %}
 {% block content %}
 {% with active = 'pengalaman' %}{% include "_jelajahi_head.html" %}{% endwith %}
 
-<form class="filter-panel" method="get" role="search">
-  {% if request.args.get('jenis') %}<input type="hidden" name="jenis" value="{{ request.args.get('jenis') }}">{% endif %}
-  <div class="filter-search">
-    <label class="visually-hidden" for="q">Posisi atau perusahaan</label>
-    <input id="q" type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Cari posisi atau perusahaan, misalnya Backend Engineer">
-    <button class="btn btn-primary" type="submit">Cari</button>
+{% set a = request.args %}
+<form class="dir-filter" method="get" role="search" data-autosubmit>
+  {% if a.get('jenis') %}<input type="hidden" name="jenis" value="{{ a.get('jenis') }}">{% endif %}
+
+  <div class="dir-search">
+    <span class="dir-search-icon" aria-hidden="true">{{ icon('search', 20) }}</span>
+    <label class="visually-hidden" for="q">{{ _("Posisi atau perusahaan") }}</label>
+    <input id="q" type="search" name="q" value="{{ a.get('q', '') }}" placeholder="{{ _("Cari posisi atau perusahaan, misalnya Backend Engineer") }}">
+    <button class="btn btn-primary dir-search-btn" type="submit">{{ _("Cari") }}</button>
   </div>
-  <div class="chip-row" role="group" aria-label="Jenis pengalaman">
-    <span class="chip-row-label">Jenis</span>
-    {{ chip('Semua', url_with(jenis=None), not request.args.get('jenis')) }}
-    {% for key, label in C.EXP_TYPES.items() %}
-      {{ chip(label, url_with(jenis=key), request.args.get('jenis') == key) }}
-    {% endfor %}
-  </div>
-  <div class="filter-fields">
-    <div class="field">
-      <label for="prodi">Program studi</label>
-      <select id="prodi" name="prodi">{{ options(C.PRODI, request.args.get('prodi', ''), 'Semua') }}</select>
+
+  <div class="dir-industries dir-industries-top">
+    <span class="dir-label" id="label-jenis">{{ _("Jenis pengalaman") }}</span>
+    <div class="dir-chips" role="group" aria-labelledby="label-jenis">
+      <a class="dir-chip" href="{{ url_with(jenis=None) }}"{% if not a.get('jenis') %} aria-current="true"{% endif %}>{{ _("Semua") }}</a>
+      {% for key, label in C.EXP_TYPES.items() %}
+        <a class="dir-chip" href="{{ url_with(jenis=key) }}"{% if a.get('jenis') == key %} aria-current="true"{% endif %}>{{ label|t }}</a>
+      {% endfor %}
     </div>
-    <div class="field">
-      <label for="angkatan">Angkatan</label>
-      <select id="angkatan" name="angkatan">
-        <option value="">Semua</option>
-        {% for row in angkatan_list %}
-          <option value="{{ row.angkatan }}"{% if request.args.get('angkatan') == row.angkatan|string %} selected{% endif %}>{{ row.angkatan }}</option>
+  </div>
+
+  <div class="dir-fields">
+    <div class="dir-group">
+      <label for="prodi">{{ _("Program studi") }}</label>
+      <div class="dir-select">
+        {{ icon('cap', 18) }}
+        <select id="prodi" name="prodi">{{ options(C.PRODI, a.get('prodi', ''), _('Semua prodi')) }}</select>
+      </div>
+    </div>
+    <div class="dir-group">
+      <label for="angkatan">{{ _("Angkatan") }}</label>
+      <div class="dir-select">
+        {{ icon('calendar', 18) }}
+        <select id="angkatan" name="angkatan">
+          <option value="">{{ _("Semua angkatan") }}</option>
+          {% for row in angkatan_list %}
+            <option value="{{ row.angkatan }}"{% if a.get('angkatan') == row.angkatan|string %} selected{% endif %}>{{ row.angkatan }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="dir-group">
+      <label for="skill">{{ _("Skill") }}</label>
+      <div class="dir-select dir-text">
+        {{ icon('tag', 18) }}
+        <input id="skill" name="skill" value="{{ a.get('skill', '') }}" placeholder="{{ _("Misalnya SQL, lalu Enter") }}">
+      </div>
+    </div>
+    <div class="dir-group dir-verified">
+      <span class="dir-label" aria-hidden="true">&nbsp;</span>
+      <label class="dir-toggle">
+        <input type="checkbox" role="switch" name="terverifikasi" value="1"{% if a.get('terverifikasi') %} checked{% endif %}>
+        <span class="switch-track" aria-hidden="true"></span>
+        <span>{{ _("Hanya yang terverifikasi") }}</span>
+      </label>
+    </div>
+  </div>
+
+  {% if popular_skills %}
+    <div class="dir-quick">
+      <span class="dir-label">{{ _("Skill yang sering dipakai") }}</span>
+      <div class="dir-quick-list">
+        {% for s in popular_skills %}
+          <a class="dir-quick-item" href="{{ url_with(skill=s.name) }}"{% if a.get('skill', '')|lower == s.name|lower %} aria-current="true"{% endif %}>{{ s.name }}</a>
         {% endfor %}
-      </select>
+      </div>
     </div>
-    <div class="field">
-      <label for="skill">Skill</label>
-      <input id="skill" name="skill" value="{{ request.args.get('skill', '') }}" placeholder="misalnya SQL">
-    </div>
-    <label class="check check-inline"><input type="checkbox" name="terverifikasi" value="1"{% if request.args.get('terverifikasi') %} checked{% endif %}> Hanya yang terverifikasi</label>
-  </div>
+  {% endif %}
 </form>
 
-<div class="result-head">
-  <p><strong>{{ page.total }} pengalaman{% if request.args.get('q') %} untuk “{{ request.args.get('q') }}”{% endif %}</strong></p>
-  {% if request.args %}<a href="{{ url_for('experiences.index') }}">Hapus semua filter</a>{% endif %}
+<div class="dir-summary">
+  <p><strong>{{ jumlah(page.total, "pengalaman") }}</strong>{% if a.get('q') %} {{ _("untuk “") }}{{ a.get('q') }}”{% endif %}{{ _(", dari yang paling baru dimulai.") }}</p>
+  {% if a %}<a class="dir-reset" href="{{ url_for('experiences.index') }}">{{ _("Hapus semua filter") }}</a>{% endif %}
 </div>
+{% if active_filters %}
+  <ul class="dir-active" aria-label="{{ _("Filter yang aktif") }}">
+    {% for label, remove_url in active_filters %}
+      <li><a href="{{ remove_url }}" aria-label="{{ _('Hapus filter {label}', label=label|t) }}">{{ label|t }} {{ icon('x', 14) }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
 {% if not g.user %}
-  <p class="notice"><a href="{{ url_for('auth.login', next=request.full_path) }}">Masuk</a> untuk melihat juga pengalaman yang hanya dibagikan ke sivitas.</p>
+  <p class="notice"><a href="{{ url_for('auth.login', next=request.full_path) }}">{{ _("Masuk") }}</a> {{ _("untuk melihat juga pengalaman yang hanya dibagikan ke sivitas.") }}</p>
 {% endif %}
 
 {% if experiences %}
@@ -56,6 +97,6 @@
   </ol>
   {{ pagination(page) }}
 {% else %}
-  <p class="empty">Tidak ada pengalaman yang cocok. Coba kata kunci lain, atau <a href="{{ url_for('experiences.index') }}">hapus semua filter</a>.</p>
+  <p class="empty">{{ _("Tidak ada pengalaman yang cocok. Coba kata kunci lain, atau") }} <a href="{{ url_for('experiences.index') }}">{{ _("hapus semua filter") }}</a>.</p>
 {% endif %}
 {% endblock %}

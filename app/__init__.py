@@ -9,7 +9,7 @@ import secrets
 
 from flask import Flask, g, render_template
 
-from . import constants, db, security, utils
+from . import constants, db, i18n, security, utils
 
 
 def _load_secret_key(instance_path):
@@ -59,6 +59,7 @@ def create_app(test_config=None):
 
     for module in (main, auth, profiles, experiences, companies, forum, stats, admin):
         app.register_blueprint(module.bp)
+    app.register_blueprint(i18n.bp)
     register_commands(app)
 
     # Fungsi dan data yang bisa dipakai langsung di semua template.
@@ -70,6 +71,10 @@ def create_app(test_config=None):
         periode=utils.format_period,
         durasi=utils.format_duration,
         C=constants,
+        _=i18n.translate,
+        current_language=i18n.current_language,
+        jumlah=i18n.count,
+        LANGUAGES=i18n.LANGUAGES,
     )
     app.jinja_env.filters.update(
         bulan=utils.format_month,
@@ -77,6 +82,7 @@ def create_app(test_config=None):
         lalu=utils.time_ago,
         inisial=utils.initials,
         warna=utils.color_for,
+        t=i18n.translate,  # untuk nilai dari data: {{ label|t }}
     )
 
     @app.context_processor
@@ -103,19 +109,19 @@ def create_app(test_config=None):
 
     @app.errorhandler(400)
     def bad_request(error):
-        return error_page(400, "Permintaan tidak bisa diproses", error.description)
+        return error_page(400, i18n._("Permintaan tidak bisa diproses"), i18n._(error.description))
 
     @app.errorhandler(403)
     def forbidden(error):
-        return error_page(403, "Halaman ini bukan untukmu", "Akunmu tidak punya akses ke halaman ini.")
+        return error_page(403, i18n._("Halaman ini bukan untukmu"), i18n._("Akunmu tidak punya akses ke halaman ini."))
 
     @app.errorhandler(404)
     def not_found(error):
-        return error_page(404, "Halaman tidak ditemukan", "Periksa alamatnya, atau kembali ke beranda.")
+        return error_page(404, i18n._("Halaman tidak ditemukan"), i18n._("Periksa alamatnya, atau kembali ke beranda."))
 
     @app.errorhandler(413)
     def too_large(error):
-        return error_page(413, "File terlalu besar", "Ukuran unggahan maksimal 5 MB. Perkecil file lalu coba lagi.")
+        return error_page(413, i18n._("File terlalu besar"), i18n._("Ukuran unggahan maksimal 5 MB. Perkecil file lalu coba lagi."))
 
     with app.app_context():
         db.init_db()

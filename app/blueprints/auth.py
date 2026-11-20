@@ -4,6 +4,7 @@ from flask import Blueprint, current_app, flash, g, redirect, render_template, r
 from markupsafe import Markup
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from ..i18n import _
 from ..db import execute, query
 from ..forms import is_allowed_email, validate_identity
 from ..security import make_verify_token, read_verify_token
@@ -25,7 +26,7 @@ def send_verification(email):
     if current_app.config["SHOW_VERIFY_LINK"]:
         # Markup.format() meng-escape isinya, jadi aman dari sisipan HTML.
         flash(
-            Markup('Mode pengembangan, belum ada pengiriman email. <a href="{}">Verifikasi akun ini</a>.').format(link),
+            Markup(_('Mode pengembangan, belum ada pengiriman email. <a href="{}">Verifikasi akun ini</a>.')).format(link),
             "info",
         )
 
@@ -104,8 +105,11 @@ def login():
         elif not user["is_verified"]:
             error = "Emailmu belum diverifikasi. Buka tautan verifikasi, atau minta tautan baru di bawah."
         else:
+            lang = session.get("lang")
             session.clear()  # sesi baru setiap kali masuk (mencegah session fixation)
             session["user_id"] = user["id"]
+            if lang:
+                session["lang"] = lang  # pilihan bahasa tetap dipakai setelah masuk
             target = request.args.get("next", "")
             return redirect(target if is_safe_next(target) else url_for("main.home"))
     return render_template("auth/login.html", error=error, form=request.form)
@@ -113,6 +117,9 @@ def login():
 
 @bp.route("/keluar", methods=("POST",))
 def logout():
+    lang = session.get("lang")
     session.clear()
+    if lang:
+        session["lang"] = lang
     flash("Kamu sudah keluar.", "success")
     return redirect(url_for("main.home"))

@@ -4,18 +4,18 @@
 {% block content %}
 <section class="hero">
   <div class="hero-copy">
-    <h1>Kakak tingkatmu pernah magang di mana?</h1>
-    <p class="lede">JejakPacil mencatat riwayat magang dan kerja mahasiswa serta alumni Fasilkom UI. Cari posisi yang kamu incar, lihat siapa yang pernah di sana, lalu tanya langsung di forum.</p>
+    <h1>{{ _("Kakak tingkatmu pernah magang di mana?") }}</h1>
+    <p class="lede">{{ _("JejakPacil mencatat riwayat magang dan kerja mahasiswa serta alumni Fasilkom UI. Cari posisi yang kamu incar, lihat siapa yang pernah di sana, lalu tanya langsung di forum.") }}</p>
     <form class="hero-search" action="{{ url_for('experiences.index') }}" method="get" role="search">
-      <label class="visually-hidden" for="hero-q">Cari posisi atau perusahaan</label>
-      <input id="hero-q" type="search" name="q" placeholder="Cari posisi atau perusahaan, misalnya Data Analyst">
-      <button class="btn btn-primary" type="submit">Cari</button>
+      <label class="visually-hidden" for="hero-q">{{ _("Cari posisi atau perusahaan") }}</label>
+      <input id="hero-q" type="search" name="q" placeholder="{{ _("Cari posisi atau perusahaan, misalnya Data Analyst") }}">
+      <button class="btn btn-primary" type="submit">{{ _("Cari") }}</button>
     </form>
-    <p class="hero-count">{{ totals.experiences }} pengalaman dari {{ totals.people }} orang di {{ totals.companies }} perusahaan sudah tercatat.</p>
+    <p class="hero-count">{{ totals.experiences }} {{ _("pengalaman dari") }} {{ totals.people }} {{ _("orang di") }} {{ totals.companies }} {{ _("perusahaan sudah tercatat.") }}</p>
   </div>
 
   <div class="hero-trail">
-    <h2 class="hero-trail-title">Jejak terbaru</h2>
+    <h2 class="hero-trail-title">{{ _("Jejak terbaru") }}</h2>
     {% if latest %}
       <ol class="trail trail-compact">
         {% for e in latest %}
@@ -24,69 +24,69 @@
             <div class="trail-body">
               <h3 class="trail-title">{{ e.position }}</h3>
               <p class="trail-where"><a href="{{ url_for('companies.detail', slug=e.company_slug) }}">{{ e.company_name }}</a></p>
-              <p class="trail-meta"><span>{{ e.full_name }}, {{ e.prodi }} {{ e.angkatan }}</span><span>{{ periode(e.start_date, e.end_date) }}</span></p>
+              <p class="trail-meta"><span>{{ e.full_name }}, {{ e.prodi|t }} {{ e.angkatan }}</span><span>{{ periode(e.start_date, e.end_date) }}</span></p>
             </div>
           </li>
         {% endfor %}
       </ol>
       <p class="trail-legend">
-        <span><span class="legend-dot is-current" aria-hidden="true"></span>Masih berjalan</span>
-        <span><span class="legend-dot" aria-hidden="true"></span>Sudah selesai</span>
+        <span><span class="legend-dot is-current" aria-hidden="true"></span>{{ _("Masih berjalan") }}</span>
+        <span><span class="legend-dot" aria-hidden="true"></span>{{ _("Sudah selesai") }}</span>
       </p>
     {% else %}
-      <p class="muted">Belum ada pengalaman yang tercatat. Jadilah yang pertama menambahkan.</p>
+      <p class="muted">{{ _("Belum ada pengalaman yang tercatat. Jadilah yang pertama menambahkan.") }}</p>
     {% endif %}
   </div>
 </section>
 
 <section class="section" aria-labelledby="fitur">
-  <h2 id="fitur" class="section-title">Yang bisa kamu lakukan di sini</h2>
-  <p class="section-lede">Empat bagian utama, sama dengan menu di bagian atas halaman.</p>
+  <h2 id="fitur" class="section-title">{{ _("Yang bisa kamu lakukan di sini") }}</h2>
+  <p class="section-lede">{{ _("Empat bagian utama, sama dengan menu di bagian atas halaman.") }}</p>
   <div class="features">
     <a class="feature" href="{{ url_for('companies.index') }}">
       <span class="icon-tile">{{ icon('building', 22) }}</span>
-      <span class="feature-title">Perusahaan</span>
-      <span class="feature-desc">Semua tempat anak Fasilkom pernah magang atau kerja, lengkap dengan logo dan jumlah orangnya.</span>
-      <span class="feature-link">Lihat daftar perusahaan</span>
+      <span class="feature-title">{{ _("Perusahaan") }}</span>
+      <span class="feature-desc">{{ _("Semua tempat anak Fasilkom pernah magang atau kerja, lengkap dengan logo dan jumlah orangnya.") }}</span>
+      <span class="feature-link">{{ _("Lihat daftar perusahaan") }}</span>
     </a>
     <a class="feature" href="{{ url_for('experiences.index') }}">
       <span class="icon-tile">{{ icon('search', 22) }}</span>
-      <span class="feature-title">Jelajahi</span>
-      <span class="feature-desc">Ketik posisi seperti Data Analyst, lalu lihat siapa yang pernah mengisinya, kapan, dan lewat jalur apa.</span>
-      <span class="feature-link">Mulai mencari</span>
+      <span class="feature-title">{{ _("Jelajahi") }}</span>
+      <span class="feature-desc">{{ _("Ketik posisi seperti Data Analyst, lalu lihat siapa yang pernah mengisinya, kapan, dan lewat jalur apa.") }}</span>
+      <span class="feature-link">{{ _("Mulai mencari") }}</span>
     </a>
     <a class="feature" href="{{ url_for('forum.index') }}">
       <span class="icon-tile">{{ icon('chat', 22) }}</span>
-      <span class="feature-title">Forum <span class="tag tag-muted">Perlu masuk</span></span>
-      <span class="feature-desc">Tanya soal seleksi, minta referral, atau ceritakan pengalamanmu. Kamu bisa menulis secara anonim.</span>
-      <span class="feature-link">Buka forum</span>
+      <span class="feature-title">{{ _("Forum") }} <span class="tag tag-muted">{{ _("Perlu masuk") }}</span></span>
+      <span class="feature-desc">{{ _("Tanya soal seleksi, minta referral, atau ceritakan pengalamanmu. Kamu bisa menulis secara anonim.") }}</span>
+      <span class="feature-link">{{ _("Buka forum") }}</span>
     </a>
     <a class="feature" href="{{ url_for('stats.index') }}">
       <span class="icon-tile">{{ icon('chart', 22) }}</span>
-      <span class="feature-title">Statistik</span>
-      <span class="feature-desc">Perusahaan paling populer, skill yang paling sering dipakai, dan jalur yang paling sering berhasil.</span>
-      <span class="feature-link">Lihat statistik</span>
+      <span class="feature-title">{{ _("Statistik") }}</span>
+      <span class="feature-desc">{{ _("Perusahaan paling populer, skill yang paling sering dipakai, dan jalur yang paling sering berhasil.") }}</span>
+      <span class="feature-link">{{ _("Lihat statistik") }}</span>
     </a>
   </div>
 </section>
 
 <section class="section" aria-labelledby="cara">
-  <h2 id="cara" class="section-title">Cara kerjanya</h2>
+  <h2 id="cara" class="section-title">{{ _("Cara kerjanya") }}</h2>
   <ol class="steps">
     <li>
-      <span class="step-number">Langkah 1</span>
-      <span class="step-title">Daftar dengan email UI</span>
-      <span class="step-desc">Hanya email @ui.ac.id yang bisa mendaftar, jadi isinya khusus sivitas Fasilkom.</span>
+      <span class="step-number">{{ _("Langkah 1") }}</span>
+      <span class="step-title">{{ _("Daftar dengan email UI") }}</span>
+      <span class="step-desc">{{ _("Hanya email @ui.ac.id yang bisa mendaftar, jadi isinya khusus sivitas Fasilkom.") }}</span>
     </li>
     <li>
-      <span class="step-number">Langkah 2</span>
-      <span class="step-title">Catat pengalamanmu</span>
-      <span class="step-desc">Magang, kerja, asdos, atau riset. Kamu yang menentukan siapa yang boleh melihat tiap pengalaman.</span>
+      <span class="step-number">{{ _("Langkah 2") }}</span>
+      <span class="step-title">{{ _("Catat pengalamanmu") }}</span>
+      <span class="step-desc">{{ _("Magang, kerja, asdos, atau riset. Kamu yang menentukan siapa yang boleh melihat tiap pengalaman.") }}</span>
     </li>
     <li>
-      <span class="step-number">Langkah 3</span>
-      <span class="step-title">Dapatkan tanda terverifikasi</span>
-      <span class="step-desc">Unggah surat penerimaan. Setelah admin memeriksa, pengalamanmu mendapat tanda terverifikasi.</span>
+      <span class="step-number">{{ _("Langkah 3") }}</span>
+      <span class="step-title">{{ _("Dapatkan tanda terverifikasi") }}</span>
+      <span class="step-desc">{{ _("Unggah surat penerimaan. Setelah admin memeriksa, pengalamanmu mendapat tanda terverifikasi.") }}</span>
     </li>
   </ol>
 </section>
@@ -94,8 +94,8 @@
 {% if top_companies %}
 <section class="section">
   <div class="section-head">
-    <h2>Tempat anak Fasilkom paling banyak berkarya</h2>
-    <a href="{{ url_for('companies.index') }}">Lihat semua perusahaan</a>
+    <h2>{{ _("Tempat anak Fasilkom paling banyak berkarya") }}</h2>
+    <a href="{{ url_for('companies.index') }}">{{ _("Lihat semua perusahaan") }}</a>
   </div>
   <ul class="logo-row">
     {% for c in top_companies %}
@@ -103,7 +103,7 @@
         <a href="{{ url_for('companies.detail', slug=c.slug) }}">
           {{ logo(c.name, c.logo, 'lg') }}
           <span class="logo-row-name">{{ c.name }}</span>
-          <span class="muted">{{ c.n_orang }} orang</span>
+          <span class="muted">{{ jumlah(c.n_orang, "orang") }}</span>
         </a>
       </li>
     {% endfor %}
@@ -114,10 +114,10 @@
 <section class="section">
   <div class="callout">
     <div>
-      <h2>Pernah magang atau kerja? Catat jejakmu.</h2>
-      <p>Adik tingkatmu terbantu saat tahu jalur yang kamu tempuh. Daftar memakai email UI, lalu tambahkan pengalaman pertamamu.</p>
+      <h2>{{ _("Pernah magang atau kerja? Catat jejakmu.") }}</h2>
+      <p>{{ _("Adik tingkatmu terbantu saat tahu jalur yang kamu tempuh. Daftar memakai email UI, lalu tambahkan pengalaman pertamamu.") }}</p>
     </div>
-    <a class="btn btn-primary" href="{{ url_for('auth.register') }}">Daftar dengan email UI</a>
+    <a class="btn btn-primary" href="{{ url_for('auth.register') }}">{{ _("Daftar dengan email UI") }}</a>
   </div>
 </section>
 {% endblock %}

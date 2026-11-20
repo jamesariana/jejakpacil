@@ -4,6 +4,7 @@ from flask import Blueprint, render_template
 
 from ..constants import EXP_TYPES, HOW_OBTAINED
 from ..db import query
+from ..i18n import _
 
 bp = Blueprint("stats", __name__)
 
@@ -44,7 +45,7 @@ def index():
             WHERE visibility != 'privat' GROUP BY type ORDER BY n DESC"""
     )
     by_angkatan = query(
-        """SELECT 'Angkatan ' || u.angkatan AS label, COUNT(DISTINCT u.id) AS n
+        """SELECT u.angkatan AS label, COUNT(DISTINCT u.id) AS n
              FROM experiences e JOIN users u ON u.id = e.user_id
             WHERE e.visibility != 'privat' GROUP BY u.angkatan ORDER BY u.angkatan DESC"""
     )
@@ -60,6 +61,8 @@ def index():
             WHERE e.visibility != 'privat'
             GROUP BY s.id ORDER BY n DESC, s.name COLLATE NOCASE LIMIT 10"""
     )
+    # Label angkatan dibuat di Python supaya ikut bahasa yang dipilih ("Angkatan 2023" / "Class of 2023").
+    by_angkatan = [{"label": _("Angkatan {n}", n=row["label"]), "n": row["n"]} for row in by_angkatan]
     charts = [
         {
             "title": "Perusahaan dengan anak Fasilkom terbanyak",

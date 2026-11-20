@@ -1,34 +1,34 @@
 {% extends "base.html" %}
-{% block title %}Pengguna{% endblock %}
+{% block title %}{{ _("Pengguna") }}{% endblock %}
 {% block content %}
-<div class="page-head"><h1>Pengguna</h1></div>
+<div class="page-head"><h1>{{ _("Pengguna") }}</h1></div>
 {% include "admin/_nav.html" %}
 
 <div class="table-wrap">
   <table class="table">
     <thead>
-      <tr><th>Nama</th><th>Email</th><th>Prodi</th><th>Email terverifikasi</th><th>Peran</th><th>Tindakan</th></tr>
+      <tr><th>{{ _("Nama") }}</th><th>{{ _("Email") }}</th><th>{{ _("Prodi") }}</th><th>{{ _("Email terverifikasi") }}</th><th>{{ _("Peran") }}</th><th>{{ _("Tindakan") }}</th></tr>
     </thead>
     <tbody>
       {% for u in users %}
         <tr>
           <td>{% if u.is_verified %}<a href="{{ url_for('profiles.detail', user_id=u.id) }}">{{ u.full_name }}</a>{% else %}{{ u.full_name }}{% endif %}</td>
           <td>{{ u.email }}</td>
-          <td>{{ u.prodi }} {{ u.angkatan }}</td>
-          <td>{{ 'Ya' if u.is_verified else 'Belum' }}</td>
-          <td>{{ 'Admin' if u.role == 'admin' else 'Anggota' }}</td>
+          <td>{{ u.prodi|t }} {{ u.angkatan }}</td>
+          <td>{{ _('Ya') if u.is_verified else _('Belum') }}</td>
+          <td>{{ _('Admin') if u.role == 'admin' else _('Anggota') }}</td>
           <td>
             <div class="row-actions">
               {% if not u.is_verified %}
                 <form method="post" action="{{ url_for('admin.update_user', user_id=u.id, action='verifikasi') }}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button class="btn btn-quiet btn-small" type="submit">Verifikasi email</button>
+                  <button class="btn btn-quiet btn-small" type="submit">{{ _("Verifikasi email") }}</button>
                 </form>
               {% endif %}
               {% if u.id != g.user.id %}
                 <form method="post" action="{{ url_for('admin.update_user', user_id=u.id, action='peran') }}" data-confirm="Ubah peran {{ u.full_name }}?">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button class="link-button" type="submit">{{ 'Cabut admin' if u.role == 'admin' else 'Jadikan admin' }}</button>
+                  <button class="link-button" type="submit">{{ _('Cabut admin') if u.role == 'admin' else _('Jadikan admin') }}</button>
                 </form>
               {% endif %}
             </div>

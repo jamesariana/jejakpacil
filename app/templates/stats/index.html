@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon %}
-{% block title %}Statistik{% endblock %}
+{% block title %}{{ _("Statistik") }}{% endblock %}
 {% block content %}
 <div class="page-head">
-  <h1>Statistik</h1>
-  <p class="lede">Gambaran ke mana saja anak Fasilkom berkarya. Angka dihitung dari pengalaman yang tidak disetel privat, tanpa menampilkan nama siapa pun.</p>
+  <h1>{{ _("Statistik") }}</h1>
+  <p class="lede">{{ _("Gambaran ke mana saja anak Fasilkom berkarya. Angka dihitung dari pengalaman yang tidak disetel privat, tanpa menampilkan nama siapa pun.") }}</p>
 </div>
 
 <dl class="stat-tiles">
-  <div class="stat-tile"><span class="icon-tile">{{ icon('briefcase', 20) }}</span><dt>pengalaman tercatat</dt><dd>{{ totals.experiences }}</dd></div>
-  <div class="stat-tile"><span class="icon-tile">{{ icon('users', 20) }}</span><dt>mahasiswa dan alumni</dt><dd>{{ totals.people }}</dd></div>
-  <div class="stat-tile"><span class="icon-tile">{{ icon('building', 20) }}</span><dt>perusahaan</dt><dd>{{ totals.companies }}</dd></div>
-  <div class="stat-tile"><span class="icon-tile">{{ icon('check', 20) }}</span><dt>sudah terverifikasi</dt><dd>{{ totals.verified }}</dd></div>
+  <div class="stat-tile"><span class="icon-tile">{{ icon('briefcase', 20) }}</span><dt>{{ _("pengalaman tercatat") }}</dt><dd>{{ totals.experiences }}</dd></div>
+  <div class="stat-tile"><span class="icon-tile">{{ icon('users', 20) }}</span><dt>{{ _("mahasiswa dan alumni") }}</dt><dd>{{ totals.people }}</dd></div>
+  <div class="stat-tile"><span class="icon-tile">{{ icon('building', 20) }}</span><dt>{{ _("perusahaan") }}</dt><dd>{{ totals.companies }}</dd></div>
+  <div class="stat-tile"><span class="icon-tile">{{ icon('check', 20) }}</span><dt>{{ _("sudah terverifikasi") }}</dt><dd>{{ totals.verified }}</dd></div>
 </dl>
 
 {% if totals.experiences %}
@@ -19,22 +19,22 @@
     {% for chart in charts %}
       {% if chart.bars %}
         <section class="chart">
-          <h2 class="chart-title"><span class="icon-tile">{{ icon(chart.icon, 18) }}</span>{{ chart.title }}</h2>
+          <h2 class="chart-title"><span class="icon-tile">{{ icon(chart.icon, 18) }}</span>{{ chart.title|t }}</h2>
           <ol class="bars">
             {% for bar in chart.bars %}
-              <li class="bar" title="{{ bar.label }}: {{ bar.value }} {{ chart.unit }}">
-                <span class="bar-label">{{ bar.label }}</span>
+              <li class="bar" title="{{ bar.label|t }}: {{ bar.value }} {{ chart.unit|t }}">
+                <span class="bar-label">{{ bar.label|t }}</span>
                 <span class="bar-track"><span class="bar-fill" style="width: {{ bar.percent }}%"></span></span>
-                <span class="bar-value">{{ bar.value }} <span class="visually-hidden">{{ chart.unit }}</span></span>
+                <span class="bar-value">{{ bar.value }} <span class="visually-hidden">{{ chart.unit|t }}</span></span>
               </li>
             {% endfor %}
           </ol>
-          <p class="chart-unit muted">Satuan: {{ chart.unit }}</p>
+          <p class="chart-unit muted">{{ _("Satuan:") }} {{ chart.unit|t }}</p>
         </section>
       {% endif %}
     {% endfor %}
   </div>
 {% else %}
-  <p class="empty">Belum ada data untuk dihitung. Statistik muncul setelah ada pengalaman yang ditambahkan.</p>
+  <p class="empty">{{ _("Belum ada data untuk dihitung. Statistik muncul setelah ada pengalaman yang ditambahkan.") }}</p>
 {% endif %}
 {% endblock %}

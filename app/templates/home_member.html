@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {# Beranda untuk pengguna yang sudah masuk. #}
 {% from "_macros.html" import logo, icon, checklist_list, progress %}
-{% block title %}Beranda{% endblock %}
+{% block title %}{{ _("Beranda") }}{% endblock %}
 {% block content %}
 <div class="page-head">
-  <h1>Halo, {{ g.user.full_name.split(' ')[0] }}</h1>
-  <p class="lede">{{ g.user.prodi }} angkatan {{ g.user.angkatan }}, {{ 'alumni' if g.user.status == 'alumni' else 'mahasiswa aktif' }}.</p>
+  <h1>{{ _("Halo,") }} {{ g.user.full_name.split(' ')[0] }}</h1>
+  <p class="lede">{{ g.user.prodi|t }} {{ _("angkatan") }} {{ g.user.angkatan }}, {{ _('alumni') if g.user.status == 'alumni' else _('mahasiswa aktif') }}.</p>
 </div>
 
 <div class="split">
@@ -13,39 +13,39 @@
     {% if checklist.done < checklist.total %}
       <section class="panel" aria-labelledby="lengkapi">
         <div class="panel-head">
-          <h2 id="lengkapi">Lengkapi profilmu</h2>
-          <span class="panel-count">{{ checklist.done }} dari {{ checklist.total }} selesai</span>
+          <h2 id="lengkapi">{{ _("Lengkapi profilmu") }}</h2>
+          <span class="panel-count">{{ checklist.done }} {{ _("dari") }} {{ checklist.total }} {{ _("selesai") }}</span>
         </div>
-        <p class="muted">Profil yang lengkap lebih mudah ditemukan kakak tingkat yang mau membantu.</p>
-        {{ progress(checklist.percent, 'Kelengkapan profil') }}
+        <p class="muted">{{ _("Profil yang lengkap lebih mudah ditemukan kakak tingkat yang mau membantu.") }}</p>
+        {{ progress(checklist.percent, _('Kelengkapan profil')) }}
         {{ checklist_list(checklist) }}
       </section>
     {% endif %}
 
     <section aria-labelledby="diskusi">
       <div class="section-head">
-        <h2 id="diskusi">Diskusi terbaru di forum</h2>
-        <a href="{{ url_for('forum.index') }}">Buka forum</a>
+        <h2 id="diskusi">{{ _("Diskusi terbaru di forum") }}</h2>
+        <a href="{{ url_for('forum.index') }}">{{ _("Buka forum") }}</a>
       </div>
       {% if threads %}
         <ul class="plain-list">
           {% for t in threads %}
             <li>
               <a class="plain-list-title" href="{{ url_for('forum.thread', thread_id=t.id) }}">{{ t.title }}</a>
-              <span class="meta-row"><span class="tag">{{ t.category_name }}</span><span class="muted">{{ t.n_replies }} balasan</span><span class="muted">{{ t.created_at|lalu }}</span></span>
+              <span class="meta-row"><span class="tag">{{ t.category_name|t }}</span><span class="muted">{{ jumlah(t.n_replies, "balasan") }}</span><span class="muted">{{ t.created_at|lalu }}</span></span>
             </li>
           {% endfor %}
         </ul>
       {% else %}
-        <p class="empty">Forum masih sepi. <a href="{{ url_for('forum.create') }}">Mulai diskusi pertama</a>.</p>
+        <p class="empty">{{ _("Forum masih sepi.") }} <a href="{{ url_for('forum.create') }}">{{ _("Mulai diskusi pertama") }}</a>.</p>
       {% endif %}
     </section>
 
     {% if latest %}
       <section aria-labelledby="jejak">
         <div class="section-head">
-          <h2 id="jejak">Jejak terbaru</h2>
-          <a href="{{ url_for('experiences.index') }}">Jelajahi semua pengalaman</a>
+          <h2 id="jejak">{{ _("Jejak terbaru") }}</h2>
+          <a href="{{ url_for('experiences.index') }}">{{ _("Jelajahi semua pengalaman") }}</a>
         </div>
         <ol class="trail trail-compact">
           {% for e in latest %}
@@ -54,7 +54,7 @@
               <div class="trail-body">
                 <h3 class="trail-title">{{ e.position }}</h3>
                 <p class="trail-where"><a href="{{ url_for('companies.detail', slug=e.company_slug) }}">{{ e.company_name }}</a></p>
-                <p class="trail-meta"><span><a href="{{ url_for('profiles.detail', user_id=e.user_id) }}">{{ e.full_name }}</a>, {{ e.prodi }} {{ e.angkatan }}</span><span>{{ periode(e.start_date, e.end_date) }}</span></p>
+                <p class="trail-meta"><span><a href="{{ url_for('profiles.detail', user_id=e.user_id) }}">{{ e.full_name }}</a>, {{ e.prodi|t }} {{ e.angkatan }}</span><span>{{ periode(e.start_date, e.end_date) }}</span></p>
               </div>
             </li>
           {% endfor %}
@@ -65,21 +65,21 @@
 
   <aside class="split-side">
     <section aria-labelledby="aksi">
-      <h2 id="aksi" class="side-title">Mau melakukan apa?</h2>
+      <h2 id="aksi" class="side-title">{{ _("Mau melakukan apa?") }}</h2>
       <ul class="action-list">
-        <li><a href="{{ url_for('experiences.create') }}"><span class="icon-tile">{{ icon('plus') }}</span><span><strong>Tambah pengalaman</strong><span class="muted">Catat magang, kerja, asdos, atau riset.</span></span></a></li>
-        <li><a href="{{ url_for('forum.create') }}"><span class="icon-tile">{{ icon('chat') }}</span><span><strong>Tanya di forum</strong><span class="muted">Mulai thread baru, bisa anonim.</span></span></a></li>
-        <li><a href="{{ url_for('experiences.index') }}"><span class="icon-tile">{{ icon('search') }}</span><span><strong>Cari kakak tingkat</strong><span class="muted">Berdasarkan posisi, perusahaan, atau skill.</span></span></a></li>
-        <li><a href="{{ url_for('companies.index') }}"><span class="icon-tile">{{ icon('building') }}</span><span><strong>Lihat perusahaan</strong><span class="muted">Siapa saja yang pernah di sana.</span></span></a></li>
+        <li><a href="{{ url_for('experiences.create') }}"><span class="icon-tile">{{ icon('plus') }}</span><span><strong>{{ _("Tambah pengalaman") }}</strong><span class="muted">{{ _("Catat magang, kerja, asdos, atau riset.") }}</span></span></a></li>
+        <li><a href="{{ url_for('forum.create') }}"><span class="icon-tile">{{ icon('chat') }}</span><span><strong>{{ _("Tanya di forum") }}</strong><span class="muted">{{ _("Mulai thread baru, bisa anonim.") }}</span></span></a></li>
+        <li><a href="{{ url_for('experiences.index') }}"><span class="icon-tile">{{ icon('search') }}</span><span><strong>{{ _("Cari kakak tingkat") }}</strong><span class="muted">{{ _("Berdasarkan posisi, perusahaan, atau skill.") }}</span></span></a></li>
+        <li><a href="{{ url_for('companies.index') }}"><span class="icon-tile">{{ icon('building') }}</span><span><strong>{{ _("Lihat perusahaan") }}</strong><span class="muted">{{ _("Siapa saja yang pernah di sana.") }}</span></span></a></li>
       </ul>
     </section>
 
     {% if top_companies %}
       <section aria-labelledby="populer">
-        <h2 id="populer" class="side-title">Perusahaan terpopuler</h2>
+        <h2 id="populer" class="side-title">{{ _("Perusahaan terpopuler") }}</h2>
         <ul class="company-list">
           {% for c in top_companies %}
-            <li><a href="{{ url_for('companies.detail', slug=c.slug) }}">{{ logo(c.name, c.logo, 'sm') }}<span class="company-list-name">{{ c.name }}</span><span class="muted">{{ c.n_orang }} orang</span></a></li>
+            <li><a href="{{ url_for('companies.detail', slug=c.slug) }}">{{ logo(c.name, c.logo, 'sm') }}<span class="company-list-name">{{ c.name }}</span><span class="muted">{{ jumlah(c.n_orang, "orang") }}</span></a></li>
           {% endfor %}
         </ul>
       </section>

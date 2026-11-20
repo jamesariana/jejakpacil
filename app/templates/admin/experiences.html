@@ -1,27 +1,27 @@
 {% extends "base.html" %}
-{% block title %}Verifikasi pengalaman{% endblock %}
+{% block title %}{{ _("Verifikasi pengalaman") }}{% endblock %}
 {% block content %}
-<div class="page-head"><h1>Verifikasi pengalaman</h1></div>
+<div class="page-head"><h1>{{ _("Verifikasi pengalaman") }}</h1></div>
 {% include "admin/_nav.html" %}
 
 {% if pending %}
   <div class="table-wrap">
     <table class="table">
       <thead>
-        <tr><th>Orang</th><th>Pengalaman</th><th>Periode</th><th>Bukti</th><th>Keputusan</th></tr>
+        <tr><th>{{ _("Orang") }}</th><th>{{ _("Pengalaman") }}</th><th>{{ _("Periode") }}</th><th>{{ _("Bukti") }}</th><th>{{ _("Keputusan") }}</th></tr>
       </thead>
       <tbody>
         {% for e in pending %}
           <tr>
-            <td><a href="{{ url_for('profiles.detail', user_id=e.user_id) }}">{{ e.full_name }}</a><br><span class="muted">{{ e.prodi }} {{ e.angkatan }}</span></td>
-            <td>{{ e.position }}<br><span class="muted">{{ e.company_name }}, {{ C.EXP_TYPES.get(e.type, e.type) }}</span></td>
+            <td><a href="{{ url_for('profiles.detail', user_id=e.user_id) }}">{{ e.full_name }}</a><br><span class="muted">{{ e.prodi|t }} {{ e.angkatan }}</span></td>
+            <td>{{ e.position }}<br><span class="muted">{{ e.company_name }}, {{ (C.EXP_TYPES.get(e.type, e.type))|t }}</span></td>
             <td>{{ periode(e.start_date, e.end_date) }}</td>
-            <td>{% if e.proof %}<a href="{{ media_url('proofs', e.proof) }}" target="_blank">Buka bukti</a>{% else %}<span class="muted">Tidak ada</span>{% endif %}</td>
+            <td>{% if e.proof %}<a href="{{ media_url('proofs', e.proof) }}" target="_blank">{{ _("Buka bukti") }}</a>{% else %}<span class="muted">{{ _("Tidak ada") }}</span>{% endif %}</td>
             <td>
               <form method="post" action="{{ url_for('admin.decide_experience', experience_id=e.id) }}" class="row-actions">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button class="btn btn-primary btn-small" name="decision" value="terverifikasi" type="submit">Verifikasi</button>
-                <button class="btn btn-quiet btn-small" name="decision" value="ditolak" type="submit">Tolak bukti</button>
+                <button class="btn btn-primary btn-small" name="decision" value="terverifikasi" type="submit">{{ _("Verifikasi") }}</button>
+                <button class="btn btn-quiet btn-small" name="decision" value="ditolak" type="submit">{{ _("Tolak bukti") }}</button>
               </form>
             </td>
           </tr>
@@ -30,6 +30,6 @@
     </table>
   </div>
 {% else %}
-  <p class="empty">Tidak ada pengalaman yang menunggu verifikasi.</p>
+  <p class="empty">{{ _("Tidak ada pengalaman yang menunggu verifikasi.") }}</p>
 {% endif %}
 {% endblock %}

@@ -1711,3 +1711,166 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { background-c
 .step-number { color: #3f6a9e; }
 :root[data-theme="dark"] .step-number { color: #b9d7ea; }
 .bars .bar:first-child .bar-fill { background: #769fcd; }
+
+/* =====================================================================
+   Filter halaman perusahaan: satu panel berisi pencarian, jenis, urutan,
+   dan industri (dengan jumlah perusahaan di tiap pilihan).
+   ===================================================================== */
+.dir-filter {
+  display: grid; gap: 18px; margin-bottom: 18px; padding: 20px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
+  box-shadow: 0 6px 20px rgba(30, 51, 80, 0.06);
+}
+.dir-search { position: relative; display: flex; align-items: center; }
+.dir-search-icon { position: absolute; left: 18px; display: inline-flex; color: var(--ink-3); pointer-events: none; }
+.dir-filter .dir-search input[type="search"] {
+  width: 100%; min-height: 54px; padding: 0 110px 0 50px; font-size: 1.02rem;
+  border-radius: 999px; background: var(--soft-bg); border: 1px solid var(--line);
+}
+.dir-filter .dir-search input[type="search"]:focus { background: var(--surface); }
+.dir-search-btn { position: absolute; right: 6px; min-height: 42px; padding-inline: 22px; border-radius: 999px; }
+
+.dir-controls { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 14px 24px; }
+.dir-group { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.dir-group legend, .dir-group > label, .dir-label {
+  padding: 0; font-size: 0.85rem; font-weight: 600; color: var(--ink-3);
+}
+.dir-group .segmented { border-radius: 999px; }
+.dir-group .seg-body { min-height: 38px; border-radius: 999px; padding: 0 20px; }
+
+.dir-select {
+  position: relative; display: flex; align-items: center; gap: 8px;
+  padding: 0 6px 0 14px; min-height: 46px; border-radius: 999px;
+  background: var(--muted-bg); color: var(--ink-2);
+}
+.dir-select select {
+  min-height: 40px; width: auto; border: 0; border-radius: 999px; padding: 0 36px 0 6px;
+  background-color: transparent; font-weight: 600; color: var(--ink); cursor: pointer; box-shadow: none;
+}
+.dir-select select:focus { box-shadow: none; outline: none; }
+.dir-select:focus-within { outline: 3px solid var(--blue); outline-offset: 2px; }
+.dir-select:hover { background: var(--hover-bg-strong); }
+
+.dir-industries { display: grid; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line); }
+.dir-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.dir-chip {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 6px 0 14px;
+  border-radius: 999px; background: var(--soft-bg); color: var(--ink-2);
+  font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: background 0.15s ease, color 0.15s ease;
+}
+.dir-chip:hover { background: var(--hover-bg-strong); color: var(--ink); }
+.dir-chip-n {
+  min-width: 24px; height: 24px; padding: 0 7px; display: inline-grid; place-items: center;
+  border-radius: 999px; background: var(--surface); font-size: 0.78rem; color: var(--ink-3);
+}
+.dir-chip[aria-current] { background: #769fcd; color: #10233d; }
+.dir-chip[aria-current] .dir-chip-n { background: rgba(255, 255, 255, 0.55); color: #10233d; }
+
+.dir-summary { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
+.dir-summary p { margin: 0; color: var(--ink-2); }
+.dir-summary strong { color: var(--ink); }
+.dir-reset { font-weight: 600; }
+.company-row-recent { font-size: 0.8rem; color: var(--ink-3); }
+
+:root[data-theme="dark"] .dir-filter {
+  background: linear-gradient(180deg, #2a4260 0%, #263c57 100%); border-color: #34506f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 28px rgba(8, 18, 32, 0.28);
+}
+:root[data-theme="dark"] .dir-filter .dir-search input[type="search"] { background-color: #1b2c41; }
+:root[data-theme="dark"] .dir-chip { background: #1f3249; }
+:root[data-theme="dark"] .dir-chip:hover { background: #33537a; }
+:root[data-theme="dark"] .dir-chip-n { background: #2c4664; color: #c9dbea; }
+:root[data-theme="dark"] .dir-chip[aria-current] { background: #b9d7ea; color: #0e1a28; }
+:root[data-theme="dark"] .dir-chip[aria-current] .dir-chip-n { background: rgba(14, 26, 40, 0.15); color: #0e1a28; }
+:root[data-theme="dark"] .dir-select { background: #1f3249; }
+:root[data-theme="dark"] .dir-select select { background-color: transparent; }
+
+@media (max-width: 640px) {
+  .dir-filter { padding: 14px; }
+  .dir-controls { flex-direction: column; align-items: stretch; }
+  .dir-group .segmented { width: 100%; }
+  .dir-group .seg { flex: 1; }
+  .dir-group .seg-body { width: 100%; justify-content: center; padding: 0 10px; }
+  .dir-select select { flex: 1; }
+  .dir-filter .dir-search input[type="search"] { padding-right: 90px; }
+  .dir-search-btn { padding-inline: 16px; }
+}
+:root[data-theme="dark"] .dir-group .segmented { background: #1f3249; }
+:root[data-theme="dark"] .dir-group .seg input:checked + .seg-body { background: #b9d7ea; color: #0e1a28; box-shadow: none; }
+
+/* =====================================================================
+   Filter halaman Jelajahi (memakai kelas dir-* yang sama dengan halaman perusahaan)
+   ===================================================================== */
+.dir-industries-top { padding-top: 0; border-top: 0; }
+.dir-fields {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 16px; align-items: end;
+  padding-top: 16px; border-top: 1px solid var(--line);
+}
+.dir-fields .dir-select { width: 100%; }
+.dir-fields .dir-select select { flex: 1; min-width: 0; }
+.dir-filter .dir-text input:not([type="checkbox"]) {
+  flex: 1; min-width: 0; min-height: 40px; padding: 0 12px 0 6px; border: 0; border-radius: 999px;
+  background: transparent; box-shadow: none; font-weight: 600; color: var(--ink);
+}
+.dir-filter .dir-text input:focus { outline: none; box-shadow: none; }
+.dir-filter .dir-text input::placeholder { font-weight: 400; }
+
+.dir-toggle {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 16px 0 10px;
+  border-radius: 999px; background: var(--muted-bg); font-weight: 600; color: var(--ink-2); cursor: pointer;
+}
+.dir-toggle:hover { background: var(--hover-bg-strong); color: var(--ink); }
+.dir-toggle input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.dir-toggle input:checked + .switch-track { background: var(--blue); }
+.dir-toggle input:checked + .switch-track::after { transform: translateX(20px); }
+.dir-toggle input:focus-visible + .switch-track { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+.dir-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.dir-quick-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.dir-quick-item {
+  padding: 4px 12px; border-radius: 999px; border: 1px dashed var(--line-strong);
+  font-size: 0.85rem; font-weight: 600; color: var(--ink-2); text-decoration: none;
+}
+.dir-quick-item:hover { background: var(--hover-bg-strong); border-style: solid; color: var(--ink); }
+.dir-quick-item[aria-current] { background: #769fcd; border-color: #769fcd; color: #10233d; }
+
+.dir-active { display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 16px; padding: 0; list-style: none; }
+.dir-active a {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 14px; border-radius: 999px;
+  background: var(--blue-wash); color: var(--ink); font-size: 0.88rem; font-weight: 600; text-decoration: none;
+}
+.dir-active a:hover { background: var(--hover-bg-strong); }
+.dir-active .icon { opacity: 0.7; }
+
+:root[data-theme="dark"] .dir-toggle { background: #1f3249; }
+:root[data-theme="dark"] .dir-toggle:hover { background: #33537a; }
+:root[data-theme="dark"] .dir-toggle input:checked + .switch-track { background: #769fcd; }
+:root[data-theme="dark"] .dir-quick-item { border-color: #4f7096; color: #c9dbea; }
+:root[data-theme="dark"] .dir-quick-item:hover { background: #33537a; }
+:root[data-theme="dark"] .dir-quick-item[aria-current] { background: #b9d7ea; border-color: #b9d7ea; color: #0e1a28; }
+:root[data-theme="dark"] .dir-active a { background: #2e4d70; color: #f7fbfc; }
+@media (max-width: 640px) {
+  .tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .tabs a { white-space: nowrap; }
+  .tabs .tag { display: none; }
+}
+
+/* =====================================================================
+   Tombol bahasa di navbar (ID / EN)
+   ===================================================================== */
+.lang-switch {
+  display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px;
+  background: var(--muted-bg);
+}
+.lang-switch a {
+  min-width: 34px; height: 30px; padding: 0 8px; display: inline-grid; place-items: center;
+  border-radius: 999px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--ink-2); text-decoration: none; transition: background 0.15s ease, color 0.15s ease;
+}
+.lang-switch a:hover { background: var(--hover-bg-strong); color: var(--ink); }
+.lang-switch a[aria-current] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgba(30, 51, 80, 0.15); }
+:root[data-theme="dark"] .lang-switch { background: #1f3249; }
+:root[data-theme="dark"] .lang-switch a[aria-current] { background: #b9d7ea; color: #0e1a28; }
+@media (max-width: 440px) {
+  .lang-switch a { min-width: 28px; height: 26px; padding: 0 5px; font-size: 0.72rem; }
+}

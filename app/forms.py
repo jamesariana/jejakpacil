@@ -7,6 +7,7 @@ Setiap fungsi menerima isi form dan mengembalikan (data_bersih, errors).
 import re
 from datetime import datetime
 
+from .i18n import _
 from .constants import EXP_TYPES, HOW_OBTAINED, PRODI, STATUS, VISIBILITY, WORK_MODES
 from .queries import parse_skills
 from .utils import current_month, valid_month, valid_url
@@ -43,7 +44,7 @@ def validate_identity(form):
     if data["prodi"] not in PRODI:
         errors["prodi"] = "Pilih program studi."
     if data["angkatan"] is None or not FIRST_ANGKATAN <= data["angkatan"] <= this_year:
-        errors["angkatan"] = f"Isi tahun angkatan antara {FIRST_ANGKATAN} dan {this_year}."
+        errors["angkatan"] = _("Isi tahun angkatan antara {a} dan {b}.", a=FIRST_ANGKATAN, b=this_year)
     if data["status"] not in STATUS:
         errors["status"] = "Pilih status."
     elif data["status"] == "alumni":
@@ -62,7 +63,7 @@ def validate_links(form):
         value = form.get(field, "").strip()[:200]
         data[field] = value
         if value and not valid_url(value):
-            errors[field] = f"Tautan {label} harus diawali http:// atau https://."
+            errors[field] = _("Tautan {label} harus diawali http:// atau https://.", label=label)
     return data, errors
 
 

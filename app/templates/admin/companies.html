@@ -1,58 +1,58 @@
 {% extends "base.html" %}
 {% from "_macros.html" import logo %}
-{% block title %}Kelola perusahaan{% endblock %}
+{% block title %}{{ _("Kelola perusahaan") }}{% endblock %}
 {% block content %}
-<div class="page-head"><h1>Kelola perusahaan</h1></div>
+<div class="page-head"><h1>{{ _("Kelola perusahaan") }}</h1></div>
 {% include "admin/_nav.html" %}
 
 <section class="section section-tight">
-  <h2>Gabungkan perusahaan ganda</h2>
-  <p class="muted">Semua pengalaman dan thread dari perusahaan pertama dipindahkan ke perusahaan kedua, lalu perusahaan pertama dihapus.</p>
+  <h2>{{ _("Gabungkan perusahaan ganda") }}</h2>
+  <p class="muted">{{ _("Semua pengalaman dan thread dari perusahaan pertama dipindahkan ke perusahaan kedua, lalu perusahaan pertama dihapus.") }}</p>
   <form method="post" action="{{ url_for('admin.merge_companies') }}" class="filters" data-confirm="Gabungkan kedua perusahaan ini? Tindakan ini tidak bisa dibatalkan.">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="field">
-      <label for="source_id">Pindahkan dari</label>
+      <label for="source_id">{{ _("Pindahkan dari") }}</label>
       <select id="source_id" name="source_id" required>
-        <option value="">Pilih perusahaan ganda</option>
-        {% for c in companies %}<option value="{{ c.id }}">{{ c.name }}{% if not c.is_approved %} (menunggu){% endif %}</option>{% endfor %}
+        <option value="">{{ _("Pilih perusahaan ganda") }}</option>
+        {% for c in companies %}<option value="{{ c.id }}">{{ c.name }}{% if not c.is_approved %} {{ _("(menunggu)") }}{% endif %}</option>{% endfor %}
       </select>
     </div>
     <div class="field">
-      <label for="target_id">Gabungkan ke</label>
+      <label for="target_id">{{ _("Gabungkan ke") }}</label>
       <select id="target_id" name="target_id" required>
-        <option value="">Pilih perusahaan tujuan</option>
+        <option value="">{{ _("Pilih perusahaan tujuan") }}</option>
         {% for c in companies %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
       </select>
     </div>
-    <div class="filters-actions"><button class="btn btn-quiet" type="submit">Gabungkan</button></div>
+    <div class="filters-actions"><button class="btn btn-quiet" type="submit">{{ _("Gabungkan") }}</button></div>
   </form>
 </section>
 
 <div class="table-wrap">
   <table class="table">
     <thead>
-      <tr><th>Perusahaan</th><th>Industri</th><th>Domain</th><th>Pengalaman</th><th>Status</th><th>Tindakan</th></tr>
+      <tr><th>{{ _("Perusahaan") }}</th><th>{{ _("Industri") }}</th><th>{{ _("Domain") }}</th><th>{{ _("Pengalaman") }}</th><th>{{ _("Status") }}</th><th>{{ _("Tindakan") }}</th></tr>
     </thead>
     <tbody>
       {% for c in companies %}
         <tr>
           <td>
             <span class="cell-with-logo">{{ logo(c.name, c.logo, 'sm') }} {{ c.name }}</span>
-            {% if c.creator and not c.is_approved %}<br><span class="muted">Ditambahkan oleh {{ c.creator }}</span>{% endif %}
+            {% if c.creator and not c.is_approved %}<br><span class="muted">{{ _("Ditambahkan oleh") }} {{ c.creator }}</span>{% endif %}
           </td>
-          <td>{{ c.industry }}</td>
+          <td>{{ c.industry|t }}</td>
           <td>{{ c.domain or '-' }}</td>
           <td>{{ c.n_exp }}</td>
-          <td>{% if c.is_approved %}Disetujui{% else %}<span class="tag tag-warn">Menunggu</span>{% endif %}</td>
+          <td>{% if c.is_approved %}{{ _("Disetujui") }}{% else %}<span class="tag tag-warn">{{ _("Menunggu") }}</span>{% endif %}</td>
           <td>
             <div class="row-actions">
               {% if not c.is_approved %}
                 <form method="post" action="{{ url_for('admin.approve_company', company_id=c.id) }}">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button class="btn btn-primary btn-small" type="submit">Setujui</button>
+                  <button class="btn btn-primary btn-small" type="submit">{{ _("Setujui") }}</button>
                 </form>
               {% endif %}
-              <a href="{{ url_for('admin.edit_company', company_id=c.id) }}">Ubah</a>
+              <a href="{{ url_for('admin.edit_company', company_id=c.id) }}">{{ _("Ubah") }}</a>
             </div>
           </td>
         </tr>

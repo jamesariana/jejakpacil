@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon %}
-{% block title %}Panel admin{% endblock %}
+{% block title %}{{ _("Panel admin") }}{% endblock %}
 {% block content %}
 <div class="page-head">
-  <h1>Panel admin</h1>
-  <p class="lede">Periksa bukti pengalaman, rapikan daftar perusahaan, dan jaga forum tetap nyaman.</p>
+  <h1>{{ _("Panel admin") }}</h1>
+  <p class="lede">{{ _("Periksa bukti pengalaman, rapikan daftar perusahaan, dan jaga forum tetap nyaman.") }}</p>
 </div>
 {% include "admin/_nav.html" %}
 
@@ -13,41 +13,41 @@
     <a class="admin-card{% if counts.experiences %} has-work{% endif %}" href="{{ url_for('admin.experiences') }}">
       <span class="icon-tile">{{ icon('check', 20) }}</span>
       <span class="admin-card-count">{{ counts.experiences }}</span>
-      <span class="admin-card-title">Pengalaman menunggu verifikasi</span>
-      <span class="muted">Periksa bukti yang diunggah, lalu beri atau tolak tanda terverifikasi.</span>
+      <span class="admin-card-title">{{ _("Pengalaman menunggu verifikasi") }}</span>
+      <span class="muted">{{ _("Periksa bukti yang diunggah, lalu beri atau tolak tanda terverifikasi.") }}</span>
     </a>
   </li>
   <li>
     <a class="admin-card{% if counts.companies %} has-work{% endif %}" href="{{ url_for('admin.companies') }}">
       <span class="icon-tile">{{ icon('building', 20) }}</span>
       <span class="admin-card-count">{{ counts.companies }}</span>
-      <span class="admin-card-title">Perusahaan menunggu persetujuan</span>
-      <span class="muted">Setujui perusahaan baru, atau gabungkan dengan yang sudah ada jika namanya ganda.</span>
+      <span class="admin-card-title">{{ _("Perusahaan menunggu persetujuan") }}</span>
+      <span class="muted">{{ _("Setujui perusahaan baru, atau gabungkan dengan yang sudah ada jika namanya ganda.") }}</span>
     </a>
   </li>
   <li>
     <a class="admin-card{% if counts.reports %} has-work{% endif %}" href="{{ url_for('admin.reports') }}">
       <span class="icon-tile">{{ icon('flag', 20) }}</span>
       <span class="admin-card-count">{{ counts.reports }}</span>
-      <span class="admin-card-title">Laporan forum belum ditangani</span>
-      <span class="muted">Sembunyikan konten yang melanggar, atau tutup laporannya.</span>
+      <span class="admin-card-title">{{ _("Laporan forum belum ditangani") }}</span>
+      <span class="muted">{{ _("Sembunyikan konten yang melanggar, atau tutup laporannya.") }}</span>
     </a>
   </li>
   <li>
     <a class="admin-card" href="{{ url_for('admin.users') }}">
       <span class="icon-tile">{{ icon('users', 20) }}</span>
       <span class="admin-card-count">{{ counts.users }}</span>
-      <span class="admin-card-title">Pengguna terdaftar</span>
-      <span class="muted">Verifikasi email secara manual atau ubah peran admin.</span>
+      <span class="admin-card-title">{{ _("Pengguna terdaftar") }}</span>
+      <span class="muted">{{ _("Verifikasi email secara manual atau ubah peran admin.") }}</span>
     </a>
   </li>
 </ul>
 
 <div class="export-box">
   <div>
-    <h2>Unduh semua pengalaman</h2>
-    <p class="muted">File CSV berisi data pribadi, termasuk pengalaman privat. Simpan dan bagikan dengan hati-hati.</p>
+    <h2>{{ _("Unduh semua pengalaman") }}</h2>
+    <p class="muted">{{ _("File CSV berisi data pribadi, termasuk pengalaman privat. Simpan dan bagikan dengan hati-hati.") }}</p>
   </div>
-  <a class="btn btn-quiet" href="{{ url_for('admin.export_csv') }}">Unduh CSV</a>
+  <a class="btn btn-quiet" href="{{ url_for('admin.export_csv') }}">{{ _("Unduh CSV") }}</a>
 </div>
 {% endblock %}
