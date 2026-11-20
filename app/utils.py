@@ -117,6 +117,44 @@ def format_date(value):
     return f"{local.day} {_month_name(local.month)} {local.year}"
 
 
+def format_clock(value):
+    """Jam kirim pesan dalam WIB: "10.42" (bahasa Inggris: "10:42")."""
+    from .i18n import pick
+
+    moment = _parse_timestamp(value)
+    if moment is None:
+        return ""
+    local = moment.astimezone(WIB)
+    return f"{local.hour:02d}{pick('.', ':')}{local.minute:02d}"
+
+
+def day_label(value):
+    """Pemisah hari di chat: "Hari ini", "Kemarin", atau tanggal lengkap."""
+    from .i18n import _
+
+    moment = _parse_timestamp(value)
+    if moment is None:
+        return ""
+    day = moment.astimezone(WIB).date()
+    today = datetime.now(WIB).date()
+    if day == today:
+        return _("Hari ini")
+    if day == today - timedelta(days=1):
+        return _("Kemarin")
+    return format_date(value)
+
+
+def short_when(value):
+    """Waktu singkat di daftar percakapan: jam untuk hari ini, "Kemarin", atau tanggal."""
+    moment = _parse_timestamp(value)
+    if moment is None:
+        return ""
+    if moment.astimezone(WIB).date() == datetime.now(WIB).date():
+        return format_clock(value)
+    label = day_label(value)
+    return label.rsplit(" ", 1)[0] if label[:1].isdigit() else label  # "12 Nov 2026" -> "12 Nov"
+
+
 def time_ago(value):
     """Waktu relatif: "5 menit lalu", "kemarin", atau tanggal untuk yang sudah lama."""
     from .i18n import _
@@ -182,12 +220,19 @@ def _upload_dir(kind):
     return path
 
 
-def save_image_bytes(data, kind, max_size=(512, 512)):
-    """Periksa bahwa `data` benar-benar gambar, perkecil, dan simpan sebagai PNG.
+MAX_FILE_BYTES = 5 * 1024 * 1024  # batas ukuran per file unggahan
+
+
+def save_image_bytes(data, kind, max_size=(512, 512), photo=False):
+    """Periksa bahwa `data` benar-benar gambar, perkecil, dan simpan ulang.
 
     Gambar selalu ditulis ulang oleh Pillow, jadi file berbahaya yang menyamar
     dengan ekstensi .png tidak akan tersimpan. Mengembalikan nama file baru.
+    `photo=True` menyimpan sebagai JPEG (lebih kecil untuk foto lampiran);
+    selain itu PNG supaya latar transparan logo tetap terjaga.
     """
+    if len(data) > MAX_FILE_BYTES:
+        raise ValueError("Ukuran file maksimal 5 MB.")
     try:
         image = Image.open(io.BytesIO(data), formats=["PNG", "JPEG", "WEBP", "GIF"])
         image.load()
@@ -196,6 +241,14 @@ def save_image_bytes(data, kind, max_size=(512, 512)):
     if image.mode not in ("RGB", "RGBA"):
         image = image.convert("RGBA")
     image.thumbnail(max_size)
+    if photo:
+        if image.mode == "RGBA":  # JPEG tidak punya transparansi: tempel di atas latar putih
+            background = Image.new("RGB", image.size, "white")
+            background.paste(image, mask=image.split()[3])
+            image = background
+        filename = f"{uuid.uuid4().hex}.jpg"
+        image.save(os.path.join(_upload_dir(kind), filename), format="JPEG", quality=85, optimize=True)
+        return filename
     filename = f"{uuid.uuid4().hex}.png"
     image.save(os.path.join(_upload_dir(kind), filename), format="PNG")
     return filename
@@ -210,6 +263,8 @@ def save_pdf(file, kind):
     data = file.read()
     if not data.startswith(b"%PDF"):
         raise ValueError("File harus berformat PDF.")
+    if len(data) > MAX_FILE_BYTES:
+        raise ValueError("Ukuran file maksimal 5 MB.")
     filename = f"{uuid.uuid4().hex}.pdf"
     with open(os.path.join(_upload_dir(kind), filename), "wb") as output:
         output.write(data)

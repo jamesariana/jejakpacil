@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import field, icon, cat_icon, switch %}
+{% from "_macros.html" import field, icon, cat_icon, switch, file_picker %}
 {% block title %}{{ _('Ubah thread') if thread else _('Buat thread') }}{% endblock %}
 {% block content %}
 <section class="narrow form-page">
@@ -9,7 +9,7 @@
     <p class="lede">{{ _("Pilih kategori, tulis judul yang jelas, lalu ceritakan isinya.") }}</p>
   </div>
 
-  <form method="post" class="form" novalidate>
+  <form method="post" class="form" enctype="multipart/form-data" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <fieldset class="choice-group{% if errors.get('category_id') %} has-error{% endif %}">
@@ -35,6 +35,23 @@
     {% call field('Isi', 'body', errors) %}
       <textarea id="body" name="body" rows="9" maxlength="8000" placeholder="{{ _("Ceritakan konteksnya: posisi, tahap seleksi, atau hal yang mau kamu tanyakan.") }}" required>{{ form.get('body') or '' }}</textarea>
     {% endcall %}
+
+    <div class="field{% if errors.get('files') %} has-error{% endif %}">
+      <span class="field-label">{{ _("Lampiran") }} <span class="optional">{{ _("(opsional)") }}</span></span>
+      {% if current_files %}
+        <ul class="attach-current">
+          {% for f in current_files %}
+            <li>
+              {% if f.kind == 'image' %}<img src="{{ media_url('forum', f.stored_name) }}" alt="">{% else %}<span class="att-ext" aria-hidden="true">PDF</span>{% endif %}
+              <span class="attach-current-name">{{ f.original_name }}</span>
+              <label class="check check-inline"><input type="checkbox" name="remove_file" value="{{ f.id }}"> {{ _("Hapus") }}</label>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <div class="attach-drop">{{ file_picker('lampiran-thread', _('Pilih foto atau PDF')) }}</div>
+      {% if errors.get('files') %}<p class="error">{{ errors['files']|t }}</p>{% endif %}
+    </div>
 
     {% call field('Tentang perusahaan', 'company_id', errors, hint='Thread akan muncul juga di halaman perusahaan itu.', optional=True) %}
       <select id="company_id" name="company_id">

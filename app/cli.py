@@ -5,13 +5,15 @@ Contoh pemakaian (dari folder proyek):
     flask --app app seed-demo --with-logos
 """
 
+import io
+
 import click
 from werkzeug.security import generate_password_hash
 
 from .db import get_db, query
 from .forms import is_allowed_email
 from .logos import fetch_logo
-from .utils import slugify
+from .utils import save_image_bytes, slugify
 
 DEMO_PASSWORD = "pacil12345"
 
@@ -230,6 +232,7 @@ def register_commands(app):
             _add_skills(db, "experience_skills", "experience_id", cursor.lastrowid, skills)
 
         categories = {row["slug"]: row["id"] for row in query("SELECT id, slug FROM categories")}
+        thread_ids = {}
         for author, category, company, title, body, anonymous, pinned, replies, voters in DEMO_THREADS:
             cursor = db.execute(
                 "INSERT INTO threads (author_id, category_id, company_id, title, body, is_anonymous, is_pinned)"
@@ -237,6 +240,7 @@ def register_commands(app):
                 (users[author], categories[category], companies.get(company), title, body, anonymous, pinned),
             )
             thread_id = cursor.lastrowid
+            thread_ids[title] = thread_id
             for reply_author, reply_body, reply_anonymous, children in replies:
                 cursor = db.execute(
                     "INSERT INTO replies (thread_id, author_id, body, is_anonymous) VALUES (?, ?, ?, ?)",
@@ -251,6 +255,7 @@ def register_commands(app):
             for voter in voters:
                 db.execute("INSERT INTO votes (user_id, thread_id) VALUES (?, ?)", (users[voter], thread_id))
 
+        _seed_attachments_and_chats(db, users, thread_ids)
         db.commit()
         click.echo("Data demo siap.")
         click.echo("  Admin : admin@ui.ac.id / admin12345")
@@ -264,3 +269,72 @@ def _add_skills(db, table, owner_column, owner_id, skills_text):
         db.execute(
             f"INSERT OR IGNORE INTO {table} ({owner_column}, skill_id) VALUES (?, ?)", (owner_id, skill_id)
         )
+
+
+def _demo_image(lines, background, foreground):
+    """Gambar contoh sederhana untuk lampiran demo (tanpa perlu file dari luar)."""
+    from PIL import Image, ImageDraw
+
+    image = Image.new("RGB", (900, 1200), background)
+    draw = ImageDraw.Draw(image)
+    draw.rounded_rectangle((60, 60, 840, 1140), 48, outline=foreground, width=10)
+    for index, line in enumerate(lines):
+        try:
+            draw.text((120, 160 + index * 120), line, fill=foreground, font_size=64 if index == 0 else 48)
+        except TypeError:  # Pillow lama (< 10.1) belum mendukung font_size
+            draw.text((120, 160 + index * 120), line, fill=foreground)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def _seed_attachments_and_chats(db, users, thread_ids):
+    """Lampiran foto di satu thread dan beberapa chat pribadi, supaya fiturnya langsung terlihat."""
+    def add_image(lines, background, foreground, folder, **owner):
+        (column, owner_id), = owner.items()
+        data = _demo_image(lines, background, foreground)
+        stored = save_image_bytes(data, folder, max_size=(1600, 1600), photo=True)
+        db.execute(
+            f"INSERT INTO attachments (uploader_id, {column}, stored_name, original_name, kind, size)"
+            " VALUES (?, ?, ?, ?, 'image', ?)",
+            (users["farhan"], owner_id, stored, f"{lines[0]}.jpg", len(data)),
+        )
+
+    android = thread_ids.get("Cerita persiapan magang Android")
+    if android:
+        add_image(["Rencana 8 minggu", "1. Kotlin dasar", "2. Proyek kecil sampai rilis",
+                   "3. Struktur data tiap malam", "4. Latihan wawancara"], "#2f4a3a", "#f2f2e9", "forum",
+                  thread_id=android)
+        add_image(["Jadwal Kuliah", "DDP 1   08.00", "Kalkulus   10.00", "Manbis   13.00"],
+                  "#d6e6f2", "#1e3350", "forum", thread_id=android)
+
+    def conversation(a, b, thread_id, lines):
+        low, high = sorted((users[a], users[b]))
+        cursor = db.execute(
+            "INSERT INTO conversations (user_low, user_high, thread_id, last_message_at)"
+            " VALUES (?, ?, ?, datetime('now', ?))",
+            (low, high, thread_id, f"-{lines[-1][2]} minutes"),
+        )
+        for sender, body, minutes_ago, read in lines:
+            message = db.execute(
+                "INSERT INTO messages (conversation_id, sender_id, body, created_at, read_at)"
+                " VALUES (?, ?, ?, datetime('now', ?), CASE WHEN ? THEN datetime('now') END)",
+                (cursor.lastrowid, users[sender], body, f"-{minutes_ago} minutes", read),
+            )
+            if body == "":
+                add_image(["Jadwal Kuliah", "DDP 1   08.00", "Kalkulus   10.00", "Manbis   13.00"],
+                          "#d6e6f2", "#1e3350", "chat", message_id=message.lastrowid)
+
+    conversation("salsa", "farhan", android, [
+        ("salsa", "Halo Kak Farhan! Aku baca thread persiapan magang Android-nya. Boleh tanya soal proyek pribadinya?", 40, 1),
+        ("farhan", "Halo Salsa! Boleh banget. Ini tampilan aplikasinya waktu itu:", 35, 1),
+        ("farhan", "", 35, 1),
+        ("salsa", "Keren! Itu pakai Kotlin semua, Kak?", 30, 1),
+        ("farhan", "Iya, Kotlin semua. Nanti aku kirim juga catatan belajarku.", 12, 0),
+    ])
+    conversation("salsa", "raka", None, [
+        ("salsa", "Kak Raka, aku tertarik dengan referral backend yang di forum.", 1500, 1),
+        ("raka", "Boleh. Pastikan CV di profilmu sudah yang terbaru ya.", 1440, 1),
+        ("raka", "CV-mu sudah kuteruskan ke tim HR, tunggu kabar minggu depan.", 90, 0),
+    ])
+

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import avatar, icon, cat_badge %}
+{% from "_macros.html" import avatar, icon, cat_badge, attachment_list, file_picker %}
 {% block title %}{{ thread.title }}{% endblock %}
 
 {# Avatar pengirim, atau tanda tanya untuk tulisan anonim. #}
@@ -46,11 +46,12 @@
           {% if mine %}<span class="msg-badge">{{ _("Kamu") }}</span>{% elif is_op %}<span class="msg-badge">{{ _("Penulis thread") }}</span>{% endif %}
           <span class="msg-time">{{ r.created_at|lalu }}</span>
         </p>
-        <p class="bubble">{{ r.body }}</p>
+        {% if r.body %}<p class="bubble">{{ r.body }}</p>{% endif %}
+        {% if reply_files.get(r.id) %}<div class="msg-files">{{ attachment_list(reply_files[r.id], 'forum', compact=True) }}</div>{% endif %}
         <div class="msg-actions">
           {{ report_form('reply_id', r.id) }}
           {% if mine or g.user.role == 'admin' %}
-            <form method="post" action="{{ url_for('forum.delete_reply', reply_id=r.id) }}" data-confirm="Hapus balasan ini?">
+            <form method="post" action="{{ url_for('forum.delete_reply', reply_id=r.id) }}" data-confirm="{{ _('Hapus balasan ini?') }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="ghost-btn ghost-danger">{{ icon('trash', 15) }}{{ _("Hapus") }}</button>
             </form>
@@ -63,12 +64,13 @@
 
 {# Kotak tulis balasan. #}
 {% macro composer(parent=None) %}
-  <form method="post" action="{{ url_for('forum.reply', thread_id=thread.id) }}" class="composer{% if parent %} composer-small{% endif %}">
+  <form method="post" action="{{ url_for('forum.reply', thread_id=thread.id) }}" class="composer{% if parent %} composer-small{% endif %}" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {% if parent %}<input type="hidden" name="parent_id" value="{{ parent.id }}">{% endif %}
     {% set field_id = 'balas-' ~ parent.id if parent else 'balasan-baru' %}
     <label class="visually-hidden" for="{{ field_id }}">{{ _('Balasanmu') if parent else _('Tulis balasan') }}</label>
-    <textarea id="{{ field_id }}" name="body" rows="2" maxlength="4000" required placeholder="{{ _('Tulis balasanmu') if parent else _('Tulis balasan untuk thread ini') }}"></textarea>
+    <textarea id="{{ field_id }}" name="body" rows="2" maxlength="4000" placeholder="{{ _('Tulis balasanmu') if parent else _('Tulis balasan untuk thread ini') }}"></textarea>
+    {{ file_picker('lampiran-' ~ (parent.id if parent else 'baru')) }}
     <div class="composer-bar">
       <label class="mini-switch">
         <input type="checkbox" role="switch" name="is_anonymous" value="1">
@@ -100,6 +102,7 @@
       </p>
     </div>
     <p class="op-body">{{ thread.body }}</p>
+    {% if thread_files %}<div class="op-files">{{ attachment_list(thread_files, 'forum') }}</div>{% endif %}
 
     <div class="op-actions">
       <form method="post" action="{{ url_for('forum.vote', thread_id=thread.id) }}">
@@ -109,11 +112,19 @@
         </button>
       </form>
       <a class="ghost-btn" href="#tulis">{{ icon('reply', 15) }}{{ _("Balas") }}</a>
+      {# Kirim pesan pribadi ke penulis. Tidak muncul untuk thread anonim, supaya identitasnya tetap rahasia. #}
+      {% if not thread.is_anonymous and thread.author_id != g.user.id %}
+        <form method="post" action="{{ url_for('messages.start', user_id=thread.author_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="thread_id" value="{{ thread.id }}">
+          <button type="submit" class="ghost-btn">{{ icon('chat', 15) }}{{ _("Kirim pesan ke penulis") }}</button>
+        </form>
+      {% endif %}
       {% if thread.author_id == g.user.id %}
         <a class="ghost-btn" href="{{ url_for('forum.edit', thread_id=thread.id) }}">{{ icon('edit', 15) }}{{ _("Ubah") }}</a>
       {% endif %}
       {% if thread.author_id == g.user.id or g.user.role == 'admin' %}
-        <form method="post" action="{{ url_for('forum.delete', thread_id=thread.id) }}" data-confirm="Hapus thread ini beserta semua balasannya?">
+        <form method="post" action="{{ url_for('forum.delete', thread_id=thread.id) }}" data-confirm="{{ _('Hapus thread ini beserta semua balasannya?') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="ghost-btn ghost-danger">{{ icon('trash', 15) }}{{ _("Hapus") }}</button>
         </form>

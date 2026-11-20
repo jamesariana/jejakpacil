@@ -7,6 +7,7 @@ from flask import Blueprint, abort, current_app, g, render_template, send_from_d
 from ..db import query
 from ..queries import EXP_SELECT, profile_checklist, visibility_sql
 from ..security import is_admin
+from .messages import can_see_message_file
 
 bp = Blueprint("main", __name__)
 
@@ -63,9 +64,24 @@ def media(kind, filename):
     - logos, photos : terbuka
     - cv            : hanya pengguna yang masuk
     - proofs        : hanya pemilik pengalaman dan admin (bisa berisi dokumen pribadi)
+    - forum         : pengguna yang masuk (forum memang hanya untuk sivitas)
+    - chat          : hanya dua orang di percakapan itu, dan admin bila pesannya dilaporkan
     """
-    if kind not in ("logos", "photos", "cv", "proofs"):
+    if kind not in ("logos", "photos", "cv", "proofs", "forum", "chat"):
         abort(404)
+    if kind in ("forum", "chat"):
+        attachment = query("SELECT * FROM attachments WHERE stored_name = ?", (filename,), one=True)
+        if attachment is None:
+            abort(404)
+        if g.user is None:
+            abort(403)
+        if kind == "chat" and not can_see_message_file(attachment["message_id"]):
+            abort(403)
+        if kind == "forum" and not is_admin() and _forum_file_hidden(attachment):
+            abort(404)  # lampiran di thread atau balasan yang disembunyikan moderator
+        folder = os.path.join(current_app.config["UPLOAD_FOLDER"], kind)
+        # Nama asli dipakai saat file diunduh; isinya tetap file yang sudah diperiksa.
+        return send_from_directory(folder, filename, download_name=attachment["original_name"])
     if kind == "cv" and g.user is None:
         abort(403)
     if kind == "proofs":
@@ -77,3 +93,18 @@ def media(kind, filename):
     folder = os.path.join(current_app.config["UPLOAD_FOLDER"], kind)
     # send_from_directory menolak nama file yang mencoba keluar dari folder (mis. ../../rahasia).
     return send_from_directory(folder, filename)
+
+
+def _forum_file_hidden(attachment):
+    """True kalau lampiran menempel di thread atau balasan yang disembunyikan."""
+    if attachment["reply_id"]:
+        row = query(
+            """SELECT r.is_hidden OR t.is_hidden AS hidden FROM replies r JOIN threads t ON t.id = r.thread_id
+                WHERE r.id = ?""",
+            (attachment["reply_id"],),
+            one=True,
+        )
+    else:
+        row = query("SELECT is_hidden AS hidden FROM threads WHERE id = ?", (attachment["thread_id"],), one=True)
+    return row is None or bool(row["hidden"])
+

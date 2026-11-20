@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import attachment_list %}
 {% block title %}{{ _("Laporan forum") }}{% endblock %}
 {% block content %}
 <div class="page-head"><h1>{{ _("Laporan forum") }}</h1></div>
@@ -40,5 +41,40 @@
   </div>
 {% else %}
   <p class="empty">{{ _("Tidak ada laporan yang perlu ditangani.") }}</p>
+{% endif %}
+
+<h2 class="section-title">{{ _("Laporan pesan pribadi") }}</h2>
+<p class="muted">{{ _("Hanya pesan yang dilaporkan yang terlihat di sini. Isi percakapan lainnya tetap pribadi.") }}</p>
+{% if message_reports %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>{{ _("Pesan yang dilaporkan") }}</th><th>{{ _("Pengirim") }}</th><th>{{ _("Alasan") }}</th><th>{{ _("Pelapor") }}</th><th>{{ _("Tindakan") }}</th></tr>
+      </thead>
+      <tbody>
+        {% for r in message_reports %}
+          <tr>
+            <td>
+              {% if r.message_body %}{{ r.message_body|truncate(200) }}{% endif %}
+              {% if r.files %}<div class="msg-files">{{ attachment_list(r.files, 'chat', compact=True) }}</div>{% endif %}
+              {% if r.message_hidden %}<br><span class="tag tag-muted">{{ _("Disembunyikan") }}</span>{% endif %}
+            </td>
+            <td>{{ r.sender_name }}</td>
+            <td>{{ r.reason }}</td>
+            <td>{{ r.reporter_name }}<br><span class="muted">{{ r.created_at|lalu }}</span></td>
+            <td>
+              <form method="post" action="{{ url_for('admin.resolve_message_report', report_id=r.id) }}" class="row-actions">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-primary btn-small" name="action" value="sembunyikan" type="submit">{{ _("Sembunyikan pesan") }}</button>
+                <button class="btn btn-quiet btn-small" name="action" value="tutup" type="submit">{{ _("Tutup laporan") }}</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="empty">{{ _("Tidak ada laporan pesan.") }}</p>
 {% endif %}
 {% endblock %}

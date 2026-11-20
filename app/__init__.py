@@ -9,7 +9,7 @@ import secrets
 
 from flask import Flask, g, render_template
 
-from . import constants, db, i18n, security, utils
+from . import attachments, constants, db, i18n, security, utils
 
 
 def _load_secret_key(instance_path):
@@ -29,7 +29,7 @@ def create_app(test_config=None):
     app.config.from_mapping(
         DATABASE=os.path.join(app.instance_path, "jejakpacil.sqlite3"),
         UPLOAD_FOLDER=os.path.join(app.instance_path, "uploads"),
-        MAX_CONTENT_LENGTH=5 * 1024 * 1024,  # batas ukuran unggahan: 5 MB
+        MAX_CONTENT_LENGTH=21 * 1024 * 1024,  # batas satu kiriman: 4 lampiran x 5 MB (per file dicek terpisah)
         PER_PAGE=12,
         CSRF_ENABLED=True,
         SESSION_COOKIE_HTTPONLY=True,
@@ -54,10 +54,10 @@ def create_app(test_config=None):
     app.before_request(security.load_logged_in_user)
     app.before_request(security.check_csrf)
 
-    from .blueprints import admin, auth, companies, experiences, forum, main, profiles, stats
+    from .blueprints import admin, auth, companies, experiences, forum, main, messages, profiles, stats
     from .cli import register_commands
 
-    for module in (main, auth, profiles, experiences, companies, forum, stats, admin):
+    for module in (main, auth, profiles, experiences, companies, forum, messages, stats, admin):
         app.register_blueprint(module.bp)
     app.register_blueprint(i18n.bp)
     register_commands(app)
@@ -82,6 +82,9 @@ def create_app(test_config=None):
         lalu=utils.time_ago,
         inisial=utils.initials,
         warna=utils.color_for,
+        jam=utils.format_clock,
+        singkat=utils.short_when,
+        ukuran=attachments.human_size,
         t=i18n.translate,  # untuk nilai dari data: {{ label|t }}
     )
 
@@ -93,10 +96,18 @@ def create_app(test_config=None):
         row = db.query(
             """SELECT (SELECT COUNT(*) FROM experiences WHERE verification = 'menunggu')
                     + (SELECT COUNT(*) FROM companies WHERE is_approved = 0)
-                    + (SELECT COUNT(*) FROM reports WHERE status = 'baru') AS total""",
+                    + (SELECT COUNT(*) FROM reports WHERE status = 'baru')
+                    + (SELECT COUNT(*) FROM message_reports WHERE status = 'baru') AS total""",
             one=True,
         )
         return {"admin_pending": row["total"]}
+
+    @app.context_processor
+    def inject_unread_messages():
+        """Jumlah pesan belum dibaca, untuk angka di ikon pesan di navbar."""
+        if g.user is None:
+            return {"unread_messages": 0}
+        return {"unread_messages": messages.unread_count(g.user["id"])}
 
     @app.after_request
     def security_headers(response):
@@ -121,7 +132,7 @@ def create_app(test_config=None):
 
     @app.errorhandler(413)
     def too_large(error):
-        return error_page(413, i18n._("File terlalu besar"), i18n._("Ukuran unggahan maksimal 5 MB. Perkecil file lalu coba lagi."))
+        return error_page(413, i18n._("File terlalu besar"), i18n._("Ukuran maksimal 5 MB per file dan 20 MB sekali kirim. Perkecil file lalu coba lagi."))
 
     with app.app_context():
         db.init_db()

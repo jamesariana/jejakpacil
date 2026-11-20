@@ -24,6 +24,11 @@
     </div>
     {% if is_owner %}
       <a class="btn btn-quiet cover-action" href="{{ url_for('profiles.edit') }}">{{ icon('edit', 16) }}{{ _("Edit profil") }}</a>
+    {% elif g.user %}
+      <form class="cover-action" method="post" action="{{ url_for('messages.start', user_id=person.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary" type="submit">{{ icon('chat', 16) }}{{ _("Kirim pesan") }}</button>
+      </form>
     {% endif %}
   </div>
 </header>

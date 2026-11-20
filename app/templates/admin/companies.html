@@ -8,7 +8,7 @@
 <section class="section section-tight">
   <h2>{{ _("Gabungkan perusahaan ganda") }}</h2>
   <p class="muted">{{ _("Semua pengalaman dan thread dari perusahaan pertama dipindahkan ke perusahaan kedua, lalu perusahaan pertama dihapus.") }}</p>
-  <form method="post" action="{{ url_for('admin.merge_companies') }}" class="filters" data-confirm="Gabungkan kedua perusahaan ini? Tindakan ini tidak bisa dibatalkan.">
+  <form method="post" action="{{ url_for('admin.merge_companies') }}" class="filters" data-confirm="{{ _('Gabungkan kedua perusahaan ini? Tindakan ini tidak bisa dibatalkan.') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="field">
       <label for="source_id">{{ _("Pindahkan dari") }}</label>

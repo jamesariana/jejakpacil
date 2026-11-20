@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar, icon %}
+{% block title %}{% if conversation %}{{ other.full_name }} | {% endif %}{{ _("Pesan") }}{% endblock %}
+{% block content %}
+{# Dua kolom: daftar percakapan di kiri, isi percakapan di kanan.
+   Di layar sempit hanya satu kolom yang tampil (kelas dm-open memilih yang mana). #}
+<div class="dm{% if conversation %} dm-open{% endif %}">
+  <aside class="dm-side" aria-label="{{ _('Daftar percakapan') }}">
+    <div class="dm-side-head">
+      <h1>{{ _("Pesan") }}</h1>
+      <form class="dm-search" method="get" action="{{ url_for('messages.inbox') }}" role="search">
+        {{ icon('search', 16) }}
+        <label class="visually-hidden" for="cari-pesan">{{ _("Cari percakapan") }}</label>
+        <input id="cari-pesan" type="search" name="q" value="{{ keyword }}" placeholder="{{ _('Cari nama') }}">
+      </form>
+      <nav class="dm-tabs" aria-label="{{ _('Saring percakapan') }}">
+        <a href="{{ url_for('messages.inbox') }}"{% if not unread_only and not conversation %} aria-current="true"{% endif %}>{{ _("Semua") }}</a>
+        <a href="{{ url_for('messages.inbox', filter='belum') }}"{% if unread_only %} aria-current="true"{% endif %}>{{ _("Belum dibaca") }}{% if unread_messages %} <span class="dm-tab-count">{{ unread_messages }}</span>{% endif %}</a>
+      </nav>
+    </div>
+    {% if conversations %}
+      <ul class="dm-list">
+        {% for c in conversations %}
+          <li>
+            <a class="dm-item{% if conversation and c.id == conversation.id %} is-active{% endif %}{% if c.n_unread %} is-unread{% endif %}" href="{{ url_for('messages.conversation', conversation_id=c.id) }}"{% if conversation and c.id == conversation.id %} aria-current="page"{% endif %}>
+              {{ avatar(c.full_name, c.photo, 'md') }}
+              <span class="dm-item-text">
+                <span class="dm-item-top"><strong>{{ c.full_name }}</strong><time datetime="{{ c.last_message_at }}">{{ c.last_message_at|singkat }}</time></span>
+                <span class="dm-item-bottom">
+                  <span class="dm-snippet">
+                    {%- if c.last_sender == g.user.id %}{{ _("Kamu:") }} {% endif -%}
+                    {%- if c.last_hidden %}{{ _("Pesan disembunyikan") }}
+                    {%- elif c.last_body %}{{ c.last_body|truncate(70) }}
+                    {%- elif c.last_kind == 'image' %}{{ _("Foto") }}
+                    {%- elif c.last_kind == 'pdf' %}{{ _("File PDF") }}{% endif -%}
+                  </span>
+                  {% if c.n_unread %}<span class="dm-badge" aria-label="{{ _('{n} belum dibaca', n=c.n_unread) }}">{{ c.n_unread }}</span>{% endif %}
+                </span>
+              </span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="dm-empty-list">
+        {% if keyword or unread_only %}
+          <p>{{ _("Tidak ada percakapan yang cocok.") }}</p>
+        {% else %}
+          <p><strong>{{ _("Belum ada percakapan.") }}</strong></p>
+          <p class="muted">{{ _("Buka profil seseorang lalu tekan Kirim pesan, atau kirim pesan ke penulis thread di forum.") }}</p>
+          <a class="btn btn-quiet btn-small" href="{{ url_for('profiles.index') }}">{{ icon('search', 15) }}{{ _("Cari mahasiswa dan alumni") }}</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </aside>
+
+  <section class="dm-main" aria-label="{{ _('Isi percakapan') }}">
+    {% if conversation %}
+      {% set first_name = other.full_name.split(' ')[0] %}
+      <header class="dm-head">
+        <a class="dm-back" href="{{ url_for('messages.inbox') }}" aria-label="{{ _('Kembali ke daftar percakapan') }}">{{ icon('back', 20) }}</a>
+        {{ avatar(other.full_name, other.photo, 'md') }}
+        <div class="dm-head-text">
+          <strong><a href="{{ url_for('profiles.detail', user_id=other.id) }}">{{ other.full_name }}</a></strong>
+          <small>{{ other.prodi|t }} {{ other.angkatan }}{% if latest_role %}{{ _(", ") }}{{ _('{role} di {company}', role=latest_role.position, company=latest_role.company_name) }}{% endif %}</small>
+        </div>
+        <div class="dm-head-actions">
+          <a class="dm-pill" href="{{ url_for('profiles.detail', user_id=other.id) }}">{{ icon('user', 15) }}<span>{{ _("Lihat profil") }}</span></a>
+          <form method="post" action="{{ url_for('messages.toggle_block', conversation_id=conversation.id) }}"{% if not i_blocked %} data-confirm="{{ _('Blokir {name}? Dia tidak akan bisa mengirim pesan kepadamu.', name=first_name) }}"{% endif %}>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="dm-pill" type="submit">{{ icon('ban', 15) }}<span>{{ _('Buka blokir') if i_blocked else _('Blokir') }}</span></button>
+          </form>
+        </div>
+      </header>
+
+      <div class="dm-body" data-chat
+           data-poll-url="{{ url_for('messages.new_messages', conversation_id=conversation.id) }}"
+           data-last-id="{{ messages[-1].id if messages else 0 }}">
+        {% if origin %}
+          <a class="dm-origin" href="{{ url_for('forum.thread', thread_id=origin.id) }}">{{ icon('chat', 15) }}<span>{{ _("Dimulai dari thread") }} <strong>{{ origin.title }}</strong></span></a>
+        {% endif %}
+        {% if not messages %}
+          <p class="dm-start" data-chat-empty>{{ _("Belum ada pesan. Sapa {name} duluan!", name=first_name) }}</p>
+        {% endif %}
+        <div class="dm-messages" data-chat-list>{% include "messages/_messages.html" %}</div>
+        <span id="akhir"></span>
+      </div>
+
+      {% if blocked %}
+        <p class="dm-blocked">{{ icon('ban', 16) }}
+          {% if i_blocked %}{{ _("Kamu memblokir {name}. Buka blokir untuk mengirim pesan lagi.", name=first_name) }}
+          {% else %}{{ _("Kamu tidak bisa membalas percakapan ini.") }}{% endif %}
+        </p>
+      {% else %}
+        <form class="dm-compose" method="post" action="{{ url_for('messages.send', conversation_id=conversation.id) }}" enctype="multipart/form-data" data-chat-form data-attach>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="attach-preview dm-preview" data-attach-preview aria-live="polite"></div>
+          <p class="dm-error" data-chat-error role="alert" hidden></p>
+          <div class="dm-compose-row">
+            <label class="dm-icon-btn" for="lampiran-chat" title="{{ _('Lampirkan foto atau PDF') }}">
+              {{ icon('clip', 19) }}<span class="visually-hidden">{{ _("Lampirkan foto atau PDF") }}</span>
+            </label>
+            <input class="attach-input" id="lampiran-chat" type="file" name="files" multiple
+                   accept="image/png,image/jpeg,image/webp,image/gif,application/pdf" data-attach-input
+                   data-max="4" data-max-message="{{ _('Lampiran maksimal {n} file.', n=4) }}"
+                   data-size-message="{{ _('{name} lebih dari 5 MB.', name='{name}') }}">
+            <label class="visually-hidden" for="pesan-baru">{{ _("Tulis pesan") }}</label>
+            <textarea id="pesan-baru" name="body" rows="1" maxlength="4000" placeholder="{{ _('Tulis pesan…') }}" data-chat-input></textarea>
+            <button class="dm-send" type="submit" aria-label="{{ _('Kirim') }}" title="{{ _('Kirim') }}">{{ icon('send', 20) }}</button>
+          </div>
+          <p class="dm-compose-hint">{{ _("Enter untuk kirim, Shift+Enter untuk baris baru.") }}</p>
+        </form>
+      {% endif %}
+    {% else %}
+      <div class="dm-placeholder">
+        <span class="dm-placeholder-icon" aria-hidden="true">{{ icon('chat', 30) }}</span>
+        <h2>{{ _("Pilih percakapan") }}</h2>
+        <p>{{ _("Ngobrol langsung dengan mahasiswa dan alumni Fasilkom. Pesan hanya bisa dibaca kamu dan lawan bicaramu; admin hanya melihat pesan yang dilaporkan.") }}</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

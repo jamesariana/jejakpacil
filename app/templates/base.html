@@ -61,6 +61,11 @@
           {{ icon('moon', 19) }}{{ icon('sun', 19) }}
         </button>
         {% if g.user %}
+          {% set unread_label = _('Pesan, {n} belum dibaca', n=unread_messages) if unread_messages else _('Pesan') %}
+          <a class="nav-msg" href="{{ url_for('messages.inbox') }}" title="{{ unread_label }}" aria-label="{{ unread_label }}"{% if (request.endpoint or '').startswith('messages.') %} aria-current="page"{% endif %}>
+            {{ icon('chat', 19) }}
+            <span class="nav-msg-count" data-unread-count{% if not unread_messages %} hidden{% endif %}>{{ unread_messages if unread_messages < 100 else '99+' }}</span>
+          </a>
           <a class="btn btn-primary btn-small" href="{{ url_for('experiences.create') }}">{{ icon('plus', 16) }}<span>{{ _("Tambah") }}<span class="hide-small"> {{ _("pengalaman") }}</span></span></a>
           <details class="menu">
             <summary>

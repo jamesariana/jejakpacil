@@ -2,11 +2,13 @@
 
 from flask import Blueprint, abort, flash, g, redirect, render_template, request, url_for
 
+from .. import attachments
 from ..db import execute, query
+from ..i18n import _
 from ..forms import validate_thread
 from ..queries import approved_companies
 from ..security import is_admin, login_required
-from ..utils import Page
+from ..utils import Page, delete_upload
 
 bp = Blueprint("forum", __name__, url_prefix="/forum")
 
@@ -83,6 +85,9 @@ def create():
         data, errors = validate_thread(
             request.form, {row["id"] for row in categories}, {row["id"] for row in companies}
         )
+        uploads, upload_error = attachments.read_uploads(request.files.getlist("files"))
+        if upload_error:
+            errors["files"] = upload_error
         if not errors:
             thread_id = execute(
                 "INSERT INTO threads (author_id, category_id, company_id, title, body, is_anonymous)"
@@ -90,6 +95,7 @@ def create():
                 (g.user["id"], data["category_id"], data["company_id"], data["title"], data["body"],
                  data["is_anonymous"]),
             )
+            attachments.store(uploads, "forum", g.user["id"], thread_id=thread_id)
             flash("Thread diterbitkan.", "success")
             return redirect(url_for("forum.thread", thread_id=thread_id))
         form = request.form
@@ -97,7 +103,8 @@ def create():
         # Tautan "Mulai diskusi" di halaman perusahaan mengisi tag perusahaan lebih dulu.
         form = {"company_id": request.args.get("perusahaan", ""), "category_id": request.args.get("kategori_id", "")}
     return render_template(
-        "forum/form.html", form=form, errors=errors, categories=categories, companies=companies, thread=None
+        "forum/form.html", form=form, errors=errors, categories=categories, companies=companies, thread=None,
+        current_files=[],
     )
 
 
@@ -121,7 +128,13 @@ def thread(thread_id):
         "SELECT 1 FROM votes WHERE user_id = ? AND thread_id = ?", (g.user["id"], thread_id), one=True
     )
     return render_template(
-        "forum/thread.html", thread=thread, top_level=top_level, children=children, voted=bool(voted)
+        "forum/thread.html",
+        thread=thread,
+        top_level=top_level,
+        children=children,
+        voted=bool(voted),
+        thread_files=attachments.for_owners("thread_id", [thread_id]).get(thread_id, []),
+        reply_files=attachments.for_owners("reply_id", [reply["id"] for reply in replies]),
     )
 
 
@@ -132,11 +145,19 @@ def edit(thread_id):
     if thread["author_id"] != g.user["id"]:
         abort(403)
     categories, companies = _categories(), approved_companies()
+    current_files = attachments.for_owners("thread_id", [thread_id]).get(thread_id, [])
     errors = {}
     if request.method == "POST":
         data, errors = validate_thread(
             request.form, {row["id"] for row in categories}, {row["id"] for row in companies}
         )
+        uploads, upload_error = attachments.read_uploads(request.files.getlist("files"))
+        removed = {int(x) for x in request.form.getlist("remove_file") if x.isdigit()}
+        kept = [row for row in current_files if row["id"] not in removed]
+        if upload_error:
+            errors["files"] = upload_error
+        elif len(kept) + len(uploads) > attachments.MAX_FILES:
+            errors["files"] = _("Lampiran maksimal {n} file.", n=attachments.MAX_FILES)
         if not errors:
             execute(
                 """UPDATE threads SET category_id = ?, company_id = ?, title = ?, body = ?, is_anonymous = ?,
@@ -144,13 +165,19 @@ def edit(thread_id):
                 (data["category_id"], data["company_id"], data["title"], data["body"], data["is_anonymous"],
                  thread_id),
             )
+            for row in current_files:
+                if row["id"] in removed:
+                    delete_upload("forum", row["stored_name"])
+                    execute("DELETE FROM attachments WHERE id = ?", (row["id"],))
+            attachments.store(uploads, "forum", g.user["id"], thread_id=thread_id)
             flash("Thread disimpan.", "success")
             return redirect(url_for("forum.thread", thread_id=thread_id))
         form = request.form
     else:
         form = dict(thread)
     return render_template(
-        "forum/form.html", form=form, errors=errors, categories=categories, companies=companies, thread=thread
+        "forum/form.html", form=form, errors=errors, categories=categories, companies=companies, thread=thread,
+        current_files=current_files,
     )
 
 
@@ -160,6 +187,10 @@ def delete(thread_id):
     thread = _get_thread(thread_id)
     if thread["author_id"] != g.user["id"] and not is_admin():
         abort(403)
+    # File lampiran dihapus dari disk dulu; barisnya ikut terhapus oleh CASCADE.
+    attachments.remove("thread_id", thread_id, "forum")
+    for row in query("SELECT id FROM replies WHERE thread_id = ?", (thread_id,)):
+        attachments.remove("reply_id", row["id"], "forum")
     execute("DELETE FROM threads WHERE id = ?", (thread_id,))  # balasan dan suara ikut terhapus (CASCADE)
     flash("Thread dihapus.", "success")
     return redirect(url_for("forum.index"))
@@ -170,7 +201,11 @@ def delete(thread_id):
 def reply(thread_id):
     thread = _get_thread(thread_id)
     body = request.form.get("body", "").strip()[:4000]
-    if len(body) < 2:
+    uploads, upload_error = attachments.read_uploads(request.files.getlist("files"))
+    if upload_error:
+        flash(upload_error, "error")
+        return redirect(url_for("forum.thread", thread_id=thread_id) + "#tulis")
+    if len(body) < 2 and not uploads:  # balasan boleh hanya berisi foto
         flash("Balasan masih kosong. Tulis sesuatu dulu.", "error")
         return redirect(url_for("forum.thread", thread_id=thread_id))
 
@@ -188,6 +223,7 @@ def reply(thread_id):
         "INSERT INTO replies (thread_id, author_id, parent_id, body, is_anonymous) VALUES (?, ?, ?, ?, ?)",
         (thread["id"], g.user["id"], parent_id, body, 1 if request.form.get("is_anonymous") else 0),
     )
+    attachments.store(uploads, "forum", g.user["id"], reply_id=reply_id)
     flash("Balasan terkirim.", "success")
     return redirect(url_for("forum.thread", thread_id=thread_id) + f"#balasan-{reply_id}")
 
@@ -200,6 +236,9 @@ def delete_reply(reply_id):
         abort(404)
     if reply["author_id"] != g.user["id"] and not is_admin():
         abort(403)
+    attachments.remove("reply_id", reply_id, "forum")
+    for row in query("SELECT id FROM replies WHERE parent_id = ?", (reply_id,)):
+        attachments.remove("reply_id", row["id"], "forum")
     execute("DELETE FROM replies WHERE id = ?", (reply_id,))
     flash("Balasan dihapus.", "success")
     return redirect(url_for("forum.thread", thread_id=reply["thread_id"]))

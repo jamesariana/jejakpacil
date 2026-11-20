@@ -1,0 +1,28 @@
+{# Daftar gelembung pesan. Dipakai saat halaman dibuka dan saat app.js mengambil pesan baru. #}
+{% from "_macros.html" import attachment_list, icon %}
+{% for m in messages %}
+  {% if m.day %}<p class="dm-day"><span>{{ m.day }}</span></p>{% endif %}
+  {% set mine = m.sender_id == g.user.id %}
+  <div class="b {{ 'b-out' if mine else 'b-in' }}" id="pesan-{{ m.id }}" data-message-id="{{ m.id }}">
+    {% if m.is_hidden %}
+      <p class="b-text b-hidden">{{ _("Pesan ini disembunyikan admin karena dilaporkan.") }}</p>
+    {% else %}
+      {% if m.files %}<div class="b-files">{{ attachment_list(m.files, 'chat', compact=True) }}</div>{% endif %}
+      {% if m.body %}<p class="b-text">{{ m.body }}</p>{% endif %}
+    {% endif %}
+    <span class="b-meta">
+      <time datetime="{{ m.created_at }}">{{ m.created_at|jam }}</time>
+      {% if not mine and not m.is_hidden %}
+        <details class="pop b-report">
+          <summary aria-label="{{ _('Laporkan pesan ini') }}" title="{{ _('Laporkan pesan ini') }}">{{ icon('flag', 13) }}</summary>
+          <form method="post" action="{{ url_for('messages.report', message_id=m.id) }}" class="pop-panel">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="alasan-pesan-{{ m.id }}">{{ _("Kenapa dilaporkan?") }}</label>
+            <input id="alasan-pesan-{{ m.id }}" name="reason" maxlength="300" placeholder="{{ _('misalnya pelecehan atau penipuan') }}" required>
+            <button class="btn btn-primary btn-small" type="submit">{{ _("Kirim laporan") }}</button>
+          </form>
+        </details>
+      {% endif %}
+    </span>
+  </div>
+{% endfor %}

@@ -7,6 +7,7 @@ from flask import Blueprint, Response, abort, flash, g, redirect, render_templat
 
 from ..i18n import _
 from ..constants import INDUSTRIES
+from .. import attachments
 from ..db import execute, get_db, query
 from ..logos import fetch_logo
 from ..queries import EXP_SELECT
@@ -22,7 +23,8 @@ def dashboard():
     counts = query(
         """SELECT (SELECT COUNT(*) FROM experiences WHERE verification = 'menunggu') AS experiences,
                   (SELECT COUNT(*) FROM companies WHERE is_approved = 0) AS companies,
-                  (SELECT COUNT(*) FROM reports WHERE status = 'baru') AS reports,
+                  (SELECT COUNT(*) FROM reports WHERE status = 'baru')
+                  + (SELECT COUNT(*) FROM message_reports WHERE status = 'baru') AS reports,
                   (SELECT COUNT(*) FROM users) AS users""",
         one=True,
     )
@@ -185,7 +187,34 @@ def reports():
              LEFT JOIN users author ON author.id = COALESCE(r.author_id, t.author_id)
             WHERE rp.status = 'baru' ORDER BY rp.created_at, rp.id"""
     )
-    return render_template("admin/reports.html", reports=rows)
+    # Laporan chat: admin hanya melihat pesan yang dilaporkan, bukan seluruh percakapan.
+    message_rows = query(
+        """SELECT mr.*, reporter.full_name AS reporter_name, sender.full_name AS sender_name,
+                  m.body AS message_body, m.is_hidden AS message_hidden
+             FROM message_reports mr
+             JOIN users reporter ON reporter.id = mr.reporter_id
+             JOIN messages m ON m.id = mr.message_id
+             JOIN users sender ON sender.id = m.sender_id
+            WHERE mr.status = 'baru' ORDER BY mr.created_at, mr.id"""
+    )
+    files = attachments.for_owners("message_id", [row["message_id"] for row in message_rows])
+    message_reports = [dict(row, files=files.get(row["message_id"], [])) for row in message_rows]
+    return render_template("admin/reports.html", reports=rows, message_reports=message_reports)
+
+
+@bp.route("/laporan-pesan/<int:report_id>/tindak", methods=("POST",))
+@admin_required
+def resolve_message_report(report_id):
+    report = query("SELECT * FROM message_reports WHERE id = ?", (report_id,), one=True)
+    if report is None:
+        abort(404)
+    if request.form.get("action") == "sembunyikan":
+        execute("UPDATE messages SET is_hidden = 1 WHERE id = ?", (report["message_id"],))
+        flash("Konten disembunyikan dan laporan ditutup.", "success")
+    else:
+        flash("Laporan ditutup tanpa tindakan.", "success")
+    execute("UPDATE message_reports SET status = 'selesai' WHERE id = ?", (report_id,))
+    return redirect(url_for("admin.reports"))
 
 
 @bp.route("/laporan/<int:report_id>/tindak", methods=("POST",))

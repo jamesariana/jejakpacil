@@ -547,3 +547,149 @@ class LanguageTest(BaseTest):
             self.assertEqual(self.client.get(url).status_code, 200, url)
         self.assertEqual(sorted(i18n.MISSING), [])
 
+
+class ForumAttachmentTest(BaseTest):
+    """Lampiran foto dan PDF di thread dan balasan forum."""
+
+    def setUp(self):
+        super().setUp()
+        self.register()
+        self.login()
+        self.category_id = self.db("SELECT id FROM categories LIMIT 1", one=True)["id"]
+
+    def create_thread(self, files):
+        return self.client.post("/forum/buat", data={
+            "category_id": str(self.category_id), "title": "Tanya soal magang data",
+            "body": "Ada yang punya pengalaman magang data analyst?", "files": files,
+        }, content_type="multipart/form-data")
+
+    def test_thread_dengan_foto_dan_pdf(self):
+        response = self.create_thread([(io.BytesIO(png_bytes()), "foto.png"),
+                                       (io.BytesIO(b"%PDF-1.4 isi"), "catatan.pdf")])
+        self.assertEqual(response.status_code, 302)
+        rows = self.db("SELECT kind, original_name FROM attachments ORDER BY id")
+        self.assertEqual([(r["kind"], r["original_name"]) for r in rows], [("image", "foto.png"), ("pdf", "catatan.pdf")])
+        page = self.client.get("/forum/t/1").get_data(as_text=True)
+        self.assertIn("catatan.pdf", page)
+        stored = self.db("SELECT stored_name FROM attachments WHERE kind = 'image'", one=True)["stored_name"]
+        self.assertTrue(stored.endswith(".jpg"))  # foto ditulis ulang sebagai JPEG
+        with self.client.get(f"/media/forum/{stored}") as media:
+            self.assertEqual(media.status_code, 200)
+
+    def test_file_palsu_ditolak(self):
+        response = self.create_thread([(io.BytesIO(b"<script>alert(1)</script>"), "foto.png")])
+        self.assertEqual(response.status_code, 200)  # form tampil lagi dengan pesan error
+        self.assertIn("bukan foto", response.get_data(as_text=True))
+        self.assertIsNone(self.db("SELECT 1 FROM threads", one=True))
+
+    def test_lebih_dari_empat_file_ditolak(self):
+        files = [(io.BytesIO(png_bytes()), f"f{i}.png") for i in range(5)]
+        self.assertIn("maksimal 4", self.create_thread(files).get_data(as_text=True))
+
+    def test_balasan_boleh_hanya_foto(self):
+        self.create_thread([])
+        self.client.post("/forum/t/1/balas", data={"body": "", "files": [(io.BytesIO(png_bytes()), "a.png")]},
+                         content_type="multipart/form-data")
+        self.assertEqual(self.db("SELECT COUNT(*) AS n FROM attachments WHERE reply_id IS NOT NULL", one=True)["n"], 1)
+
+    def test_lampiran_forum_tertutup_untuk_tamu(self):
+        self.create_thread([(io.BytesIO(png_bytes()), "foto.png")])
+        stored = self.db("SELECT stored_name FROM attachments", one=True)["stored_name"]
+        self.logout()
+        with self.client.get(f"/media/forum/{stored}") as media:
+            self.assertEqual(media.status_code, 403)
+
+    def test_hapus_thread_menghapus_file(self):
+        self.create_thread([(io.BytesIO(png_bytes()), "foto.png")])
+        stored = self.db("SELECT stored_name FROM attachments", one=True)["stored_name"]
+        path = os.path.join(self.tmp, "uploads", "forum", stored)
+        self.assertTrue(os.path.exists(path))
+        self.client.post("/forum/t/1/hapus")
+        self.assertFalse(os.path.exists(path))
+
+
+class MessageTest(BaseTest):
+    """Chat pribadi: hanya dua orang di percakapan yang bisa membaca isinya."""
+
+    def setUp(self):
+        super().setUp()
+        self.register(email="budi@ui.ac.id", name="Budi Santoso")      # id 1
+        self.register(email="sari@ui.ac.id", name="Sari Wulandari")    # id 2
+        self.register(email="tono@ui.ac.id", name="Tono Prasetyo")     # id 3
+        self.login()
+
+    def start_chat(self, user_id=2):
+        response = self.client.post(f"/pesan/mulai/{user_id}")
+        return int(response.headers["Location"].rsplit("/", 1)[1])
+
+    def test_kirim_dan_terima_pesan(self):
+        conversation_id = self.start_chat()
+        self.assertEqual(self.start_chat(), conversation_id)  # pasangan yang sama, percakapan yang sama
+        self.client.post(f"/pesan/{conversation_id}/kirim", data={"body": "Halo Sari!"})
+        self.logout()
+        self.login(email="sari@ui.ac.id")
+        home = self.client.get("/").get_data(as_text=True)
+        self.assertRegex(home, r"data-unread-count>\s*1\s*<")  # angka di ikon pesan
+        page = self.client.get(f"/pesan/{conversation_id}").get_data(as_text=True)
+        self.assertIn("Halo Sari!", page)
+        self.assertIsNotNone(self.db("SELECT read_at FROM messages", one=True)["read_at"])  # terbaca setelah dibuka
+
+    def test_orang_lain_tidak_bisa_membaca(self):
+        conversation_id = self.start_chat()
+        self.client.post(f"/pesan/{conversation_id}/kirim", data={
+            "body": "Rahasia", "files": [(io.BytesIO(png_bytes()), "a.png")]}, content_type="multipart/form-data")
+        stored = self.db("SELECT stored_name FROM attachments", one=True)["stored_name"]
+        self.logout()
+        self.login(email="tono@ui.ac.id")
+        self.assertEqual(self.client.get(f"/pesan/{conversation_id}").status_code, 404)
+        self.assertEqual(self.client.get(f"/pesan/{conversation_id}/baru").status_code, 404)
+        self.assertEqual(self.client.post(f"/pesan/{conversation_id}/kirim", data={"body": "x"}).status_code, 404)
+        with self.client.get(f"/media/chat/{stored}") as media:
+            self.assertEqual(media.status_code, 403)
+
+    def test_polling_mengirim_pesan_baru_saja(self):
+        conversation_id = self.start_chat()
+        self.client.post(f"/pesan/{conversation_id}/kirim", data={"body": "Satu"})
+        first_id = self.db("SELECT MAX(id) AS id FROM messages", one=True)["id"]
+        self.client.post(f"/pesan/{conversation_id}/kirim", data={"body": "Dua"})
+        data = self.client.get(f"/pesan/{conversation_id}/baru?setelah={first_id}").get_json()
+        self.assertIn("Dua", data["html"])
+        self.assertNotIn("Satu", data["html"])
+
+    def test_kirim_lewat_fetch_mengembalikan_json(self):
+        conversation_id = self.start_chat()
+        data = self.client.post(f"/pesan/{conversation_id}/kirim", data={"body": "Halo", "setelah": "0"},
+                                headers={"X-Requested-With": "fetch"}).get_json()
+        self.assertIn("Halo", data["html"])
+        response = self.client.post(f"/pesan/{conversation_id}/kirim", data={"body": " "},
+                                    headers={"X-Requested-With": "fetch"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_blokir(self):
+        conversation_id = self.start_chat()
+        self.logout()
+        self.login(email="sari@ui.ac.id")
+        self.client.post(f"/pesan/{conversation_id}/blokir")
+        self.logout()
+        self.login()
+        self.client.post(f"/pesan/{conversation_id}/kirim", data={"body": "Halo?"})
+        self.assertIsNone(self.db("SELECT 1 FROM messages", one=True))
+
+    def test_tidak_bisa_chat_diri_sendiri(self):
+        self.assertEqual(self.client.post("/pesan/mulai/1").status_code, 400)
+
+    def test_lapor_pesan_terlihat_admin(self):
+        conversation_id = self.start_chat()
+        self.client.post(f"/pesan/{conversation_id}/kirim", data={"body": "Pesan kasar"})
+        self.logout()
+        self.login(email="sari@ui.ac.id")
+        message_id = self.db("SELECT id FROM messages", one=True)["id"]
+        self.client.post(f"/pesan/lapor/{message_id}", data={"reason": "Kata-kata kasar"})
+        self.make_admin("tono@ui.ac.id")
+        self.logout()
+        self.login(email="tono@ui.ac.id")
+        self.assertIn("Pesan kasar", self.client.get("/admin/laporan").get_data(as_text=True))
+        report_id = self.db("SELECT id FROM message_reports", one=True)["id"]
+        self.client.post(f"/admin/laporan-pesan/{report_id}/tindak", data={"action": "sembunyikan"})
+        self.assertEqual(self.db("SELECT is_hidden FROM messages", one=True)["is_hidden"], 1)
+

@@ -24,7 +24,8 @@ JejakPacil mengumpulkan riwayat itu di satu tempat yang khusus untuk sivitas Fas
 | Logo otomatis | Logo diambil dari layanan logo berdasarkan domain, lalu disimpan di server sendiri |
 | Jelajahi | Satu menu untuk dua pencarian: tab Pengalaman (cari posisi/perusahaan, filter jenis, prodi, angkatan, skill) dan tab Mahasiswa dan alumni |
 | Beranda pribadi | Setelah masuk: daftar cek kelengkapan profil, diskusi terbaru, dan jalan pintas ke fitur |
-| Forum | Kategori, thread, balasan dua tingkat, suara, posting anonim, tag perusahaan, laporan |
+| Forum | Kategori, thread, balasan dua tingkat, suara, posting anonim, tag perusahaan, laporan, lampiran foto dan PDF |
+| Chat pribadi | Kirim pesan ke siapa saja dari profil atau thread; teks, foto, dan PDF; penanda belum dibaca; blokir dan laporkan |
 | Statistik | Perusahaan terbanyak, jenis pengalaman, jalur mendapatkan, skill, per angkatan |
 | Panel admin | Verifikasi, setujui dan gabungkan perusahaan, moderasi forum, kelola pengguna, ekspor CSV |
 | Dua bahasa | Tombol ID / EN di navbar mengganti seluruh tampilan ke bahasa Inggris dan kembali, tanpa library tambahan |
@@ -113,6 +114,9 @@ jejakpacil/
 │   ├── queries.py          query bersama: aturan privasi, skill, perusahaan
 │   ├── logos.py            ambil logo dari layanan luar
 │   ├── utils.py            slug, tanggal, unggahan file, paginasi
+│   ├── attachments.py      lampiran foto/PDF untuk forum dan chat
+│   ├── i18n.py             dua bahasa: fungsi _() dan tombol ID/EN
+│   ├── translations_en.py  kamus terjemahan Inggris
 │   ├── cli.py              perintah create-admin dan seed-demo
 │   ├── blueprints/         satu file per fitur
 │   │   ├── main.py         beranda, penyajian file unggahan
@@ -121,6 +125,7 @@ jejakpacil/
 │   │   ├── experiences.py  riwayat pengalaman
 │   │   ├── companies.py    direktori perusahaan
 │   │   ├── forum.py        forum
+│   │   ├── messages.py     chat pribadi (/pesan)
 │   │   ├── stats.py        statistik
 │   │   └── admin.py        panel admin
 │   ├── templates/          HTML (Jinja2), satu folder per fitur
@@ -154,6 +159,13 @@ terjemahannya di kamus `translations_en.py`. Bagian yang berubah ditulis `{nama}
 Saat menambah teks baru, bungkus dengan `_()` lalu tambahkan terjemahannya di `translations_en.py`.
 Tes `LanguageTest` gagal kalau ada teks di halaman utama yang belum punya terjemahan.
 
+### Chat pribadi (`blueprints/messages.py`)
+
+Setiap pasangan pengguna punya satu percakapan (tabel `conversations`). Pesan baru muncul tanpa
+memuat ulang halaman: `app.js` menanyakan ke `/pesan/<id>/baru?setelah=<id pesan terakhir>` setiap
+4 detik (polling) dan menempelkan HTML pesan yang dikirim server. Cara ini sengaja dipilih supaya
+tetap sederhana dan sepenuhnya Python, tanpa server WebSocket terpisah.
+
 ## Keamanan dan privasi
 
 - Kata sandi disimpan sebagai hash (`werkzeug.security`), tidak pernah apa adanya.
@@ -163,6 +175,9 @@ Tes `LanguageTest` gagal kalau ada teks di halaman utama yang belum punya terjem
 - Gambar unggahan dibuka dan ditulis ulang dengan Pillow; PDF diperiksa tanda awalnya; nama file
   diganti dengan nama acak.
 - File bukti hanya bisa dibuka pemiliknya dan admin. CV hanya untuk pengguna yang masuk.
+- Pesan pribadi dan lampirannya hanya bisa dibuka dua orang di percakapan itu. Admin hanya melihat
+  pesan yang dilaporkan, bukan seluruh percakapan. Pengguna bisa memblokir lawan bicara.
+- Lampiran forum dan chat dibatasi 4 file, 5 MB per file; foto ditulis ulang sebagai JPEG.
 - Gaji sengaja tidak dikumpulkan.
 - Statistik hanya menampilkan angka gabungan dan tidak menghitung pengalaman privat.
 

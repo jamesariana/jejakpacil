@@ -119,9 +119,68 @@ CREATE TABLE IF NOT EXISTS reports (
     created_at  TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Lampiran forum: foto atau PDF yang menempel di thread atau balasan.
+CREATE TABLE IF NOT EXISTS attachments (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    uploader_id   INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    thread_id     INTEGER REFERENCES threads (id) ON DELETE CASCADE,
+    reply_id      INTEGER REFERENCES replies (id) ON DELETE CASCADE,
+    message_id    INTEGER REFERENCES messages (id) ON DELETE CASCADE,
+    stored_name   TEXT    NOT NULL UNIQUE,                 -- nama acak di server
+    original_name TEXT    NOT NULL,                        -- nama asli, hanya untuk ditampilkan
+    kind          TEXT    NOT NULL CHECK (kind IN ('image', 'pdf')),
+    size          INTEGER NOT NULL,
+    created_at    TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Chat pribadi: satu percakapan untuk tiap pasangan pengguna.
+-- user_low selalu id yang lebih kecil, supaya pasangan yang sama tidak tercatat dua kali.
+CREATE TABLE IF NOT EXISTS conversations (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_low        INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    user_high       INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    thread_id       INTEGER REFERENCES threads (id) ON DELETE SET NULL,  -- thread asal, kalau dimulai dari forum
+    created_at      TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_message_at TEXT,
+    UNIQUE (user_low, user_high),
+    CHECK (user_low < user_high)
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id INTEGER NOT NULL REFERENCES conversations (id) ON DELETE CASCADE,
+    sender_id       INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    body            TEXT    NOT NULL DEFAULT '',
+    is_hidden       INTEGER NOT NULL DEFAULT 0,             -- disembunyikan admin setelah dilaporkan
+    created_at      TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at         TEXT                                    -- NULL = belum dibaca penerima
+);
+
+-- Blokir: pengguna yang diblokir tidak bisa mengirim pesan ke pemblokir.
+CREATE TABLE IF NOT EXISTS blocks (
+    blocker_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    blocked_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    created_at TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (blocker_id, blocked_id)
+);
+
+-- Laporan pesan. Admin hanya bisa membaca pesan yang dilaporkan, bukan seluruh chat.
+CREATE TABLE IF NOT EXISTS message_reports (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    reporter_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    message_id  INTEGER NOT NULL REFERENCES messages (id) ON DELETE CASCADE,
+    reason      TEXT    NOT NULL,
+    status      TEXT    NOT NULL DEFAULT 'baru',        -- baru | selesai
+    created_at  TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indeks mempercepat pencarian yang sering dipakai.
 CREATE INDEX IF NOT EXISTS idx_experiences_user    ON experiences (user_id);
 CREATE INDEX IF NOT EXISTS idx_experiences_company ON experiences (company_id);
 CREATE INDEX IF NOT EXISTS idx_threads_category    ON threads (category_id);
 CREATE INDEX IF NOT EXISTS idx_threads_company     ON threads (company_id);
 CREATE INDEX IF NOT EXISTS idx_replies_thread      ON replies (thread_id);
+CREATE INDEX IF NOT EXISTS idx_attachments_thread  ON attachments (thread_id);
+CREATE INDEX IF NOT EXISTS idx_attachments_reply   ON attachments (reply_id);
+CREATE INDEX IF NOT EXISTS idx_attachments_message ON attachments (message_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conv       ON messages (conversation_id, id);

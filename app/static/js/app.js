@@ -196,3 +196,191 @@ document.querySelectorAll("form[data-autosubmit]").forEach((form) => {
     });
   });
 });
+
+// 8. Pilih lampiran (forum dan chat).
+//    Menampilkan pratinjau foto/PDF yang dipilih, dengan tombol × untuk membatalkan
+//    satu file. Batas jumlah dan ukuran juga dicek di sini supaya pengguna langsung
+//    tahu, tetapi server tetap memeriksa ulang semuanya.
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+function setupAttachments(box) {
+  const input = box.querySelector("[data-attach-input]");
+  const preview = box.querySelector("[data-attach-preview]");
+  if (!input || !preview) return;
+  const max = Number(input.dataset.max || 4);
+
+  const render = () => {
+    preview.replaceChildren();
+    Array.from(input.files).forEach((file, index) => {
+      const item = document.createElement("div");
+      if (file.type.startsWith("image/")) {
+        item.className = "pv";
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        img.alt = file.name;
+        img.onload = () => URL.revokeObjectURL(img.src);
+        item.append(img);
+      } else {
+        item.className = "pvf";
+        const ext = document.createElement("span");
+        ext.className = "att-ext";
+        ext.textContent = "PDF";
+        const name = document.createElement("span");
+        name.className = "pvf-name";
+        name.textContent = file.name;
+        item.append(ext, name);
+      }
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "pv-remove";
+      remove.textContent = "×";
+      remove.setAttribute("aria-label", file.name);
+      remove.addEventListener("click", () => removeFile(index));
+      item.append(remove);
+      preview.append(item);
+    });
+    box.classList.toggle("has-files", input.files.length > 0);
+  };
+
+  // FileList tidak bisa diubah langsung, jadi disusun ulang lewat DataTransfer.
+  const keepFiles = (files) => {
+    const transfer = new DataTransfer();
+    files.forEach((file) => transfer.items.add(file));
+    input.files = transfer.files;
+    render();
+  };
+  const removeFile = (index) => keepFiles(Array.from(input.files).filter((_, i) => i !== index));
+
+  input.addEventListener("change", () => {
+    let files = Array.from(input.files);
+    const tooBig = files.find((file) => file.size > MAX_FILE_BYTES);
+    if (tooBig) {
+      alertInline(box, input.dataset.sizeMessage.replace("{name}", tooBig.name));
+      files = files.filter((file) => file.size <= MAX_FILE_BYTES);
+    }
+    if (files.length > max) {
+      alertInline(box, input.dataset.maxMessage);
+      files = files.slice(0, max);
+    }
+    keepFiles(files);
+  });
+  box.addEventListener("reset-attachments", () => keepFiles([]));
+}
+
+// Pesan singkat di dekat kolom lampiran (tanpa alert() yang memblokir halaman).
+function alertInline(box, text) {
+  let note = box.querySelector(".attach-error");
+  if (!note) {
+    note = document.createElement("p");
+    note.className = "attach-error";
+    note.setAttribute("role", "alert");
+    box.append(note);
+  }
+  note.textContent = text;
+  clearTimeout(note._timer);
+  note._timer = setTimeout(() => note.remove(), 5000);
+}
+
+document.querySelectorAll("[data-attach]").forEach(setupAttachments);
+
+// 9. Chat pribadi.
+//    - Kirim tanpa memuat ulang halaman (fetch), Enter untuk kirim.
+//    - Pesan baru diambil setiap 4 detik selama tab terlihat (polling).
+//    Tanpa JavaScript, form tetap bekerja seperti biasa (halaman dimuat ulang).
+const chat = document.querySelector("[data-chat]");
+if (chat) {
+  const list = chat.querySelector("[data-chat-list]");
+  const form = document.querySelector("[data-chat-form]");
+  const textarea = form && form.querySelector("[data-chat-input]");
+  const errorBox = form && form.querySelector("[data-chat-error]");
+  const unreadBadge = document.querySelector("[data-unread-count]");
+  let lastId = Number(chat.dataset.lastId || 0);
+  let busy = false;
+
+  const nearBottom = () => chat.scrollHeight - chat.scrollTop - chat.clientHeight < 120;
+  const toBottom = () => { chat.scrollTop = chat.scrollHeight; };
+  toBottom();
+  // Foto selesai dimuat setelah halaman tampil; gulir lagi supaya pesan terakhir terlihat.
+  chat.querySelectorAll("img").forEach((img) => img.addEventListener("load", toBottom, { once: true }));
+
+  const append = (data) => {
+    if (!data.html || !data.html.trim()) return;
+    const stick = nearBottom();
+    const empty = chat.querySelector("[data-chat-empty]");
+    if (empty) empty.remove();
+    const holder = document.createElement("div");
+    holder.innerHTML = data.html;
+    // Lewati pesan yang sudah ada (bisa terjadi bila kiriman dan polling datang bersamaan).
+    holder.querySelectorAll("[data-message-id]").forEach((node) => {
+      if (list.querySelector(`[data-message-id="${node.dataset.messageId}"]`)) node.remove();
+    });
+    holder.querySelectorAll("img").forEach((img) => img.addEventListener("load", () => stick && toBottom(), { once: true }));
+    list.append(...holder.childNodes);
+    lastId = Math.max(lastId, Number(data.last_id || 0));
+    if (unreadBadge && typeof data.unread === "number") {
+      unreadBadge.textContent = data.unread;
+      unreadBadge.hidden = data.unread === 0;
+    }
+    if (stick) toBottom();
+  };
+
+  const poll = async () => {
+    if (busy || document.hidden) return;
+    busy = true;
+    try {
+      const response = await fetch(`${chat.dataset.pollUrl}?setelah=${lastId}`, {
+        headers: { "X-Requested-With": "fetch" },
+      });
+      if (response.ok) append(await response.json());
+    } catch (e) { /* koneksi putus sebentar: coba lagi di putaran berikutnya */ }
+    busy = false;
+  };
+  setInterval(poll, 4000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
+
+  if (form) {
+    // Kotak tulis tumbuh mengikuti isi, sampai batas tertentu.
+    const grow = () => {
+      textarea.style.height = "auto";
+      textarea.style.height = Math.min(textarea.scrollHeight, 160) + "px";
+    };
+    textarea.addEventListener("input", grow);
+    textarea.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const fileInput = form.querySelector("[data-attach-input]");
+      if (!textarea.value.trim() && !(fileInput && fileInput.files.length)) return;
+      const data = new FormData(form);
+      data.append("setelah", lastId);
+      const button = form.querySelector("button[type=submit]");
+      button.disabled = true;
+      errorBox.hidden = true;
+      try {
+        const response = await fetch(form.action, {
+          method: "POST", body: data, headers: { "X-Requested-With": "fetch" },
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          errorBox.textContent = result.error;
+          errorBox.hidden = false;
+        } else {
+          textarea.value = "";
+          grow();
+          form.dispatchEvent(new Event("reset-attachments"));
+          append(result);
+          toBottom();
+        }
+      } catch (e) {
+        form.submit(); // gagal lewat fetch: kirim cara biasa
+      }
+      button.disabled = false;
+      textarea.focus();
+    });
+  }
+}
