@@ -151,9 +151,13 @@ CREATE TABLE IF NOT EXISTS messages (
     conversation_id INTEGER NOT NULL REFERENCES conversations (id) ON DELETE CASCADE,
     sender_id       INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     body            TEXT    NOT NULL DEFAULT '',
+    reply_to_id     INTEGER REFERENCES messages (id) ON DELETE SET NULL,  -- pesan yang dibalas
     is_hidden       INTEGER NOT NULL DEFAULT 0,             -- disembunyikan admin setelah dilaporkan
     created_at      TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    read_at         TEXT                                    -- NULL = belum dibaca penerima
+    read_at         TEXT,                                   -- NULL = belum dibaca penerima
+    edited_at       TEXT,                                   -- terisi kalau pesan pernah diedit
+    deleted_at      TEXT,                                   -- terisi kalau pengirim menghapusnya
+    updated_at      TEXT                                    -- perubahan terakhir (edit/hapus), untuk polling
 );
 
 -- Blokir: pengguna yang diblokir tidak bisa mengirim pesan ke pemblokir.

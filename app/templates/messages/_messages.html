@@ -1,28 +1,66 @@
-{# Daftar gelembung pesan. Dipakai saat halaman dibuka dan saat app.js mengambil pesan baru. #}
+{# Daftar gelembung pesan. Dipakai saat halaman dibuka, saat app.js mengambil pesan baru,
+   dan saat satu pesan diedit atau dihapus (daftar berisi satu pesan tanpa pemisah hari). #}
 {% from "_macros.html" import attachment_list, icon %}
 {% for m in messages %}
   {% if m.day %}<p class="dm-day"><span>{{ m.day }}</span></p>{% endif %}
   {% set mine = m.sender_id == g.user.id %}
-  <div class="b {{ 'b-out' if mine else 'b-in' }}" id="pesan-{{ m.id }}" data-message-id="{{ m.id }}">
-    {% if m.is_hidden %}
-      <p class="b-text b-hidden">{{ _("Pesan ini disembunyikan admin karena dilaporkan.") }}</p>
+  {% set gone = m.deleted_at or m.is_hidden %}
+  {# Ringkasan pesan untuk kutipan balasan dan untuk app.js (atribut data-*). #}
+  {% set summary = m.body|truncate(90) if m.body else (_('Foto') if m.files and m.files[0].kind == 'image' else (_('File PDF') if m.files else '')) %}
+  <div class="b {{ 'b-out' if mine else 'b-in' }}{% if gone %} b-gone{% endif %}" id="pesan-{{ m.id }}"
+       data-message-id="{{ m.id }}" data-sender="{{ _('Kamu') if mine else m.full_name.split(' ')[0] }}"
+       data-summary="{{ summary }}" data-body="{{ m.body if mine and not gone else '' }}"
+       data-has-files="{{ 1 if m.files else 0 }}">
+    {% if m.deleted_at %}
+      <p class="b-text b-deleted">{{ icon('ban', 14) }}{{ _("Kamu menghapus pesan ini.") if mine else _("Pesan ini dihapus.") }}</p>
+    {% elif m.is_hidden %}
+      <p class="b-text b-deleted">{{ _("Pesan ini disembunyikan admin karena dilaporkan.") }}</p>
     {% else %}
+      {% if m.reply_id %}
+        <a class="b-quote" href="#pesan-{{ m.reply_id }}" data-jump="{{ m.reply_id }}">
+          <strong>{{ _("Kamu") if m.reply_sender == g.user.id else m.reply_name }}</strong>
+          <span>
+            {%- if m.reply_deleted %}{{ _("Pesan ini dihapus.") }}
+            {%- elif m.reply_hidden %}{{ _("Pesan disembunyikan") }}
+            {%- elif m.reply_body %}{{ m.reply_body|truncate(90) }}
+            {%- elif m.reply_kind == 'image' %}{{ _("Foto") }}
+            {%- elif m.reply_kind == 'pdf' %}{{ _("File PDF") }}{% endif -%}
+          </span>
+        </a>
+      {% endif %}
       {% if m.files %}<div class="b-files">{{ attachment_list(m.files, 'chat', compact=True) }}</div>{% endif %}
       {% if m.body %}<p class="b-text">{{ m.body }}</p>{% endif %}
     {% endif %}
     <span class="b-meta">
+      {% if m.edited_at and not gone %}<span class="b-edited">{{ _("diedit") }}</span>{% endif %}
       <time datetime="{{ m.created_at }}">{{ m.created_at|jam }}</time>
-      {% if not mine and not m.is_hidden %}
-        <details class="pop b-report">
-          <summary aria-label="{{ _('Laporkan pesan ini') }}" title="{{ _('Laporkan pesan ini') }}">{{ icon('flag', 13) }}</summary>
-          <form method="post" action="{{ url_for('messages.report', message_id=m.id) }}" class="pop-panel">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <label for="alasan-pesan-{{ m.id }}">{{ _("Kenapa dilaporkan?") }}</label>
-            <input id="alasan-pesan-{{ m.id }}" name="reason" maxlength="300" placeholder="{{ _('misalnya pelecehan atau penipuan') }}" required>
-            <button class="btn btn-primary btn-small" type="submit">{{ _("Kirim laporan") }}</button>
-          </form>
-        </details>
-      {% endif %}
     </span>
+
+    {% if not gone %}
+      {# Menu pesan. Tanpa JavaScript, Balas dan Edit membuka halaman dengan ?balas= / ?edit=. #}
+      <details class="pop b-menu">
+        <summary aria-label="{{ _('Pilihan untuk pesan ini') }}" title="{{ _('Pilihan untuk pesan ini') }}">{{ icon('more', 16) }}</summary>
+        <div class="pop-panel b-menu-panel">
+          <a class="b-menu-item" href="?balas={{ m.id }}#tulis-pesan" data-action="reply">{{ icon('reply', 15) }}{{ _("Balas") }}</a>
+          {% if mine %}
+            {% if not m.is_reported %}
+              <a class="b-menu-item" href="?edit={{ m.id }}#tulis-pesan" data-action="edit">{{ icon('edit', 15) }}{{ _("Edit") }}</a>
+            {% endif %}
+            <form method="post" action="{{ url_for('messages.delete_message', message_id=m.id) }}" data-action="delete"
+                  data-confirm="{{ _('Hapus pesan ini untuk kalian berdua?') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="b-menu-item b-menu-danger" type="submit">{{ icon('trash', 15) }}{{ _("Hapus") }}</button>
+            </form>
+          {% else %}
+            <form method="post" action="{{ url_for('messages.report', message_id=m.id) }}" class="b-report-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <label for="alasan-pesan-{{ m.id }}">{{ _("Laporkan: kenapa?") }}</label>
+              <input id="alasan-pesan-{{ m.id }}" name="reason" maxlength="300" placeholder="{{ _('misalnya pelecehan atau penipuan') }}" required>
+              <button class="btn btn-quiet btn-small" type="submit">{{ icon('flag', 14) }}{{ _("Kirim laporan") }}</button>
+            </form>
+          {% endif %}
+        </div>
+      </details>
+    {% endif %}
   </div>
 {% endfor %}

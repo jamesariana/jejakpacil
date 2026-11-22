@@ -91,6 +91,7 @@ def _conversation_list(keyword="", unread_only=False):
     rows = query(
         """SELECT c.*, u.id AS other_id, u.full_name, u.photo, u.prodi, u.angkatan,
                   last.body AS last_body, last.sender_id AS last_sender, last.is_hidden AS last_hidden,
+                  last.deleted_at AS last_deleted,
                   (SELECT kind FROM attachments a WHERE a.message_id = last.id ORDER BY a.id LIMIT 1) AS last_kind,
                   (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != ?
                       AND m.read_at IS NULL AND m.is_hidden = 0) AS n_unread
@@ -108,17 +109,58 @@ def _conversation_list(keyword="", unread_only=False):
     return rows
 
 
+# Kolom pesan beserta ringkasan pesan yang dibalasnya (untuk kutipan di atas gelembung).
+MESSAGE_SELECT = """
+    SELECT m.*, u.full_name,
+           rm.id AS reply_id, rm.sender_id AS reply_sender, ru.full_name AS reply_name,
+           rm.body AS reply_body, rm.deleted_at AS reply_deleted, rm.is_hidden AS reply_hidden,
+           (SELECT kind FROM attachments a WHERE a.message_id = rm.id ORDER BY a.id LIMIT 1) AS reply_kind,
+           EXISTS (SELECT 1 FROM message_reports r WHERE r.message_id = m.id) AS is_reported
+      FROM messages m
+      JOIN users u ON u.id = m.sender_id
+      LEFT JOIN messages rm ON rm.id = m.reply_to_id
+      LEFT JOIN users ru ON ru.id = rm.sender_id
+"""
+
+
+def _with_files(rows):
+    files = attachments.for_owners("message_id", [row["id"] for row in rows])
+    return [dict(row, files=files.get(row["id"], [])) for row in rows]
+
+
 def _load_messages(conversation_id, after_id=0):
     """Pesan dalam percakapan (paling lama di atas) beserta lampirannya."""
     rows = query(
-        """SELECT * FROM (
-               SELECT m.*, u.full_name FROM messages m JOIN users u ON u.id = m.sender_id
+        f"""SELECT * FROM ({MESSAGE_SELECT}
                 WHERE m.conversation_id = ? AND m.id > ? ORDER BY m.id DESC LIMIT ?
            ) ORDER BY id""",
         (conversation_id, after_id, PAGE_SIZE),
     )
-    files = attachments.for_owners("message_id", [row["id"] for row in rows])
-    return [dict(row, files=files.get(row["id"], [])) for row in rows]
+    return _with_files(rows)
+
+
+def _get_own_message(message_id):
+    """Pesan milik pengguna yang sedang masuk (untuk edit dan hapus)."""
+    message = query(f"{MESSAGE_SELECT} WHERE m.id = ?", (message_id,), one=True)
+    if message is None:
+        abort(404)
+    _get_conversation(message["conversation_id"])
+    if message["sender_id"] != g.user["id"]:
+        abort(403)
+    return message
+
+
+def _render_one(message_id):
+    """HTML satu gelembung pesan, untuk mengganti gelembung lama setelah diedit atau dihapus."""
+    rows = _with_files(query(f"{MESSAGE_SELECT} WHERE m.id = ?", (message_id,)))
+    for row in rows:
+        row["day"] = None
+    return render_template("messages/_messages.html", messages=rows)
+
+
+def _db_now():
+    """Waktu server menurut SQLite, dipakai app.js untuk menanyakan "ada yang berubah sejak kapan?"."""
+    return query("SELECT CURRENT_TIMESTAMP AS now", one=True)["now"]
 
 
 def _with_day_labels(messages, previous_day=None):
@@ -181,6 +223,16 @@ def conversation(conversation_id):
     i_blocked = bool(
         query("SELECT 1 FROM blocks WHERE blocker_id = ? AND blocked_id = ?", (g.user["id"], other["id"]), one=True)
     )
+    messages = _with_day_labels(_load_messages(conversation_id))
+    # ?balas=<id> dan ?edit=<id> membuat kotak tulis langsung dalam mode balas/edit.
+    # app.js melakukan hal yang sama tanpa memuat ulang halaman; ini cadangan bila JavaScript mati.
+    by_id = {m["id"]: m for m in messages}
+    reply_to = by_id.get(int(request.args["balas"])) if request.args.get("balas", "").isdigit() else None
+    editing = by_id.get(int(request.args["edit"])) if request.args.get("edit", "").isdigit() else None
+    if editing and (editing["sender_id"] != g.user["id"] or editing["deleted_at"] or editing["is_hidden"]):
+        editing = None
+    if reply_to and reply_to["deleted_at"]:
+        reply_to = None
     return render_template(
         "messages/index.html",
         conversations=_conversation_list(),
@@ -188,7 +240,10 @@ def conversation(conversation_id):
         other=other,
         origin=origin,
         latest_role=latest_role,
-        messages=_with_day_labels(_load_messages(conversation_id)),
+        messages=messages,
+        reply_to=reply_to,
+        editing=editing,
+        now=_db_now(),
         blocked=is_blocked(g.user["id"], other["id"]),
         i_blocked=i_blocked,
         keyword="",
@@ -242,9 +297,17 @@ def send(conversation_id):
         flash(error, "error")
         return redirect(url_for("messages.conversation", conversation_id=conversation_id))
 
+    reply_to = request.form.get("reply_to", "")
+    reply_to = int(reply_to) if reply_to.isdigit() else None
+    if reply_to and not query(  # hanya boleh membalas pesan di percakapan yang sama
+        "SELECT 1 FROM messages WHERE id = ? AND conversation_id = ? AND deleted_at IS NULL",
+        (reply_to, conversation_id),
+        one=True,
+    ):
+        reply_to = None
     message_id = execute(
-        "INSERT INTO messages (conversation_id, sender_id, body) VALUES (?, ?, ?)",
-        (conversation_id, g.user["id"], body),
+        "INSERT INTO messages (conversation_id, sender_id, body, reply_to_id) VALUES (?, ?, ?, ?)",
+        (conversation_id, g.user["id"], body, reply_to),
     )
     attachments.store(uploads, "chat", g.user["id"], message_id=message_id)
     execute("UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?", (conversation_id,))
@@ -263,8 +326,21 @@ def new_messages(conversation_id):
 
 
 def _new_messages_json(conversation_id):
+    """Pesan baru setelah id tertentu, ditambah pesan lama yang diedit/dihapus sejak waktu `ubah`."""
     after = request.args.get("setelah", request.form.get("setelah", "0"))
     after = int(after) if str(after).isdigit() else 0
+    since = request.args.get("ubah", request.form.get("ubah", ""))
+    now = _db_now()
+    changed = []
+    if since:
+        rows = query(
+            """SELECT id FROM messages
+                WHERE conversation_id = ? AND id <= ?
+                  AND (updated_at > ? OR reply_to_id IN (
+                        SELECT id FROM messages WHERE conversation_id = ? AND updated_at > ?))""",
+            (conversation_id, after, since, conversation_id, since),
+        )
+        changed = [{"id": row["id"], "html": _render_one(row["id"])} for row in rows]
     previous = query(
         "SELECT created_at FROM messages WHERE id = ? AND conversation_id = ?", (after, conversation_id), one=True
     )
@@ -272,7 +348,69 @@ def _new_messages_json(conversation_id):
         _load_messages(conversation_id, after), day_label(previous["created_at"]) if previous else None
     )
     html = render_template("messages/_messages.html", messages=messages)
-    return jsonify(html=html, last_id=messages[-1]["id"] if messages else after, unread=unread_count(g.user["id"]))
+    return jsonify(
+        html=html,
+        last_id=messages[-1]["id"] if messages else after,
+        changed=changed,
+        now=now,
+        unread=unread_count(g.user["id"]),
+    )
+
+
+@bp.route("/pesan/<int:message_id>/edit", methods=("POST",))
+@login_required
+def edit_message(message_id):
+    """Ubah teks pesan sendiri. Lampiran tidak bisa diganti; hapus pesannya kalau perlu."""
+    message = _get_own_message(message_id)
+    body = request.form.get("body", "").strip()[:MAX_BODY]
+    error = None
+    if message["deleted_at"] or message["is_hidden"]:
+        error = _("Pesan ini tidak bisa diedit lagi.")
+    elif message["is_reported"]:
+        error = _("Pesan yang sudah dilaporkan tidak bisa diedit.")  # bukti untuk admin tetap utuh
+    elif not body and not attachments.for_owners("message_id", [message_id]):
+        error = _("Pesan masih kosong.")  # teks boleh dikosongkan hanya kalau masih ada lampiran
+    if error:
+        if _wants_json():
+            return jsonify(error=error), 400
+        flash(error, "error")
+    elif body != message["body"]:
+        execute(
+            """UPDATE messages SET body = ?, edited_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?""",
+            (body, message_id),
+        )
+    if _wants_json():
+        return jsonify(id=message_id, html=_render_one(message_id))
+    return redirect(url_for("messages.conversation", conversation_id=message["conversation_id"]) + f"#pesan-{message_id}")
+
+
+@bp.route("/pesan/<int:message_id>/hapus", methods=("POST",))
+@login_required
+def delete_message(message_id):
+    """Hapus pesan sendiri untuk kedua orang. Gelembungnya diganti tulisan "Pesan ini dihapus".
+
+    Kalau pesan itu sudah dilaporkan, isinya tetap disimpan supaya admin masih bisa
+    memeriksanya; pengguna tetap hanya melihat tulisan "Pesan ini dihapus".
+    """
+    message = _get_own_message(message_id)
+    if not message["deleted_at"]:
+        if message["is_reported"]:
+            execute(
+                "UPDATE messages SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (message_id,),
+            )
+        else:
+            attachments.remove("message_id", message_id, "chat")
+            execute("DELETE FROM attachments WHERE message_id = ?", (message_id,))
+            execute(
+                """UPDATE messages SET body = '', deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?""",
+                (message_id,),
+            )
+    if _wants_json():
+        return jsonify(id=message_id, html=_render_one(message_id))
+    return redirect(url_for("messages.conversation", conversation_id=message["conversation_id"]))
 
 
 @bp.route("/<int:conversation_id>/blokir", methods=("POST",))

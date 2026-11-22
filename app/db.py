@@ -42,11 +42,33 @@ def execute(sql, params=()):
     return cursor.lastrowid
 
 
+# Kolom yang ditambahkan setelah tabelnya pertama kali dibuat.
+# CREATE TABLE IF NOT EXISTS tidak menambah kolom ke tabel lama, jadi database yang
+# sudah ada di laptop anggota kelompok diperbarui di sini tanpa menghapus datanya.
+NEW_COLUMNS = {
+    "messages": {
+        "reply_to_id": "INTEGER REFERENCES messages (id) ON DELETE SET NULL",
+        "edited_at": "TEXT",
+        "deleted_at": "TEXT",
+        "updated_at": "TEXT",
+    },
+}
+
+
+def _add_missing_columns(db):
+    for table, columns in NEW_COLUMNS.items():
+        existing = {row[1] for row in db.execute(f"PRAGMA table_info({table})")}
+        for name, definition in columns.items():
+            if name not in existing:
+                db.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
+
+
 def init_db():
-    """Buat tabel yang belum ada dan isi kategori forum bawaan."""
+    """Buat tabel yang belum ada, tambah kolom baru, dan isi kategori forum bawaan."""
     db = get_db()
     with current_app.open_resource("schema.sql") as file:
         db.executescript(file.read().decode("utf-8"))
+    _add_missing_columns(db)
     for position, (slug, name, description) in enumerate(DEFAULT_CATEGORIES):
         db.execute(
             "INSERT OR IGNORE INTO categories (slug, name, description, position) VALUES (?, ?, ?, ?)",

@@ -2103,3 +2103,91 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { background-c
   .dm-compose { padding: 10px; }
   .dm-preview, .dm-error { padding-left: 0; }
 }
+
+/* =====================================================================
+   Chat: balas, edit, hapus
+   ===================================================================== */
+/* Menu ⋯ muncul saat gelembung disorot (selalu terlihat di layar sentuh). */
+.b-menu { position: absolute; top: 6px; }
+.b-out .b-menu { left: -34px; }
+.b-in .b-menu { right: -34px; }
+.b-menu summary {
+  list-style: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%;
+  color: var(--ink-3); cursor: pointer; opacity: 0; transition: opacity 0.15s ease, background 0.15s ease;
+}
+.b-menu summary::-webkit-details-marker { display: none; }
+.b:hover .b-menu summary, .b-menu[open] summary, .b-menu summary:focus-visible { opacity: 1; }
+.b-menu summary:hover, .b-menu[open] summary { background: var(--muted-bg); color: var(--ink); }
+.b-menu-panel {
+  position: absolute; top: 32px; z-index: 20; min-width: 190px; display: grid; gap: 2px; padding: 6px;
+  border-radius: 14px; background: var(--surface); border: 1px solid var(--line);
+  box-shadow: 0 12px 30px rgba(14, 26, 40, 0.18);
+}
+.b-out .b-menu-panel { right: 0; }
+.b-in .b-menu-panel { left: 0; }
+.b-menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px;
+  background: none; font: inherit; font-size: 0.88rem; font-weight: 600; color: var(--ink); text-decoration: none; cursor: pointer;
+}
+.b-menu-item:hover { background: var(--hover-bg-strong); }
+.b-menu-danger { color: var(--red-ink); }
+.b-report-form { display: grid; gap: 6px; padding: 6px; border-top: 1px solid var(--line); margin-top: 4px; }
+.b-report-form label { font-size: 0.8rem; font-weight: 600; color: var(--ink-2); }
+.b-report-form input { min-height: 36px; font-size: 0.85rem; }
+
+/* Kutipan pesan yang dibalas */
+.b-quote {
+  display: grid; gap: 1px; margin: 2px 0 6px; padding: 6px 10px; border-left: 3px solid #769fcd; border-radius: 8px;
+  background: rgba(118, 159, 205, 0.12); color: inherit; text-decoration: none; font-size: 0.82rem;
+}
+.b-out .b-quote { background: rgba(255, 255, 255, 0.5); border-left-color: #3f6a9e; }
+.b-quote strong { font-size: 0.78rem; color: #3f6a9e; }
+.b-quote span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.b-out .b-quote span { color: #2c4f78; }
+.b-quote:hover { filter: brightness(0.97); }
+
+.b-deleted { display: inline-flex; align-items: center; gap: 6px; font-style: italic; color: var(--ink-3); }
+.b-gone { background: transparent !important; border: 1px dashed var(--line-strong) !important; color: var(--ink-3); }
+.b-gone .b-meta { color: var(--ink-3); }
+.b-edited { font-style: italic; }
+@keyframes b-flash { 0%, 40% { box-shadow: 0 0 0 4px rgba(118, 159, 205, 0.6); } 100% { box-shadow: 0 0 0 0 rgba(118, 159, 205, 0); } }
+.b.is-flash { animation: b-flash 1.6s ease; }
+
+/* Bilah "Membalas ..." / "Mengedit pesan" di atas kotak tulis */
+.dm-context {
+  display: flex; align-items: center; gap: 10px; margin-left: 54px; padding: 8px 10px 8px 12px;
+  border-left: 3px solid #769fcd; border-radius: 10px; background: var(--soft-bg);
+}
+.dm-context[hidden] { display: none; }
+.dm-context-icon { color: var(--blue); display: inline-flex; }
+.dm-context-text { flex: 1; min-width: 0; display: grid; font-size: 0.84rem; }
+.dm-context-text strong { color: var(--blue); font-size: 0.8rem; }
+.dm-context-text span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.dm-context-close {
+  flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; color: var(--ink-2);
+}
+.dm-context-close:hover { background: var(--hover-bg-strong); color: var(--ink); }
+.dm-compose.is-editing .dm-context { border-left-color: #e0a84a; }
+.dm-compose.is-editing .dm-context-icon, .dm-compose.is-editing .dm-context-text strong { color: #a66d12; }
+.dm-compose-row .dm-icon-btn[hidden] { display: none; }
+
+:root[data-theme="dark"] .b-menu-panel { background: #263c57; border-color: #3a5878; }
+:root[data-theme="dark"] .b-menu summary:hover, :root[data-theme="dark"] .b-menu[open] summary { background: #33537a; }
+:root[data-theme="dark"] .b-in .b-quote { background: rgba(185, 215, 234, 0.1); border-left-color: #b9d7ea; }
+:root[data-theme="dark"] .b-in .b-quote strong { color: #b9d7ea; }
+:root[data-theme="dark"] .b-out .b-quote { background: rgba(255, 255, 255, 0.45); }
+:root[data-theme="dark"] .dm-context { background: #1b2c41; border-left-color: #b9d7ea; }
+:root[data-theme="dark"] .dm-context-icon, :root[data-theme="dark"] .dm-context-text strong { color: #b9d7ea; }
+:root[data-theme="dark"] .dm-compose.is-editing .dm-context-icon,
+:root[data-theme="dark"] .dm-compose.is-editing .dm-context-text strong { color: #f2c27a; }
+
+/* Layar sentuh tidak punya hover: tombol ⋯ selalu terlihat, ditaruh di dalam gelembung. */
+@media (hover: none), (max-width: 760px) {
+  .b-menu summary { opacity: 0.7; }
+  .b { padding-right: 34px; }
+  .b-out .b-menu, .b-in .b-menu { left: auto; right: 4px; top: 4px; }
+  .b-out .b-menu-panel, .b-in .b-menu-panel { right: 0; left: auto; }
+  .dm-context { margin-left: 0; }
+}
+.b-menu-panel { width: max-content; max-width: 260px; }
+.b-menu.opens-up .b-menu-panel { top: auto; bottom: 32px; }

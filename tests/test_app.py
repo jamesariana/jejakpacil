@@ -693,3 +693,105 @@ class MessageTest(BaseTest):
         self.client.post(f"/admin/laporan-pesan/{report_id}/tindak", data={"action": "sembunyikan"})
         self.assertEqual(self.db("SELECT is_hidden FROM messages", one=True)["is_hidden"], 1)
 
+
+class MessageActionTest(BaseTest):
+    """Balas, edit, dan hapus pesan chat."""
+
+    def setUp(self):
+        super().setUp()
+        self.register(email="budi@ui.ac.id", name="Budi Santoso")      # id 1
+        self.register(email="sari@ui.ac.id", name="Sari Wulandari")    # id 2
+        self.register(email="tono@ui.ac.id", name="Tono Prasetyo")     # id 3
+        self.login()
+        self.conversation_id = self.start_chat()
+
+    start_chat = MessageTest.start_chat
+
+    def send(self, body, **extra):
+        self.client.post(f"/pesan/{self.conversation_id}/kirim", data={"body": body, **extra})
+        return self.db("SELECT MAX(id) AS id FROM messages", one=True)["id"]
+
+    def as_sari(self):
+        self.logout()
+        self.login(email="sari@ui.ac.id")
+
+    def test_balas_pesan(self):
+        first = self.send("Kapan seleksinya?")
+        self.as_sari()
+        reply = self.send("Minggu depan", reply_to=str(first))
+        self.assertEqual(self.db("SELECT reply_to_id FROM messages WHERE id = ?", (reply,), one=True)["reply_to_id"], first)
+        page = self.client.get(f"/pesan/{self.conversation_id}").get_data(as_text=True)
+        self.assertIn('class="b-quote"', page)
+        self.assertIn("Kapan seleksinya?", page)
+
+    def test_balas_pesan_percakapan_lain_diabaikan(self):
+        other_conversation = self.start_chat(3)
+        self.client.post(f"/pesan/{other_conversation}/kirim", data={"body": "Rahasia untuk Tono"})
+        secret = self.db("SELECT MAX(id) AS id FROM messages", one=True)["id"]
+        reply = self.send("Halo", reply_to=str(secret))
+        self.assertIsNone(self.db("SELECT reply_to_id FROM messages WHERE id = ?", (reply,), one=True)["reply_to_id"])
+
+    def test_edit_pesan_sendiri(self):
+        message_id = self.send("Halo Sri")
+        data = self.client.post(f"/pesan/pesan/{message_id}/edit", data={"body": "Halo Sari"},
+                                headers={"X-Requested-With": "fetch"}).get_json()
+        self.assertIn("Halo Sari", data["html"])
+        self.assertIn("diedit", data["html"])
+        row = self.db("SELECT body, edited_at FROM messages WHERE id = ?", (message_id,), one=True)
+        self.assertEqual(row["body"], "Halo Sari")
+        self.assertIsNotNone(row["edited_at"])
+
+    def test_tidak_bisa_edit_atau_hapus_pesan_orang_lain(self):
+        message_id = self.send("Pesan Budi")
+        self.as_sari()
+        self.assertEqual(self.client.post(f"/pesan/pesan/{message_id}/edit", data={"body": "diubah"}).status_code, 403)
+        self.assertEqual(self.client.post(f"/pesan/pesan/{message_id}/hapus").status_code, 403)
+        self.assertEqual(self.db("SELECT body FROM messages", one=True)["body"], "Pesan Budi")
+
+    def test_hapus_pesan_dan_lampirannya(self):
+        self.client.post(f"/pesan/{self.conversation_id}/kirim", data={
+            "body": "Ini fotonya", "files": [(io.BytesIO(png_bytes()), "a.png")]}, content_type="multipart/form-data")
+        message_id = self.db("SELECT MAX(id) AS id FROM messages", one=True)["id"]
+        stored = self.db("SELECT stored_name FROM attachments", one=True)["stored_name"]
+        self.client.post(f"/pesan/pesan/{message_id}/hapus")
+        row = self.db("SELECT body, deleted_at FROM messages WHERE id = ?", (message_id,), one=True)
+        self.assertEqual(row["body"], "")
+        self.assertIsNotNone(row["deleted_at"])
+        self.assertFalse(os.path.exists(os.path.join(self.tmp, "uploads", "chat", stored)))
+        self.as_sari()
+        page = self.client.get(f"/pesan/{self.conversation_id}").get_data(as_text=True)
+        self.assertIn("Pesan ini dihapus.", page)
+        self.assertNotIn("Ini fotonya", page)
+
+    def test_pesan_yang_dilaporkan_tetap_tersimpan_untuk_admin(self):
+        message_id = self.send("Kata-kata kasar")
+        self.as_sari()
+        self.client.post(f"/pesan/lapor/{message_id}", data={"reason": "Kasar sekali"})
+        self.logout()
+        self.login()
+        response = self.client.post(f"/pesan/pesan/{message_id}/edit", data={"body": "Maaf"},
+                                    headers={"X-Requested-With": "fetch"})
+        self.assertEqual(response.status_code, 400)  # tidak bisa mengubah bukti
+        self.client.post(f"/pesan/pesan/{message_id}/hapus")
+        row = self.db("SELECT body, deleted_at FROM messages WHERE id = ?", (message_id,), one=True)
+        self.assertEqual(row["body"], "Kata-kata kasar")
+        self.assertIsNotNone(row["deleted_at"])
+
+    def test_polling_mengirim_pesan_yang_berubah(self):
+        message_id = self.send("Versi pertama")
+        now = self.db("SELECT datetime('now', '-1 second') AS t", one=True)["t"]
+        self.client.post(f"/pesan/pesan/{message_id}/edit", data={"body": "Versi kedua"})
+        self.as_sari()
+        data = self.client.get(f"/pesan/{self.conversation_id}/baru?setelah={message_id}&ubah={now}").get_json()
+        self.assertEqual([item["id"] for item in data["changed"]], [message_id])
+        self.assertIn("Versi kedua", data["changed"][0]["html"])
+        self.assertTrue(data["now"])
+
+    def test_mode_balas_dan_edit_tanpa_javascript(self):
+        message_id = self.send("Halo")
+        page = self.client.get(f"/pesan/{self.conversation_id}?edit={message_id}").get_data(as_text=True)
+        self.assertIn(f"/pesan/pesan/{message_id}/edit", page)
+        self.assertIn("Mengedit pesan", page)
+        page = self.client.get(f"/pesan/{self.conversation_id}?balas={message_id}").get_data(as_text=True)
+        self.assertIn(f'name="reply_to" value="{message_id}"', page)
+

@@ -29,7 +29,8 @@
                 <span class="dm-item-bottom">
                   <span class="dm-snippet">
                     {%- if c.last_sender == g.user.id %}{{ _("Kamu:") }} {% endif -%}
-                    {%- if c.last_hidden %}{{ _("Pesan disembunyikan") }}
+                    {%- if c.last_deleted %}{{ _("Pesan dihapus") }}
+                    {%- elif c.last_hidden %}{{ _("Pesan disembunyikan") }}
                     {%- elif c.last_body %}{{ c.last_body|truncate(70) }}
                     {%- elif c.last_kind == 'image' %}{{ _("Foto") }}
                     {%- elif c.last_kind == 'pdf' %}{{ _("File PDF") }}{% endif -%}
@@ -75,7 +76,7 @@
 
       <div class="dm-body" data-chat
            data-poll-url="{{ url_for('messages.new_messages', conversation_id=conversation.id) }}"
-           data-last-id="{{ messages[-1].id if messages else 0 }}">
+           data-last-id="{{ messages[-1].id if messages else 0 }}" data-now="{{ now }}">
         {% if origin %}
           <a class="dm-origin" href="{{ url_for('forum.thread', thread_id=origin.id) }}">{{ icon('chat', 15) }}<span>{{ _("Dimulai dari thread") }} <strong>{{ origin.title }}</strong></span></a>
         {% endif %}
@@ -92,23 +93,46 @@
           {% else %}{{ _("Kamu tidak bisa membalas percakapan ini.") }}{% endif %}
         </p>
       {% else %}
-        <form class="dm-compose" method="post" action="{{ url_for('messages.send', conversation_id=conversation.id) }}" enctype="multipart/form-data" data-chat-form data-attach>
+        {# Kotak tulis punya tiga mode: pesan baru, membalas pesan, dan mengedit pesan sendiri.
+           app.js mengganti mode tanpa memuat ulang; tanpa JavaScript mode dipilih lewat ?balas= / ?edit=. #}
+        {% set context = editing or reply_to %}
+        <form class="dm-compose{% if editing %} is-editing{% endif %}" id="tulis-pesan" method="post"
+              action="{{ url_for('messages.edit_message', message_id=editing.id) if editing else url_for('messages.send', conversation_id=conversation.id) }}"
+              data-send-url="{{ url_for('messages.send', conversation_id=conversation.id) }}"
+              data-edit-url="{{ url_for('messages.edit_message', message_id=0) }}"
+              enctype="multipart/form-data" data-chat-form data-attach>
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="reply_to" value="{{ reply_to.id if reply_to else '' }}" data-reply-input>
+          <div class="dm-context" data-chat-context{% if not context %} hidden{% endif %}>
+            <span class="dm-context-icon" aria-hidden="true" data-context-icon>{{ icon('edit' if editing else 'reply', 16) }}</span>
+            <span class="dm-context-text">
+              <strong data-context-title
+                      data-reply-label="{{ _('Membalas {name}', name='{name}') }}"
+                      data-edit-label="{{ _('Mengedit pesan') }}">
+                {%- if editing %}{{ _("Mengedit pesan") }}
+                {%- elif reply_to %}{{ _('Membalas {name}', name=(_('Kamu') if reply_to.sender_id == g.user.id else reply_to.full_name.split(' ')[0])) }}{% endif -%}
+              </strong>
+              <span data-context-summary>{{ (context.body|truncate(90)) if context and context.body else '' }}</span>
+            </span>
+            <a class="dm-context-close" href="{{ url_for('messages.conversation', conversation_id=conversation.id) }}#tulis-pesan" data-context-close aria-label="{{ _('Batal') }}" title="{{ _('Batal') }}">{{ icon('x', 16) }}</a>
+          </div>
           <div class="attach-preview dm-preview" data-attach-preview aria-live="polite"></div>
           <p class="dm-error" data-chat-error role="alert" hidden></p>
           <div class="dm-compose-row">
-            <label class="dm-icon-btn" for="lampiran-chat" title="{{ _('Lampirkan foto atau PDF') }}">
+            <label class="dm-icon-btn" for="lampiran-chat" title="{{ _('Lampirkan foto atau PDF') }}" data-attach-button{% if editing %} hidden{% endif %}>
               {{ icon('clip', 19) }}<span class="visually-hidden">{{ _("Lampirkan foto atau PDF") }}</span>
             </label>
             <input class="attach-input" id="lampiran-chat" type="file" name="files" multiple
                    accept="image/png,image/jpeg,image/webp,image/gif,application/pdf" data-attach-input
                    data-max="4" data-max-message="{{ _('Lampiran maksimal {n} file.', n=4) }}"
-                   data-size-message="{{ _('{name} lebih dari 5 MB.', name='{name}') }}">
+                   data-size-message="{{ _('{name} lebih dari 5 MB.', name='{name}') }}"{% if editing %} disabled{% endif %}>
             <label class="visually-hidden" for="pesan-baru">{{ _("Tulis pesan") }}</label>
-            <textarea id="pesan-baru" name="body" rows="1" maxlength="4000" placeholder="{{ _('Tulis pesan…') }}" data-chat-input></textarea>
-            <button class="dm-send" type="submit" aria-label="{{ _('Kirim') }}" title="{{ _('Kirim') }}">{{ icon('send', 20) }}</button>
+            <textarea id="pesan-baru" name="body" rows="1" maxlength="4000" placeholder="{{ _('Tulis pesan…') }}" data-chat-input>{{ editing.body if editing else '' }}</textarea>
+            <button class="dm-send" type="submit" aria-label="{{ _('Kirim') }}" title="{{ _('Kirim') }}"
+                    data-send-icon>{{ icon('check' if editing else 'send', 20) }}</button>
           </div>
-          <p class="dm-compose-hint">{{ _("Enter untuk kirim, Shift+Enter untuk baris baru.") }}</p>
+          {% for name in ('send', 'check', 'reply', 'edit') %}<template data-icon="{{ name }}">{{ icon(name, 20 if name in ('send', 'check') else 16) }}</template>{% endfor %}
+          <p class="dm-compose-hint">{{ _("Enter untuk kirim, Shift+Enter untuk baris baru, Esc untuk batal balas atau edit.") }}</p>
         </form>
       {% endif %}
     {% else %}
