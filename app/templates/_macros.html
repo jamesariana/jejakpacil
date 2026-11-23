@@ -38,6 +38,8 @@
   {%- elif name == 'back' -%}<path d="m15 6-6 6 6 6"/>
   {%- elif name == 'user' -%}<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
   {%- elif name == 'more' -%}<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>
+  {%- elif name == 'bell' -%}<path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Z"/><path d="M10 20a2 2 0 0 0 4 0"/>
+  {%- elif name == 'thumb' -%}<path d="M7 10v11H4V10Z"/><path d="M7 10l4-7a2 2 0 0 1 3 2l-1 4h5.5a2 2 0 0 1 2 2.4l-1.4 7A2 2 0 0 1 17.1 21H7"/>
   {%- elif name == 'sort' -%}<path d="M7 4v16"/><path d="m3 8 4-4 4 4"/><path d="M17 20V4"/><path d="m13 16 4 4 4-4"/>
   {%- elif name == 'eye-off' -%}<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6 0 9.5 7 9.5 7a17 17 0 0 1-3 3.9M6.5 6.6A17 17 0 0 0 2.5 12S6 19 12 19a9.6 9.6 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
   {%- endif -%}
@@ -89,7 +91,7 @@
    lead = 'company' menonjolkan perusahaan (dipakai di profil),
    lead = 'person' menonjolkan orangnya (dipakai di halaman perusahaan). #}
 {% macro exp_item(e, lead='company', show_person=True, can_edit=False) %}
-  <li class="trail-item{% if not e.end_date %} is-current{% endif %}">
+  <li class="trail-item{% if not e.end_date %} is-current{% endif %}" id="pengalaman-{{ e.id }}">
     <div class="trail-lead">
       {% if lead == 'person' %}{{ avatar(e.full_name, e.user_photo, 'md') }}{% else %}{{ logo(e.company_name, e.company_logo, 'md') }}{% endif %}
     </div>

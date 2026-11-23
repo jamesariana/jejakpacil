@@ -178,6 +178,34 @@ CREATE TABLE IF NOT EXISTS message_reports (
     created_at  TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Catatan percobaan untuk membatasi tebak-tebakan kata sandi dan permintaan tautan.
+-- kind: "login-gagal" atau "lupa-sandi"; key: email atau alamat IP.
+CREATE TABLE IF NOT EXISTS rate_limits (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind       TEXT NOT NULL,
+    key        TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Notifikasi di dalam website: balasan forum, suara, keputusan admin, dan moderasi.
+-- Teksnya tidak disimpan jadi; yang disimpan jenis dan datanya, lalu template
+-- menyusun kalimatnya dalam bahasa yang sedang dipilih pengguna.
+CREATE TABLE IF NOT EXISTS notifications (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id      INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,   -- penerima
+    kind         TEXT    NOT NULL,          -- lihat KINDS di notifications.py
+    actor_id     INTEGER REFERENCES users (id) ON DELETE SET NULL,           -- yang memicu, kalau ada
+    is_anonymous INTEGER NOT NULL DEFAULT 0, -- pemicu menulis secara anonim: namanya tidak ditampilkan
+    count        INTEGER NOT NULL DEFAULT 1, -- untuk notifikasi yang digabung, misalnya "3 orang memberi suara"
+    subject      TEXT    NOT NULL DEFAULT '', -- judul thread, posisi, atau nama perusahaan (salinan saat itu)
+    detail       TEXT    NOT NULL DEFAULT '', -- keterangan tambahan, misalnya nama perusahaan
+    link         TEXT    NOT NULL,            -- halaman yang dibuka saat notifikasi diklik
+    group_key    TEXT,                        -- notifikasi dengan kunci sama yang belum dibaca digabung
+    is_read      INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indeks mempercepat pencarian yang sering dipakai.
 CREATE INDEX IF NOT EXISTS idx_experiences_user    ON experiences (user_id);
 CREATE INDEX IF NOT EXISTS idx_experiences_company ON experiences (company_id);
@@ -188,3 +216,5 @@ CREATE INDEX IF NOT EXISTS idx_attachments_thread  ON attachments (thread_id);
 CREATE INDEX IF NOT EXISTS idx_attachments_reply   ON attachments (reply_id);
 CREATE INDEX IF NOT EXISTS idx_attachments_message ON attachments (message_id);
 CREATE INDEX IF NOT EXISTS idx_messages_conv       ON messages (conversation_id, id);
+CREATE INDEX IF NOT EXISTS idx_rate_limits ON rate_limits (kind, key, created_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id, is_read, updated_at);

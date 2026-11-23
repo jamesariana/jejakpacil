@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar, icon, pagination %}
+{% block title %}{{ _("Notifikasi") }}{% endblock %}
+{% block content %}
+<div class="notif-page">
+  <header class="notif-head">
+    <div>
+      <h1>{{ _("Notifikasi") }}</h1>
+      <p class="muted">{{ _("Balasan di forum, suara untuk thread-mu, dan keputusan admin tentang pengalamanmu.") }}</p>
+    </div>
+    {% if unread_notifications %}
+      <form method="post" action="{{ url_for('notifications.mark_all_read') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-quiet btn-small" type="submit">{{ icon('check', 15) }}{{ _("Tandai semua sudah dibaca") }}</button>
+      </form>
+    {% endif %}
+  </header>
+
+  <nav class="dm-tabs notif-tabs" aria-label="{{ _('Saring notifikasi') }}">
+    <a href="{{ url_for('notifications.index') }}"{% if not unread_only %} aria-current="true"{% endif %}>{{ _("Semua") }}</a>
+    <a href="{{ url_for('notifications.index', filter='belum') }}"{% if unread_only %} aria-current="true"{% endif %}>{{ _("Belum dibaca") }}{% if unread_notifications %} <span class="dm-tab-count">{{ unread_notifications }}</span>{% endif %}</a>
+  </nav>
+
+  {% if items %}
+    <ul class="notif-list">
+      {% for n in items %}
+        {% set who = _('Seseorang (anonim)') if n.is_anonymous else (n.actor_name or _('Seseorang')) %}
+        <li>
+          <a class="notif-item{% if not n.is_read %} is-unread{% endif %}" href="{{ url_for('notifications.open_one', notification_id=n.id) }}">
+            {# Ikon jenis notifikasi; untuk balasan dan suara pakai foto orangnya (kecuali anonim). #}
+            {% if n.kind in ('balasan_thread', 'balasan_komentar', 'suara') and not n.is_anonymous and n.actor_name %}
+              <span class="notif-avatar">{{ avatar(n.actor_name, n.actor_photo, 'md') }}
+                <span class="notif-kind notif-kind-{{ n.kind }}" aria-hidden="true">{{ icon('thumb' if n.kind == 'suara' else 'reply', 12) }}</span></span>
+            {% else %}
+              <span class="notif-icon notif-icon-{{ n.kind }}" aria-hidden="true">
+                {{ icon({'verifikasi_diterima': 'check', 'verifikasi_ditolak': 'x', 'perusahaan_disetujui': 'building',
+                         'konten_disembunyikan': 'ban'}.get(n.kind, 'reply'), 18) }}
+              </span>
+            {% endif %}
+            <span class="notif-text">
+              <span class="notif-sentence">
+                {%- if n.kind == 'balasan_thread' -%}
+                  {{ _('{who} membalas thread-mu “{title}”.', who=who, title=n.subject) }}
+                {%- elif n.kind == 'balasan_komentar' -%}
+                  {{ _('{who} membalas komentarmu di “{title}”.', who=who, title=n.subject) }}
+                {%- elif n.kind == 'suara' -%}
+                  {%- if n.count > 1 -%}{{ _('{who} dan {n} orang lainnya memberi suara untuk thread-mu “{title}”.', who=who, n=n.count - 1, title=n.subject) }}
+                  {%- else -%}{{ _('{who} memberi suara untuk thread-mu “{title}”.', who=who, title=n.subject) }}{%- endif -%}
+                {%- elif n.kind == 'verifikasi_diterima' -%}
+                  {{ _('Pengalamanmu sebagai {role} di {company} sudah terverifikasi. Tanda terverifikasi kini tampil di profilmu.', role=n.subject, company=n.detail) }}
+                {%- elif n.kind == 'verifikasi_ditolak' -%}
+                  {{ _('Bukti pengalamanmu sebagai {role} di {company} ditolak. Unggah bukti lain supaya bisa diperiksa lagi.', role=n.subject, company=n.detail) }}
+                {%- elif n.kind == 'perusahaan_disetujui' -%}
+                  {{ _('{company}, perusahaan yang kamu tambahkan, sudah disetujui dan tampil di daftar perusahaan.', company=n.subject) }}
+                {%- elif n.kind == 'konten_disembunyikan' -%}
+                  {%- if n.detail == 'balasan' -%}{{ _('Balasanmu di “{title}” disembunyikan moderator karena melanggar aturan forum.', title=n.subject) }}
+                  {%- else -%}{{ _('Thread-mu “{title}” disembunyikan moderator karena melanggar aturan forum.', title=n.subject) }}{%- endif -%}
+                {%- endif -%}
+              </span>
+              <time class="notif-time" datetime="{{ n.updated_at }}">{{ n.updated_at|lalu }}</time>
+            </span>
+            {% if not n.is_read %}<span class="notif-dot" aria-label="{{ _('Belum dibaca') }}"></span>{% endif %}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    {{ pagination(page) }}
+  {% else %}
+    <div class="notif-empty">
+      <span class="dm-placeholder-icon" aria-hidden="true">{{ icon('bell', 28) }}</span>
+      {% if unread_only %}
+        <p><strong>{{ _("Semua notifikasi sudah dibaca.") }}</strong></p>
+      {% else %}
+        <p><strong>{{ _("Belum ada notifikasi.") }}</strong></p>
+        <p class="muted">{{ _("Notifikasi muncul saat thread-mu dibalas, diberi suara, atau saat admin memeriksa pengalamanmu.") }}</p>
+        <a class="btn btn-quiet btn-small" href="{{ url_for('forum.index') }}">{{ icon('chat', 15) }}{{ _("Buka forum") }}</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

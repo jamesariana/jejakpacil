@@ -21,6 +21,28 @@ def is_allowed_email(email):
     return bool(EMAIL_RE.match(email or ""))
 
 
+# Kata sandi yang terlalu mudah ditebak, ditolak walaupun panjangnya cukup.
+COMMON_PASSWORDS = {
+    "12345678", "123456789", "1234567890", "password", "password1", "qwerty123", "qwertyuiop",
+    "katasandi", "11111111", "00000000", "abcd1234", "iloveyou", "fasilkom", "fasilkomui", "pacil123",
+}
+
+
+def validate_new_password(password, password2, email=""):
+    """Aturan kata sandi baru, dipakai saat daftar, lupa sandi, dan ganti sandi."""
+    errors = {}
+    local_part = email.split("@")[0].lower() if email else ""
+    if len(password) < 8:
+        errors["password"] = "Kata sandi minimal 8 karakter."
+    elif len(password) > 128:
+        errors["password"] = "Kata sandi maksimal 128 karakter."
+    elif password.lower() in COMMON_PASSWORDS or (local_part and local_part in password.lower()):
+        errors["password"] = "Kata sandi ini terlalu mudah ditebak. Jangan pakai nama emailmu atau angka berurutan."
+    elif password != password2:
+        errors["password2"] = "Ulangi kata sandi yang sama."
+    return errors
+
+
 def _to_int(value):
     try:
         return int(value)

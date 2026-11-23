@@ -90,5 +90,13 @@
       <a href="{{ url_for('profiles.detail', user_id=user.id) }}">{{ _("Batal") }}</a>
     </div>
   </form>
+
+  <section class="panel account-security" aria-labelledby="keamanan-akun">
+    <div>
+      <h2 id="keamanan-akun">{{ _("Keamanan akun") }}</h2>
+      <p class="muted">{{ _("Ganti kata sandi secara berkala. Kalau lupa, kamu bisa mengatur ulang lewat email UI.") }}</p>
+    </div>
+    <a class="btn btn-quiet" href="{{ url_for('auth.change_password') }}">{{ icon('lock', 16) }}{{ _("Ganti kata sandi") }}</a>
+  </section>
 </section>
 {% endblock %}

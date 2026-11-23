@@ -6,6 +6,7 @@ import io
 from flask import Blueprint, Response, abort, flash, g, redirect, render_template, request, url_for
 
 from ..i18n import _
+from ..notifications import notify
 from ..constants import INDUSTRIES
 from .. import attachments
 from ..db import execute, get_db, query
@@ -47,6 +48,19 @@ def decide_experience(experience_id):
     if decision not in ("terverifikasi", "ditolak"):
         abort(400, description="Keputusan tidak dikenal.")
     execute("UPDATE experiences SET verification = ? WHERE id = ?", (decision, experience_id))
+    experience = query(
+        """SELECT e.user_id, e.position, c.name AS company_name FROM experiences e
+             JOIN companies c ON c.id = e.company_id WHERE e.id = ?""",
+        (experience_id,),
+        one=True,
+    )
+    if experience:
+        if decision == "terverifikasi":
+            link = url_for("profiles.detail", user_id=experience["user_id"]) + f"#pengalaman-{experience_id}"
+        else:
+            link = url_for("experiences.edit", experience_id=experience_id) + "#bagian-privasi"
+        notify(experience["user_id"], "verifikasi_diterima" if decision == "terverifikasi" else "verifikasi_ditolak",
+               link, subject=experience["position"], detail=experience["company_name"], actor_id=g.user["id"])
     flash("Pengalaman diverifikasi." if decision == "terverifikasi" else "Bukti ditolak.", "success")
     return redirect(url_for("admin.experiences"))
 
@@ -69,6 +83,10 @@ def companies():
 @admin_required
 def approve_company(company_id):
     execute("UPDATE companies SET is_approved = 1 WHERE id = ?", (company_id,))
+    company = query("SELECT name, slug, created_by FROM companies WHERE id = ?", (company_id,), one=True)
+    if company and company["created_by"]:
+        notify(company["created_by"], "perusahaan_disetujui", url_for("companies.detail", slug=company["slug"]),
+               subject=company["name"], actor_id=g.user["id"])
     flash("Perusahaan disetujui dan sekarang tampil di direktori.", "success")
     return redirect(url_for("admin.companies"))
 
@@ -226,13 +244,31 @@ def resolve_report(report_id):
     if request.form.get("action") == "sembunyikan":
         if report["reply_id"]:
             execute("UPDATE replies SET is_hidden = 1 WHERE id = ?", (report["reply_id"],))
+            hidden = query(
+                """SELECT r.author_id, t.id AS thread_id, t.title FROM replies r JOIN threads t ON t.id = r.thread_id
+                    WHERE r.id = ?""",
+                (report["reply_id"],),
+                one=True,
+            )
         else:
             execute("UPDATE threads SET is_hidden = 1 WHERE id = ?", (report["thread_id"],))
+            hidden = query(
+                "SELECT author_id, id AS thread_id, title FROM threads WHERE id = ?", (report["thread_id"],), one=True
+            )
+        _notify_hidden(hidden, is_reply=bool(report["reply_id"]))
         flash("Konten disembunyikan dan laporan ditutup.", "success")
     else:
         flash("Laporan ditutup tanpa tindakan.", "success")
     execute("UPDATE reports SET status = 'selesai' WHERE id = ?", (report_id,))
     return redirect(url_for("admin.reports"))
+
+
+def _notify_hidden(row, is_reply):
+    """Beri tahu penulis bahwa thread atau balasannya disembunyikan moderator."""
+    if row is None:
+        return
+    notify(row["author_id"], "konten_disembunyikan", url_for("forum.index"),
+           subject=row["title"], detail="balasan" if is_reply else "thread", actor_id=g.user["id"])
 
 
 @bp.route("/thread/<int:thread_id>/<action>", methods=("POST",))
@@ -243,6 +279,9 @@ def moderate_thread(thread_id, action):
     if column is None:
         abort(404)
     execute(f"UPDATE threads SET {column} = 1 - {column} WHERE id = ?", (thread_id,))
+    thread = query("SELECT author_id, id AS thread_id, title, is_hidden FROM threads WHERE id = ?", (thread_id,), one=True)
+    if column == "is_hidden" and thread and thread["is_hidden"]:
+        _notify_hidden(thread, is_reply=False)
     flash("Thread diperbarui.", "success")
     return redirect(url_for("forum.thread", thread_id=thread_id))
 

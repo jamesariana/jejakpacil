@@ -5,6 +5,7 @@ from flask import Blueprint, abort, flash, g, redirect, render_template, request
 from .. import attachments
 from ..db import execute, query
 from ..i18n import _
+from ..notifications import notify
 from ..forms import validate_thread
 from ..queries import approved_companies
 from ..security import is_admin, login_required
@@ -209,21 +210,32 @@ def reply(thread_id):
         flash("Balasan masih kosong. Tulis sesuatu dulu.", "error")
         return redirect(url_for("forum.thread", thread_id=thread_id))
 
-    parent_id = None
+    parent_id = parent_author = None
     if request.form.get("parent_id", "").isdigit():
         parent = query(
-            "SELECT id, parent_id FROM replies WHERE id = ? AND thread_id = ?",
+            "SELECT id, parent_id, author_id FROM replies WHERE id = ? AND thread_id = ?",
             (int(request.form["parent_id"]), thread_id),
             one=True,
         )
         if parent is not None:
             # Hanya dua tingkat: membalas "anak" berarti menempel ke balasan utamanya.
             parent_id = parent["parent_id"] or parent["id"]
+            parent_author = parent["author_id"]  # yang dibalas langsung, untuk notifikasi
     reply_id = execute(
         "INSERT INTO replies (thread_id, author_id, parent_id, body, is_anonymous) VALUES (?, ?, ?, ?, ?)",
         (thread["id"], g.user["id"], parent_id, body, 1 if request.form.get("is_anonymous") else 0),
     )
     attachments.store(uploads, "forum", g.user["id"], reply_id=reply_id)
+
+    # Notifikasi: penulis komentar yang dibalas, lalu penulis thread (sekali saja per orang).
+    anonymous = bool(request.form.get("is_anonymous"))
+    link = url_for("forum.thread", thread_id=thread_id) + f"#balasan-{reply_id}"
+    if parent_author:
+        notify(parent_author, "balasan_komentar", link, subject=thread["title"],
+               actor_id=g.user["id"], is_anonymous=anonymous)
+    if thread["author_id"] != parent_author:
+        notify(thread["author_id"], "balasan_thread", link, subject=thread["title"],
+               actor_id=g.user["id"], is_anonymous=anonymous)
     flash("Balasan terkirim.", "success")
     return redirect(url_for("forum.thread", thread_id=thread_id) + f"#balasan-{reply_id}")
 
@@ -248,12 +260,15 @@ def delete_reply(reply_id):
 @login_required
 def vote(thread_id):
     """Tombol suara bersifat bolak-balik: tekan sekali memberi suara, tekan lagi mencabutnya."""
-    _get_thread(thread_id)
+    thread = _get_thread(thread_id)
     key = (g.user["id"], thread_id)
     if query("SELECT 1 FROM votes WHERE user_id = ? AND thread_id = ?", key, one=True):
         execute("DELETE FROM votes WHERE user_id = ? AND thread_id = ?", key)
     else:
         execute("INSERT INTO votes (user_id, thread_id) VALUES (?, ?)", key)
+        # Digabung per thread: "3 orang memberi suara", bukan tiga notifikasi terpisah.
+        notify(thread["author_id"], "suara", url_for("forum.thread", thread_id=thread_id),
+               subject=thread["title"], actor_id=g.user["id"], group_key=f"suara-{thread_id}")
     return redirect(url_for("forum.thread", thread_id=thread_id))
 
 

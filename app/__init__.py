@@ -9,7 +9,7 @@ import secrets
 
 from flask import Flask, g, render_template
 
-from . import attachments, constants, db, i18n, security, utils
+from . import attachments, constants, db, i18n, notifications, security, utils
 
 
 def _load_secret_key(instance_path):
@@ -60,6 +60,7 @@ def create_app(test_config=None):
     for module in (main, auth, profiles, experiences, companies, forum, messages, stats, admin):
         app.register_blueprint(module.bp)
     app.register_blueprint(i18n.bp)
+    app.register_blueprint(notifications.bp)
     register_commands(app)
 
     # Fungsi dan data yang bisa dipakai langsung di semua template.
@@ -106,8 +107,11 @@ def create_app(test_config=None):
     def inject_unread_messages():
         """Jumlah pesan belum dibaca, untuk angka di ikon pesan di navbar."""
         if g.user is None:
-            return {"unread_messages": 0}
-        return {"unread_messages": messages.unread_count(g.user["id"])}
+            return {"unread_messages": 0, "unread_notifications": 0}
+        return {
+            "unread_messages": messages.unread_count(g.user["id"]),
+            "unread_notifications": notifications.unread_count(g.user["id"]),
+        }
 
     @app.after_request
     def security_headers(response):

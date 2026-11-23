@@ -23,7 +23,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body data-counts-url="{{ url_for('notifications.counts') if g.user else '' }}">
   <a class="skip-link" href="#isi">{{ _("Langsung ke isi") }}</a>
 
   <header class="topbar">
@@ -50,17 +50,28 @@
       </nav>
 
       <div class="account">
-        {# Tombol bahasa: dua pilihan, yang aktif diberi aria-current. #}
+        {# Tombol bahasa (ID/EN) dan mode gelap. Untuk pengguna yang masuk, keduanya ada
+           di dalam menu akun supaya navbar lebih lega; untuk tamu, tetap di navbar. #}
         {% set here = request.full_path.rstrip('?') %}
-        <span class="lang-switch" role="group" aria-label="{{ _('Bahasa') }}">
-          {% for code in LANGUAGES %}
-            <a href="{{ url_for('i18n.switch', code=code, next=here) }}" hreflang="{{ code }}" lang="{{ code }}" title="{{ LANGUAGES[code] }}"{% if current_language() == code %} aria-current="true"{% endif %}>{{ code|upper }}</a>
-          {% endfor %}
-        </span>
-        <button class="theme-toggle" type="button" data-theme-toggle data-label-dark="{{ _('Ganti ke mode gelap') }}" data-label-light="{{ _('Ganti ke mode terang') }}" aria-label="{{ _("Ganti ke mode gelap") }}" title="{{ _("Ganti ke mode gelap") }}">
-          {{ icon('moon', 19) }}{{ icon('sun', 19) }}
-        </button>
+        {% macro lang_switch() %}
+          <span class="lang-switch" role="group" aria-label="{{ _('Bahasa') }}">
+            {% for code in LANGUAGES %}
+              <a href="{{ url_for('i18n.switch', code=code, next=here) }}" hreflang="{{ code }}" lang="{{ code }}" title="{{ LANGUAGES[code] }}"{% if current_language() == code %} aria-current="true"{% endif %}>{{ code|upper }}</a>
+            {% endfor %}
+          </span>
+        {% endmacro %}
+        {% if not g.user %}
+          {{ lang_switch() }}
+          <button class="theme-toggle" type="button" data-theme-toggle data-label-dark="{{ _('Ganti ke mode gelap') }}" data-label-light="{{ _('Ganti ke mode terang') }}" aria-label="{{ _('Ganti ke mode gelap') }}" title="{{ _('Ganti ke mode gelap') }}">
+            {{ icon('moon', 19) }}{{ icon('sun', 19) }}
+          </button>
+        {% endif %}
         {% if g.user %}
+          {% set bell_label = _('Notifikasi, {n} belum dibaca', n=unread_notifications) if unread_notifications else _('Notifikasi') %}
+          <a class="nav-msg nav-bell" href="{{ url_for('notifications.index') }}" title="{{ bell_label }}" aria-label="{{ bell_label }}"{% if (request.endpoint or '').startswith('notifications.') %} aria-current="page"{% endif %}>
+            {{ icon('bell', 19) }}
+            <span class="nav-msg-count" data-notification-count{% if not unread_notifications %} hidden{% endif %}>{{ unread_notifications if unread_notifications < 100 else '99+' }}</span>
+          </a>
           {% set unread_label = _('Pesan, {n} belum dibaca', n=unread_messages) if unread_messages else _('Pesan') %}
           <a class="nav-msg" href="{{ url_for('messages.inbox') }}" title="{{ unread_label }}" aria-label="{{ unread_label }}"{% if (request.endpoint or '').startswith('messages.') %} aria-current="page"{% endif %}>
             {{ icon('chat', 19) }}
@@ -77,9 +88,20 @@
               <a href="{{ url_for('main.home') }}">{{ _("Beranda saya") }}</a>
               <a href="{{ url_for('profiles.detail', user_id=g.user.id) }}">{{ _("Profil saya") }}</a>
               <a href="{{ url_for('profiles.edit') }}">{{ _("Edit profil") }}</a>
+              <a href="{{ url_for('auth.change_password') }}">{{ _("Ganti kata sandi") }}</a>
               {% if g.user.role == 'admin' %}
                 <a href="{{ url_for('admin.dashboard') }}">{{ _("Panel admin") }}{% if admin_pending %} ({{ admin_pending }}){% endif %}</a>
               {% endif %}
+              <div class="menu-section" role="group" aria-label="{{ _('Tampilan') }}">
+                <div class="menu-row">
+                  <span class="menu-row-label">{{ icon('globe', 16) }}{{ _("Bahasa") }}</span>
+                  {{ lang_switch() }}
+                </div>
+                <button class="menu-row menu-theme" type="button" role="switch" aria-checked="false" data-theme-toggle>
+                  <span class="menu-row-label">{{ icon('moon', 16) }}{{ _("Mode gelap") }}</span>
+                  <span class="menu-switch" aria-hidden="true"></span>
+                </button>
+              </div>
               <form method="post" action="{{ url_for('auth.logout') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">{{ _("Keluar") }}</button>

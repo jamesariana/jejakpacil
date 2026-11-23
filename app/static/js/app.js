@@ -158,26 +158,34 @@ if (sliderNav) {
 // 6. Tombol mode gelap / mode terang.
 //    Pilihan disimpan di localStorage supaya tetap dipakai di halaman berikutnya.
 //    Tema awal sudah dipasang oleh skrip kecil di <head> (base.html).
-const themeButton = document.querySelector("[data-theme-toggle]");
-if (themeButton) {
+//    Ada dua jenis tombol: ikon bulan/matahari di navbar (untuk tamu) dan sakelar
+//    "Mode gelap" di menu akun (untuk pengguna yang masuk). Keduanya memakai kode ini.
+const themeButtons = document.querySelectorAll("[data-theme-toggle]");
+if (themeButtons.length) {
   const root = document.documentElement;
-  const updateButton = () => {
+  const updateButtons = () => {
     const dark = root.getAttribute("data-theme") === "dark";
-    // Teks diambil dari atribut data-label-* supaya ikut bahasa yang dipilih.
-    const label = dark ? themeButton.dataset.labelLight : themeButton.dataset.labelDark;
-    themeButton.setAttribute("aria-label", label);
-    themeButton.setAttribute("title", label);
+    themeButtons.forEach((button) => {
+      if (button.getAttribute("role") === "switch") {
+        button.setAttribute("aria-checked", String(dark));
+      } else {
+        // Teks diambil dari atribut data-label-* supaya ikut bahasa yang dipilih.
+        const label = dark ? button.dataset.labelLight : button.dataset.labelDark;
+        button.setAttribute("aria-label", label);
+        button.setAttribute("title", label);
+      }
+    });
   };
-  updateButton();
+  updateButtons();
 
-  themeButton.addEventListener("click", () => {
+  themeButtons.forEach((button) => button.addEventListener("click", () => {
     const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
     root.classList.add("theme-switching");
     root.setAttribute("data-theme", next);
     try { localStorage.setItem("jejakpacil-theme", next); } catch (e) { /* mode privat: abaikan */ }
-    updateButton();
+    updateButtons();
     setTimeout(() => root.classList.remove("theme-switching"), 350);
-  });
+  }));
 }
 
 // 7. Filter yang langsung diterapkan.
@@ -523,4 +531,47 @@ if (chat) {
       textarea.focus();
     });
   }
+}
+
+// 10. Tombol "Tampilkan" di kolom kata sandi, supaya pengguna bisa memeriksa ketikannya.
+document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+  const input = document.getElementById(button.getAttribute("aria-controls"));
+  button.setAttribute("aria-pressed", "false");
+  button.addEventListener("click", () => {
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    button.textContent = show ? button.dataset.hide : button.dataset.show;
+    button.setAttribute("aria-pressed", String(show));
+    input.focus();
+  });
+});
+
+// 11. Angka di ikon lonceng dan pesan tetap terbaru di semua halaman.
+//     Ditanyakan ke server setiap 30 detik selama tab terlihat. Judul tab juga
+//     diberi angka, misalnya "(3) JejakPacil", supaya terlihat dari tab lain.
+const countsUrl = document.body.dataset.countsUrl;
+if (countsUrl) {
+  const bellBadge = document.querySelector("[data-notification-count]");
+  const messageBadge = document.querySelector("[data-unread-count]");
+  const baseTitle = document.title.replace(/^\(\d+\+?\)\s*/, "");
+  const setBadge = (badge, n) => {
+    if (!badge) return;
+    badge.textContent = n > 99 ? "99+" : n;
+    badge.hidden = n === 0;
+  };
+  const refresh = async () => {
+    if (document.hidden) return;
+    try {
+      const response = await fetch(countsUrl, { headers: { "X-Requested-With": "fetch" } });
+      if (!response.ok) return;
+      const data = await response.json();
+      setBadge(bellBadge, data.notifications);
+      setBadge(messageBadge, data.messages);
+      const total = data.notifications + data.messages;
+      document.title = total ? `(${total > 99 ? "99+" : total}) ${baseTitle}` : baseTitle;
+    } catch (e) { /* coba lagi di putaran berikutnya */ }
+  };
+  refresh();
+  setInterval(refresh, 30000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
 }

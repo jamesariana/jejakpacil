@@ -2191,3 +2191,107 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { background-c
 }
 .b-menu-panel { width: max-content; max-width: 260px; }
 .b-menu.opens-up .b-menu-panel { top: auto; bottom: 32px; }
+
+/* =====================================================================
+   Kata sandi: lupa, atur ulang, ganti
+   ===================================================================== */
+.label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.label-link { font-size: 0.85rem; font-weight: 600; }
+.password-wrap { position: relative; display: flex; align-items: center; }
+.password-wrap input { flex: 1; padding-right: 108px; }
+.password-toggle {
+  position: absolute; right: 6px; height: 34px; padding: 0 12px; border: 0; border-radius: 999px;
+  background: var(--muted-bg); color: var(--ink-2); font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+}
+.password-toggle:hover { background: var(--hover-bg-strong); color: var(--ink); }
+.form-narrow { max-width: 560px; }
+.account-security { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin-top: 20px; }
+.account-security h2 { margin: 0 0 4px; font-size: 1.1rem; }
+.account-security p { margin: 0; }
+:root[data-theme="dark"] .password-toggle { background: #1f3249; }
+
+/* Pesan error tetap merah: setelah palet diganti biru, --red ikut jadi biru sehingga
+   error tidak lagi terlihat seperti peringatan. --red-ink sudah merah dan kontrasnya cukup. */
+.error, .attach-error, .dm-error { color: var(--red-ink); }
+.flash-error { background: #fcecee; border-color: rgba(178, 58, 72, 0.3); border-left-color: var(--red-ink); color: #6e1d27; }
+.flash-error::before { background: var(--red-ink); color: #fff; }
+.has-error input, .has-error select, .has-error textarea { border-color: var(--red-ink); }
+:root[data-theme="dark"] .error, :root[data-theme="dark"] .attach-error, :root[data-theme="dark"] .dm-error { color: #ff9ea6; }
+:root[data-theme="dark"] .flash-error { background: #3a2230; border-color: rgba(255, 158, 166, 0.35); border-left-color: #ff9ea6; color: #ffd9dc; }
+:root[data-theme="dark"] .flash-error::before { background: #ff9ea6; color: #2a1520; }
+:root[data-theme="dark"] .has-error input, :root[data-theme="dark"] .has-error select, :root[data-theme="dark"] .has-error textarea { border-color: #ff9ea6; }
+
+/* =====================================================================
+   Notifikasi (/notifikasi) dan ikon lonceng
+   ===================================================================== */
+.nav-bell[aria-current] { background: #b9d7ea; color: #10233d; }
+.notif-page { max-width: 760px; margin: 0 auto; display: grid; gap: 16px; }
+.notif-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.notif-head h1 { margin: 0 0 4px; }
+.notif-head p { margin: 0; }
+.notif-list {
+  margin: 0; padding: 6px; list-style: none; display: grid; gap: 2px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(30, 51, 80, 0.06);
+}
+.notif-item {
+  position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 14px 40px 14px 14px;
+  border-radius: 14px; color: var(--ink); text-decoration: none; transition: background 0.15s ease;
+}
+.notif-item:hover { background: var(--hover-bg); }
+.notif-item.is-unread { background: var(--blue-wash); }
+.notif-item.is-unread:hover { background: var(--hover-bg-strong); }
+.notif-avatar { position: relative; flex: none; }
+.notif-kind {
+  position: absolute; right: -4px; bottom: -4px; width: 22px; height: 22px; display: grid; place-items: center;
+  border-radius: 50%; background: #769fcd; color: #10233d; border: 2px solid var(--surface);
+}
+.notif-icon {
+  flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--muted-bg); color: var(--ink-2);
+}
+.notif-icon-verifikasi_diterima { background: #dcefe6; color: #1f6b4a; }
+.notif-icon-verifikasi_ditolak, .notif-icon-konten_disembunyikan { background: #fcecee; color: var(--red-ink); }
+.notif-icon-perusahaan_disetujui { background: var(--blue-wash); color: var(--blue); }
+.notif-text { min-width: 0; display: grid; gap: 4px; }
+.notif-sentence { line-height: 1.45; overflow-wrap: anywhere; }
+.notif-item.is-unread .notif-sentence { font-weight: 600; }
+.notif-time { font-size: 0.8rem; color: var(--ink-3); }
+.notif-dot { position: absolute; right: 16px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: #769fcd; }
+.notif-empty { display: grid; justify-items: center; gap: 8px; padding: 40px 20px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; }
+.notif-empty p { margin: 0; }
+
+:root[data-theme="dark"] .nav-bell[aria-current] { background: #b9d7ea; color: #0e1a28; }
+:root[data-theme="dark"] .notif-list, :root[data-theme="dark"] .notif-empty { background: linear-gradient(180deg, #2a4260 0%, #263c57 100%); border-color: #34506f; }
+:root[data-theme="dark"] .notif-item.is-unread { background: #31507a; }
+:root[data-theme="dark"] .notif-icon { background: #1f3249; }
+:root[data-theme="dark"] .notif-icon-verifikasi_diterima { background: #1f4a3a; color: #9fe0c0; }
+:root[data-theme="dark"] .notif-icon-verifikasi_ditolak, :root[data-theme="dark"] .notif-icon-konten_disembunyikan { background: #4a2533; color: #ff9ea6; }
+:root[data-theme="dark"] .notif-kind, :root[data-theme="dark"] .notif-dot { background: #b9d7ea; color: #0e1a28; }
+:root[data-theme="dark"] .notif-kind { border-color: #263c57; }
+
+/* =====================================================================
+   Bahasa dan mode gelap di dalam menu akun
+   ===================================================================== */
+.menu-list { min-width: 240px; }
+.menu-section { display: grid; gap: 2px; margin: 4px 0; padding: 6px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.menu-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 8px 6px 12px; border-radius: var(--radius-s); }
+.menu-list .menu-row { display: flex; }
+.menu-row-label { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); }
+.menu-row-label .icon { color: var(--ink-3); }
+.menu-row .lang-switch a { min-width: 32px; height: 28px; }
+.menu-list button.menu-theme { padding: 9px 10px 9px 12px; }
+.menu-switch {
+  position: relative; flex: none; width: 40px; height: 24px; border-radius: 999px;
+  background: var(--switch-off, #c5d3e0); transition: background 0.2s ease;
+}
+.menu-switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(14, 26, 40, 0.3); transition: transform 0.2s ease;
+}
+.menu-theme[aria-checked="true"] .menu-switch { background: #769fcd; }
+.menu-theme[aria-checked="true"] .menu-switch::after { transform: translateX(16px); }
+.menu-theme:focus-visible { outline: 3px solid var(--blue); outline-offset: -2px; }
+:root[data-theme="dark"] .menu-theme[aria-checked="true"] .menu-switch { background: #b9d7ea; }
+:root[data-theme="dark"] .menu-theme[aria-checked="true"] .menu-switch::after { background: #0e1a28; }
+:root[data-theme="dark"] .menu-row .lang-switch { background: #1b2c41; }

@@ -256,6 +256,7 @@ def register_commands(app):
                 db.execute("INSERT INTO votes (user_id, thread_id) VALUES (?, ?)", (users[voter], thread_id))
 
         _seed_attachments_and_chats(db, users, thread_ids)
+        _seed_notifications(db, users)
         db.commit()
         click.echo("Data demo siap.")
         click.echo("  Admin : admin@ui.ac.id / admin12345")
@@ -337,4 +338,32 @@ def _seed_attachments_and_chats(db, users, thread_ids):
         ("raka", "Boleh. Pastikan CV di profilmu sudah yang terbaru ya.", 1440, 1),
         ("raka", "CV-mu sudah kuteruskan ke tim HR, tunggu kabar minggu depan.", 90, 0),
     ])
+
+
+def _seed_notifications(db, users):
+    """Beberapa notifikasi untuk Salsa, supaya halaman /notifikasi tidak kosong saat demo."""
+    salsa = users["salsa"]
+    thread = db.execute(
+        "SELECT id, title FROM threads WHERE author_id = ? ORDER BY id LIMIT 1", (salsa,)
+    ).fetchone() or db.execute("SELECT id, title FROM threads ORDER BY id DESC LIMIT 1").fetchone()
+    experience = db.execute(
+        """SELECT e.id, e.position, c.name FROM experiences e JOIN companies c ON c.id = e.company_id
+            WHERE e.user_id = ? AND e.verification = 'terverifikasi' LIMIT 1""",
+        (salsa,),
+    ).fetchone()
+    rows = []
+    if thread:
+        link = f"/forum/t/{thread['id']}"
+        rows.append(("balasan_thread", users["farhan"], 1, thread["title"], "", link, 0, 25))
+        rows.append(("suara", users["raka"], 3, thread["title"], "", link, 0, 120))
+    if experience:
+        rows.append(("verifikasi_diterima", None, 1, experience["position"], experience["name"],
+                     f"/mahasiswa/{salsa}#pengalaman-{experience['id']}", 1, 60 * 26))
+    for kind, actor, count, subject, detail, link, read, minutes in rows:
+        db.execute(
+            """INSERT INTO notifications (user_id, kind, actor_id, count, subject, detail, link, is_read,
+                                          created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', ?), datetime('now', ?))""",
+            (salsa, kind, actor, count, subject, detail, link, read, f"-{minutes} minutes", f"-{minutes} minutes"),
+        )
 

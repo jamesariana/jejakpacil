@@ -25,6 +25,7 @@ JejakPacil mengumpulkan riwayat itu di satu tempat yang khusus untuk sivitas Fas
 | Jelajahi | Satu menu untuk dua pencarian: tab Pengalaman (cari posisi/perusahaan, filter jenis, prodi, angkatan, skill) dan tab Mahasiswa dan alumni |
 | Beranda pribadi | Setelah masuk: daftar cek kelengkapan profil, diskusi terbaru, dan jalan pintas ke fitur |
 | Forum | Kategori, thread, balasan dua tingkat, suara, posting anonim, tag perusahaan, laporan, lampiran foto dan PDF |
+| Notifikasi | Ikon lonceng dengan jumlah belum dibaca: balasan forum, suara (digabung), keputusan verifikasi, perusahaan disetujui, konten disembunyikan |
 | Chat pribadi | Kirim pesan ke siapa saja dari profil atau thread; teks, foto, dan PDF; penanda belum dibaca; blokir dan laporkan |
 | Statistik | Perusahaan terbanyak, jenis pengalaman, jalur mendapatkan, skill, per angkatan |
 | Panel admin | Verifikasi, setujui dan gabungkan perusahaan, moderasi forum, kelola pengguna, ekspor CSV |
@@ -174,6 +175,13 @@ tetap sederhana dan sepenuhnya Python, tanpa server WebSocket terpisah.
 - Setiap form POST membawa token CSRF.
 - Gambar unggahan dibuka dan ditulis ulang dengan Pillow; PDF diperiksa tanda awalnya; nama file
   diganti dengan nama acak.
+- Lupa kata sandi: tautan atur ulang berlaku 1 jam dan hanya bisa dipakai sekali (token berisi
+  sidik kata sandi lama, jadi otomatis tidak berlaku setelah kata sandi diganti). Pesan yang
+  ditampilkan sama untuk email terdaftar maupun tidak, supaya daftar pengguna tidak bisa ditebak.
+- Ganti kata sandi mengeluarkan semua perangkat lain secara otomatis.
+- Percobaan masuk dibatasi: 5 kali gagal per email atau 20 kali per alamat IP dalam 15 menit.
+  Permintaan tautan lupa sandi dibatasi 5 kali per IP dalam 15 menit.
+- Kata sandi minimal 8 karakter dan tidak boleh mudah ditebak (angka berurutan, nama email).
 - File bukti hanya bisa dibuka pemiliknya dan admin. CV hanya untuk pengguna yang masuk.
 - Pesan pribadi dan lampirannya hanya bisa dibuka dua orang di percakapan itu. Admin hanya melihat
   pesan yang dilaporkan, bukan seluruh percakapan. Pengguna bisa memblokir lawan bicara.

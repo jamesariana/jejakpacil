@@ -13,6 +13,7 @@ Teks yang punya bagian berubah memakai tanda kurung kurawal:
 """
 
 from flask import Blueprint, g, has_request_context, redirect, request, session, url_for
+from markupsafe import Markup
 
 from .translations_en import EN
 from .utils import is_safe_next
@@ -41,6 +42,8 @@ def translate(text, **values):
     """Terjemahkan teks ke bahasa yang sedang dipakai, lalu isi bagian {nama}."""
     if text is None:
         return ""
+    if isinstance(text, Markup):
+        return text  # HTML yang sudah diterjemahkan dan ditandai aman (misalnya pesan berisi tautan)
     text = str(text)
     if current_language() == "en" and text.strip():
         translated = EN.get(text)

@@ -4,6 +4,7 @@ Setiap tes memakai database dan folder unggahan sementara, jadi data asli tidak 
 """
 
 import io
+import re
 import os
 import shutil
 import tempfile
@@ -794,4 +795,191 @@ class MessageActionTest(BaseTest):
         self.assertIn("Mengedit pesan", page)
         page = self.client.get(f"/pesan/{self.conversation_id}?balas={message_id}").get_data(as_text=True)
         self.assertIn(f'name="reply_to" value="{message_id}"', page)
+
+
+class PasswordTest(BaseTest):
+    """Lupa kata sandi, atur ulang, ganti kata sandi, dan pembatas percobaan masuk."""
+
+    def setUp(self):
+        super().setUp()
+        self.register()
+
+    def reset_link(self):
+        """Ambil tautan atur ulang dari pesan flash (mode pengembangan)."""
+        self.client.post("/lupa-kata-sandi", data={"email": "budi@ui.ac.id"})
+        page = self.client.get("/masuk").get_data(as_text=True)
+        match = re.search(r'<a href="(http://localhost/atur-ulang-kata-sandi/[^"]+)">', page)  # tautan, bukan teks
+        self.assertIsNotNone(match)
+        return match.group(1).replace("http://localhost", "")
+
+    def test_lupa_kata_sandi_lalu_masuk_dengan_yang_baru(self):
+        link = self.reset_link()
+        response = self.client.post(link, data={"password": "sandiBaru2026", "password2": "sandiBaru2026"})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.login(password="rahasia123").status_code, 200)  # sandi lama ditolak
+        self.assertEqual(self.login(password="sandiBaru2026").status_code, 302)
+
+    def test_tautan_atur_ulang_hanya_sekali_pakai(self):
+        link = self.reset_link()
+        self.client.post(link, data={"password": "sandiBaru2026", "password2": "sandiBaru2026"})
+        response = self.client.get(link)
+        self.assertIn("/lupa-kata-sandi", response.headers["Location"])
+
+    def test_tautan_mode_pengembangan_bisa_diklik(self):
+        # Pesan berisi tautan tidak boleh tampil sebagai teks HTML mentah (&lt;a href=...).
+        page = self.client.get("/masuk").get_data(as_text=True)
+        self.assertIn('<a href="http://localhost/verifikasi/', page)
+
+    def test_tautan_palsu_ditolak(self):
+        response = self.client.get("/atur-ulang-kata-sandi/token-palsu")
+        self.assertIn("/lupa-kata-sandi", response.headers["Location"])
+
+    def test_email_tidak_terdaftar_tetap_pesan_sama(self):
+        response = self.client.post("/lupa-kata-sandi", data={"email": "tidakada@ui.ac.id"}, follow_redirects=True)
+        self.assertIn("Jika email itu terdaftar", response.get_data(as_text=True))
+        self.assertNotIn("atur-ulang-kata-sandi/", response.get_data(as_text=True))
+
+    def test_kata_sandi_mudah_ditebak_ditolak(self):
+        link = self.reset_link()
+        for weak in ("12345678", "budi2026x", "pendek"):
+            page = self.client.post(link, data={"password": weak, "password2": weak}).get_data(as_text=True)
+            self.assertIn('class="error"', page, weak)
+
+    def test_ganti_kata_sandi_mengeluarkan_perangkat_lain(self):
+        self.login()
+        other_device = self.app.test_client()
+        other_device.post("/masuk", data={"email": "budi@ui.ac.id", "password": "rahasia123"})
+        self.assertEqual(other_device.get("/profil/edit").status_code, 200)
+
+        wrong = self.client.post("/akun/kata-sandi", data={
+            "current": "salah", "password": "sandiBaru2026", "password2": "sandiBaru2026"})
+        self.assertIn("Kata sandi saat ini salah", wrong.get_data(as_text=True))
+        self.client.post("/akun/kata-sandi", data={
+            "current": "rahasia123", "password": "sandiBaru2026", "password2": "sandiBaru2026"})
+
+        self.assertEqual(self.client.get("/profil/edit").status_code, 200)   # perangkat ini tetap masuk
+        self.assertEqual(other_device.get("/profil/edit").status_code, 302)  # perangkat lain keluar
+
+    def test_terlalu_banyak_percobaan_gagal_dikunci(self):
+        for _ in range(5):
+            self.login(password="salah-terus")
+        page = self.login(password="rahasia123").get_data(as_text=True)  # sandi benar pun ditolak sementara
+        self.assertIn("Terlalu banyak percobaan", page)
+        with self.app.app_context():
+            from app.db import execute
+            execute("UPDATE rate_limits SET created_at = datetime('now', '-20 minutes')")
+        self.assertEqual(self.login(password="rahasia123").status_code, 302)  # setelah 15 menit boleh lagi
+
+    def test_masuk_berhasil_menghapus_hitungan_gagal(self):
+        for _ in range(4):
+            self.login(password="salah")
+        self.login()
+        self.assertIsNone(self.db("SELECT 1 FROM rate_limits WHERE kind = 'login-gagal'", one=True))
+
+
+class NotificationTest(BaseTest):
+    """Notifikasi: balasan, suara, keputusan admin, dan halaman /notifikasi."""
+
+    def setUp(self):
+        super().setUp()
+        self.register(email="budi@ui.ac.id", name="Budi Santoso")      # penulis thread
+        self.register(email="sari@ui.ac.id", name="Sari Wulandari")
+        self.register(email="tono@ui.ac.id", name="Tono Prasetyo")
+        self.login()
+        category_id = self.db("SELECT id FROM categories LIMIT 1", one=True)["id"]
+        self.client.post("/forum/buat", data={
+            "category_id": str(category_id), "title": "Tips wawancara teknis",
+            "body": "Ada tips untuk wawancara teknis pertama?"})
+        self.thread_id = self.db("SELECT id FROM threads", one=True)["id"]
+
+    def switch(self, email):
+        self.logout()
+        self.login(email=email)
+
+    def notifications_for(self, email):
+        return self.db(
+            "SELECT n.* FROM notifications n JOIN users u ON u.id = n.user_id WHERE u.email = ? ORDER BY n.id", (email,))
+
+    def test_balasan_ke_thread(self):
+        self.client.post(f"/forum/t/{self.thread_id}/balas", data={"body": "Balasanku sendiri"})
+        self.assertEqual(self.notifications_for("budi@ui.ac.id"), [])  # membalas thread sendiri: tidak ada notifikasi
+        self.switch("sari@ui.ac.id")
+        self.client.post(f"/forum/t/{self.thread_id}/balas", data={"body": "Latihan soal di LeetCode"})
+        rows = self.notifications_for("budi@ui.ac.id")
+        self.assertEqual([r["kind"] for r in rows], ["balasan_thread"])
+        self.switch("budi@ui.ac.id")
+        page = self.client.get("/notifikasi/").get_data(as_text=True)
+        self.assertIn("Sari Wulandari membalas thread-mu", page)
+
+    def test_balasan_anonim_tidak_membuka_nama(self):
+        self.switch("sari@ui.ac.id")
+        self.client.post(f"/forum/t/{self.thread_id}/balas", data={"body": "Rahasia", "is_anonymous": "1"})
+        self.switch("budi@ui.ac.id")
+        page = self.client.get("/notifikasi/").get_data(as_text=True)
+        self.assertIn("Seseorang (anonim)", page)
+        self.assertNotIn("Sari Wulandari", page)
+        # Identitas pengirim anonim bahkan tidak disimpan di tabel notifikasi.
+        self.assertIsNone(self.notifications_for("budi@ui.ac.id")[0]["actor_id"])
+
+    def test_balasan_ke_komentar(self):
+        self.switch("sari@ui.ac.id")
+        self.client.post(f"/forum/t/{self.thread_id}/balas", data={"body": "Komentar Sari"})
+        reply_id = self.db("SELECT id FROM replies", one=True)["id"]
+        self.switch("tono@ui.ac.id")
+        self.client.post(f"/forum/t/{self.thread_id}/balas", data={"body": "Setuju", "parent_id": str(reply_id)})
+        self.assertEqual([r["kind"] for r in self.notifications_for("sari@ui.ac.id")], ["balasan_komentar"])
+        self.assertEqual([r["kind"] for r in self.notifications_for("budi@ui.ac.id")],
+                         ["balasan_thread", "balasan_thread"])
+
+    def test_suara_digabung(self):
+        for email in ("sari@ui.ac.id", "tono@ui.ac.id"):
+            self.switch(email)
+            self.client.post(f"/forum/t/{self.thread_id}/suara")
+        self.client.post(f"/forum/t/{self.thread_id}/suara")  # Tono mencabut suara
+        self.client.post(f"/forum/t/{self.thread_id}/suara")  # lalu memberi lagi: tidak dihitung dua kali
+        rows = self.notifications_for("budi@ui.ac.id")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["count"], 2)
+        self.switch("budi@ui.ac.id")
+        self.assertIn("dan 1 orang lainnya memberi suara", self.client.get("/notifikasi/").get_data(as_text=True))
+
+    def test_buka_notifikasi_menandai_dibaca(self):
+        self.switch("sari@ui.ac.id")
+        self.client.post(f"/forum/t/{self.thread_id}/balas", data={"body": "Halo"})
+        notification_id = self.notifications_for("budi@ui.ac.id")[0]["id"]
+        self.assertEqual(self.client.get(f"/notifikasi/{notification_id}/buka").status_code, 404)  # bukan milik Sari
+        self.switch("budi@ui.ac.id")
+        self.assertEqual(self.client.get("/notifikasi/jumlah").get_json()["notifications"], 1)
+        response = self.client.get(f"/notifikasi/{notification_id}/buka")
+        self.assertIn(f"/forum/t/{self.thread_id}#balasan-", response.headers["Location"])
+        self.assertEqual(self.client.get("/notifikasi/jumlah").get_json()["notifications"], 0)
+
+    def test_tandai_semua_dibaca(self):
+        self.switch("sari@ui.ac.id")
+        self.client.post(f"/forum/t/{self.thread_id}/balas", data={"body": "Satu"})
+        self.client.post(f"/forum/t/{self.thread_id}/suara")
+        self.switch("budi@ui.ac.id")
+        self.client.post("/notifikasi/tandai-dibaca")
+        self.assertEqual(self.client.get("/notifikasi/jumlah").get_json()["notifications"], 0)
+
+    def test_keputusan_admin(self):
+        self.add_experience(company_name="Startup Baru", company_website="startupbaru.id")
+        experience_id = self.db("SELECT id FROM experiences", one=True)["id"]
+        company_id = self.db("SELECT id FROM companies WHERE name = 'Startup Baru'", one=True)["id"]
+        self.make_admin("tono@ui.ac.id")
+        self.switch("tono@ui.ac.id")
+        self.client.post(f"/admin/pengalaman/{experience_id}/putuskan", data={"decision": "ditolak"})
+        self.client.post(f"/admin/perusahaan/{company_id}/setujui")
+        kinds = [r["kind"] for r in self.notifications_for("budi@ui.ac.id")]
+        self.assertEqual(kinds, ["verifikasi_ditolak", "perusahaan_disetujui"])
+        self.switch("budi@ui.ac.id")
+        page = self.client.get("/notifikasi/").get_data(as_text=True)
+        self.assertIn("Software Engineer Intern di Startup Baru ditolak", page)
+        self.assertIn("Startup Baru, perusahaan yang kamu tambahkan", page)
+
+    def test_lonceng_di_navbar(self):
+        self.switch("sari@ui.ac.id")
+        self.client.post(f"/forum/t/{self.thread_id}/balas", data={"body": "Halo"})
+        self.switch("budi@ui.ac.id")
+        self.assertRegex(self.client.get("/").get_data(as_text=True), r"data-notification-count>\s*1\s*<")
 
