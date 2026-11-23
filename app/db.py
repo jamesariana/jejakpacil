@@ -46,6 +46,10 @@ def execute(sql, params=()):
 # CREATE TABLE IF NOT EXISTS tidak menambah kolom ke tabel lama, jadi database yang
 # sudah ada di laptop anggota kelompok diperbarui di sini tanpa menghapus datanya.
 NEW_COLUMNS = {
+    "users": {
+        "open_to_questions": "INTEGER NOT NULL DEFAULT 0",
+        "open_note": "TEXT NOT NULL DEFAULT ''",
+    },
     "experiences": {
         "role_category": "TEXT",
         "selection_stages": "TEXT",

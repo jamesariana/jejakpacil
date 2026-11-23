@@ -868,5 +868,11 @@ EN = {
     'Isi bulan mulai kalau masih berjalan.': "Fill in the start month if it's still ongoing.",
     'Tautan harus diawali http:// atau https://.': 'Links must start with http:// or https://.',
     'Simpan': 'Save',
-    'Perubahan disimpan.': 'Changes saved.',
+    'Perubahan disimpan.': 'Changes saved.', 
+    'Terbuka untuk ditanya': 'Open to questions',
+    'Bersedia ditanya adik tingkat': 'Happy to be asked by juniors',
+    'Muncul sebagai lencana di profilmu dan bisa disaring di Jelajahi. Orang lain tetap menghubungimu lewat pesan.': 'Shown as a badge on your profile and filterable in Explore. People still reach you through messages.',
+    'Topik yang bisa ditanyakan': 'Topics you can help with',
+    'misalnya magang backend, review CV': 'e.g. backend internships, CV review',
+    'Hanya yang terbuka untuk ditanya': 'Open to questions only',
 }

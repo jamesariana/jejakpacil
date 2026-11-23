@@ -91,6 +91,12 @@ def validate_links(form):
             errors[field] = _("Tautan {label} harus diawali http:// atau https://.", label=label)
     return data, errors
 
+def validate_availability(form):
+    """Pengaturan "Terbuka untuk ditanya". Tidak ada error: checkbox dan teks pendek bebas."""
+    is_open = 1 if form.get("open_to_questions") else 0
+    note = re.sub(r"\s+", " ", form.get("open_note", "")).strip()[:120] if is_open else ""
+    return {"open_to_questions": is_open, "open_note": note}
+
 
 def validate_experience(form):
     is_current = bool(form.get("is_current"))

@@ -4,7 +4,7 @@ from flask import Blueprint, abort, flash, g, redirect, render_template, request
 
 from ..constants import PRODI, STATUS
 from ..db import execute, query
-from ..forms import validate_identity, validate_links
+from ..forms import validate_availability, validate_identity, validate_links
 from ..queries import EXP_SELECT, parse_skills, profile_checklist, set_user_skills, user_skills, visibility_sql
 from ..security import login_required
 from ..utils import Page, delete_upload, save_image, save_pdf
@@ -36,6 +36,8 @@ def index():
             " WHERE us.user_id = u.id AND s.name LIKE ?)"
         )
         params.append(f"%{args['skill'].strip()}%")
+    if args.get("terbuka") == "1":
+        where.append("u.open_to_questions = 1")
     where_sql = " AND ".join(where)
 
     total = query(f"SELECT COUNT(*) AS n FROM users u WHERE {where_sql}", params, one=True)["n"]
@@ -86,6 +88,7 @@ def edit():
         links, link_errors = validate_links(request.form)
         errors.update(link_errors)
         bio = request.form.get("bio", "").strip()[:600]
+        availability = validate_availability(request.form)
 
         # Unggahan baru disimpan dulu; file lama baru dihapus setelah semuanya valid.
         photo, cv = user["photo"], user["cv"]
@@ -109,11 +112,13 @@ def edit():
         if not errors:
             execute(
                 """UPDATE users SET full_name = ?, prodi = ?, angkatan = ?, status = ?, grad_year = ?,
-                          bio = ?, photo = ?, cv = ?, github_url = ?, linkedin_url = ?, portfolio_url = ?
+                          bio = ?, photo = ?, cv = ?, github_url = ?, linkedin_url = ?, portfolio_url = ?,
+                          open_to_questions = ?, open_note = ?
                     WHERE id = ?""",
                 (
                     data["full_name"], data["prodi"], data["angkatan"], data["status"], data["grad_year"],
                     bio, photo, cv, links["github_url"], links["linkedin_url"], links["portfolio_url"],
+                    availability["open_to_questions"], availability["open_note"],
                     user["id"],
                 ),
             )

@@ -28,6 +28,7 @@ CSS_FILES = [
     "11-akun.css",           # kata sandi, notifikasi, menu akun
     "12-cerita-seleksi.css", # bidang pekerjaan dan cerita seleksi
     "13-cv.css",             # buat CV dan halaman cek keaslian
+    "14-terbuka.css",        # pengaturan "Terbuka untuk ditanya"
 ]
 JS_FILES = [
     "form.js",        # isian bersyarat, konfirmasi hapus, menu akun
