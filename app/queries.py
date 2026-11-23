@@ -152,3 +152,70 @@ def profile_checklist(user):
         "percent": round(done / len(items) * 100),
         "missing": [item["short"] for item in items if not item["done"]],
     }
+
+
+def has_selection_story(e):
+    return bool(e["selection_stages"] or e["selection_weeks"] or e["selection_difficulty"]
+                or e["selection_questions"] or e["selection_tips"])
+
+
+def selection_summary(experiences):
+    """Rangkuman cerita seleksi dari daftar pengalaman yang boleh dilihat pengunjung.
+
+    Dipakai di halaman perusahaan: berapa tahap yang biasa dilalui, berapa lama prosesnya,
+    seberapa sulit, jalur masuk yang paling sering, serta beberapa tips dan contoh pertanyaan.
+    Karena dihitung dari `experiences` yang sudah disaring visibility_sql(), cerita dari
+    pengalaman privat atau sivitas tidak bocor ke pengunjung yang tidak berhak.
+    """
+    from .constants import HOW_OBTAINED, SELECTION_DIFFICULTY, SELECTION_STAGES
+
+    stories = [e for e in experiences if has_selection_story(e)]
+    with_stages = [e for e in stories if e["selection_stages"]]
+    stage_counts = {}
+    for e in with_stages:
+        for key in set(e["selection_stages"].split(",")):
+            if key in SELECTION_STAGES:
+                stage_counts[key] = stage_counts.get(key, 0) + 1
+    stages = [
+        {"key": key, "label": label, "n": stage_counts[key],
+         "percent": round(100 * stage_counts[key] / len(with_stages))}
+        for key, label in SELECTION_STAGES.items() if key in stage_counts
+    ]
+
+    weeks = sorted(e["selection_weeks"] for e in stories if e["selection_weeks"])
+    median_weeks = None
+    if weeks:
+        middle = len(weeks) // 2
+        median_weeks = weeks[middle] if len(weeks) % 2 else round((weeks[middle - 1] + weeks[middle]) / 2)
+    levels = [e["selection_difficulty"] for e in stories if e["selection_difficulty"]]
+    difficulty = round(sum(levels) / len(levels), 1) if levels else None
+
+    channel_counts = {}
+    for e in experiences:
+        channel_counts[e["how_obtained"]] = channel_counts.get(e["how_obtained"], 0) + 1
+    channels = sorted(
+        ({"label": HOW_OBTAINED.get(key, key), "n": n} for key, n in channel_counts.items()),
+        key=lambda item: -item["n"],
+    )[:4]
+
+    def quotes(field):
+        return [
+            {"id": e["id"], "text": e[field], "name": e["full_name"], "position": e["position"], "type": e["type"]}
+            for e in stories if e[field]
+        ][:3]
+
+    return {
+        "n_stories": len(stories),
+        "n_with_stages": len(with_stages),
+        "stages": stages,
+        "typical_n": round(sum(len(e["selection_stages"].split(",")) for e in with_stages) / len(with_stages))
+        if with_stages else None,
+        "median_weeks": median_weeks,
+        "weeks_range": (weeks[0], weeks[-1]) if len(weeks) > 1 and weeks[0] != weeks[-1] else None,
+        "difficulty": difficulty,
+        "difficulty_label": SELECTION_DIFFICULTY[min(5, max(1, round(difficulty)))] if difficulty else None,
+        "channels": channels,
+        "tips": quotes("selection_tips"),
+        "questions": quotes("selection_questions"),
+    }
+

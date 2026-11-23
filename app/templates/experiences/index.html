@@ -52,12 +52,24 @@
         <input id="skill" name="skill" value="{{ a.get('skill', '') }}" placeholder="{{ _("Misalnya SQL, lalu Enter") }}">
       </div>
     </div>
+    <div class="dir-group">
+      <label for="bidang">{{ _("Bidang") }}</label>
+      <div class="dir-select">
+        {{ icon('briefcase', 18) }}
+        <select id="bidang" name="bidang">{{ options(C.ROLE_CATEGORIES, a.get('bidang', ''), 'Semua bidang') }}</select>
+      </div>
+    </div>
     <div class="dir-group dir-verified">
       <span class="dir-label" aria-hidden="true">&nbsp;</span>
       <label class="dir-toggle">
         <input type="checkbox" role="switch" name="terverifikasi" value="1"{% if a.get('terverifikasi') %} checked{% endif %}>
         <span class="switch-track" aria-hidden="true"></span>
         <span>{{ _("Hanya yang terverifikasi") }}</span>
+      </label>
+      <label class="dir-toggle">
+        <input type="checkbox" role="switch" name="cerita" value="1"{% if a.get('cerita') %} checked{% endif %}>
+        <span class="switch-track" aria-hidden="true"></span>
+        <span>{{ _("Ada cerita seleksi") }}</span>
       </label>
     </div>
   </div>

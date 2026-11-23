@@ -26,6 +26,8 @@ JejakPacil mengumpulkan riwayat itu di satu tempat yang khusus untuk sivitas Fas
 | Beranda pribadi | Setelah masuk: daftar cek kelengkapan profil, diskusi terbaru, dan jalan pintas ke fitur |
 | Forum | Kategori, thread, balasan dua tingkat, suara, posting anonim, tag perusahaan, laporan, lampiran foto dan PDF |
 | Notifikasi | Ikon lonceng dengan jumlah belum dibaca: balasan forum, suara (digabung), keputusan verifikasi, perusahaan disetujui, konten disembunyikan |
+| Cerita seleksi | Tahapan yang dilalui, lama proses, tingkat kesulitan, contoh pertanyaan, dan tips untuk adik tingkat, dirangkum per perusahaan ("Proses seleksi di ...") |
+| Bidang pekerjaan | Posisi dengan nama berbeda ("BE Intern", "Backend Engineer") dikelompokkan ke satu bidang; bisa difilter di Jelajahi dan muncul di Statistik |
 | Chat pribadi | Kirim pesan ke siapa saja dari profil atau thread; teks, foto, dan PDF; penanda belum dibaca; blokir dan laporkan |
 | Statistik | Perusahaan terbanyak, jenis pengalaman, jalur mendapatkan, skill, per angkatan |
 | Panel admin | Verifikasi, setujui dan gabungkan perusahaan, moderasi forum, kelola pengguna, ekspor CSV |
@@ -199,8 +201,6 @@ tetap sederhana dan sepenuhnya Python, tanpa server WebSocket terpisah.
 
 ## Ide pengembangan
 
-- Cerita proses seleksi per perusahaan dengan format terstruktur
-- Notifikasi saat thread dibalas atau pengalaman diverifikasi
 - Isi profil otomatis dari CV dengan membaca PDF
 - Rekomendasi perusahaan berdasarkan kemiripan skill
 

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import field, icon, pills, switch %}
+{% from "_macros.html" import field, icon, options, pills, switch %}
 {% block title %}{{ _('Ubah pengalaman') if experience else _('Tambah pengalaman') }}{% endblock %}
 {% block content %}
 <section class="narrow form-page">
@@ -28,6 +28,10 @@
 
       {% call field('Posisi', 'position', errors) %}
         <input id="position" name="position" value="{{ form.get('position') or '' }}" placeholder="{{ _("misalnya Software Engineer Intern") }}" required>
+      {% endcall %}
+
+      {% call field('Bidang pekerjaan', 'role_category', errors, hint='Pilih yang paling dekat. Dipakai untuk mengelompokkan posisi yang namanya berbeda-beda, misalnya "BE Intern" dan "Backend Engineer".') %}
+        <select id="role_category" name="role_category" required>{{ options(C.ROLE_CATEGORIES, form.get('role_category') or '', 'Pilih bidang') }}</select>
       {% endcall %}
 
       {{ pills('type', C.EXP_TYPES, form.get('type') or '', _('Jenis'), errors) }}
@@ -69,7 +73,45 @@
       {{ pills('how_obtained', C.HOW_OBTAINED, form.get('how_obtained') or '', _('Dapat dari mana? Info ini paling dicari adik tingkat.'), errors) }}
     </section>
 
-    {# Bagian 4 #}
+    {# Bagian 4: cerita seleksi (opsional). Bagian ini yang paling dicari adik tingkat. #}
+    {% set stages = selected_stages %}
+    <section class="form-section" aria-labelledby="bagian-seleksi">
+      <h2 id="bagian-seleksi" class="form-section-title"><span class="icon-tile">{{ icon('route', 18) }}</span>{{ _("Cerita seleksi") }} <span class="optional">{{ _("(opsional)") }}</span></h2>
+      <p class="form-section-intro">{{ _("Bagaimana proses masuknya? Adik tingkat paling butuh info ini untuk bersiap. Tidak perlu diisi semua.") }}</p>
+
+      <fieldset class="choice-group">
+        <legend>{{ _("Tahapan yang kamu lalui") }}</legend>
+        <div class="pill-group stage-picks">
+          {% for value, label in C.SELECTION_STAGES.items() %}
+            <label class="pill">
+              <input type="checkbox" name="selection_stages" value="{{ value }}"{% if value in stages %} checked{% endif %}>
+              <span class="pill-body">{{ label|t }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <div class="field-row">
+        {% call field('Lama proses seleksi', 'selection_weeks', errors, hint='Dari melamar sampai diterima, dalam minggu.', optional=True) %}
+          <div class="input-suffix">
+            <input id="selection_weeks" type="number" name="selection_weeks" min="1" max="52" inputmode="numeric" value="{{ form.get('selection_weeks') or '' }}" placeholder="4">
+            <span aria-hidden="true">{{ _("minggu") }}</span>
+          </div>
+        {% endcall %}
+      </div>
+
+      {{ pills('selection_difficulty', C.SELECTION_DIFFICULTY, form.get('selection_difficulty') or '', _('Seberapa sulit seleksinya?'), errors, style='segmented') }}
+
+      {% call field('Contoh pertanyaan atau soal', 'selection_questions', errors, hint='Misalnya pertanyaan wawancara atau jenis soal tes. Jangan menyalin soal yang dirahasiakan perusahaan.', optional=True) %}
+        <textarea id="selection_questions" name="selection_questions" rows="4" maxlength="2000" placeholder="{{ _('misalnya: Ceritakan proyek yang paling kamu banggakan. Live coding soal array dan hash map.') }}">{{ form.get('selection_questions') or '' }}</textarea>
+      {% endcall %}
+
+      {% call field('Tips untuk adik tingkat', 'selection_tips', errors, optional=True) %}
+        <textarea id="selection_tips" name="selection_tips" rows="3" maxlength="2000" placeholder="{{ _('misalnya: Latihan SQL di HackerRank, siapkan cerita proyek dengan format STAR.') }}">{{ form.get('selection_tips') or '' }}</textarea>
+      {% endcall %}
+    </section>
+
+    {# Bagian 5 #}
     <section class="form-section" aria-labelledby="bagian-privasi">
       <h2 id="bagian-privasi" class="form-section-title"><span class="icon-tile">{{ icon('lock', 18) }}</span>{{ _("Privasi dan bukti") }}</h2>
 

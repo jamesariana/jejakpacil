@@ -61,7 +61,14 @@ CREATE TABLE IF NOT EXISTS experiences (
     proof        TEXT,                                  -- nama file bukti di uploads/proofs
     verification TEXT    NOT NULL DEFAULT 'belum',      -- belum | menunggu | terverifikasi | ditolak
     visibility   TEXT    NOT NULL DEFAULT 'sivitas',    -- publik | sivitas | privat
-    created_at   TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at   TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    role_category        TEXT,              -- bidang pekerjaan, lihat ROLE_CATEGORIES
+    -- Cerita seleksi (semuanya opsional), ikut aturan visibilitas pengalamannya:
+    selection_stages     TEXT,              -- kunci SELECTION_STAGES dipisah koma, mis. "berkas,tes_online,wawancara_hr"
+    selection_weeks      INTEGER,           -- lama proses dari melamar sampai diterima, dalam minggu
+    selection_difficulty INTEGER,           -- 1 (mudah) sampai 5 (sangat sulit)
+    selection_questions  TEXT,              -- contoh pertanyaan atau soal yang ditanyakan
+    selection_tips       TEXT               -- tips untuk adik tingkat
 );
 
 CREATE TABLE IF NOT EXISTS experience_skills (

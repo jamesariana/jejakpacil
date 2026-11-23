@@ -76,7 +76,7 @@ class BaseTest(unittest.TestCase):
             "position": "Software Engineer Intern", "type": "magang",
             "start_date": "2025-06", "end_date": "2025-08", "location": "Jakarta",
             "work_mode": "hybrid", "how_obtained": "portal", "visibility": "publik",
-            "skills": "Python, python, SQL",
+            "skills": "Python, python, SQL", "role_category": "swe_backend",
         }
         data.update(extra)
         return self.client.post("/pengalaman/tambah", data=data, content_type="multipart/form-data")
@@ -295,7 +295,7 @@ class ExperienceTest(BaseTest):
         data = {
             "company_name": "Tokopedia", "position": "Posisi Lain", "type": "magang",
             "start_date": "2025-06", "end_date": "2025-08", "work_mode": "hybrid",
-            "how_obtained": "portal", "visibility": "publik",
+            "how_obtained": "portal", "visibility": "publik", "role_category": "swe_backend",
         }
         self.client.post("/pengalaman/1/edit", data=data, content_type="multipart/form-data")
         self.assertEqual(self.db("SELECT verification FROM experiences", one=True)["verification"], "belum")
@@ -982,4 +982,73 @@ class NotificationTest(BaseTest):
         self.client.post(f"/forum/t/{self.thread_id}/balas", data={"body": "Halo"})
         self.switch("budi@ui.ac.id")
         self.assertRegex(self.client.get("/").get_data(as_text=True), r"data-notification-count>\s*1\s*<")
+
+
+class SelectionStoryTest(BaseTest):
+    """Bidang pekerjaan (ROLE_CATEGORIES) dan cerita seleksi."""
+
+    def setUp(self):
+        super().setUp()
+        self.register()
+        self.login()
+
+    def approve_companies(self):
+        with self.app.app_context():
+            execute("UPDATE companies SET is_approved = 1")
+
+    def test_bidang_wajib_diisi(self):
+        page = self.add_experience(role_category="").get_data(as_text=True)
+        self.assertIn("Pilih bidang pekerjaan", page)
+        self.assertIsNone(self.db("SELECT 1 FROM experiences", one=True))
+
+    def test_cerita_seleksi_tersimpan_dan_tampil(self):
+        self.add_experience(
+            selection_stages=["wawancara_hr", "berkas", "bukan-tahap"],  # urutan dirapikan, yang tidak dikenal dibuang
+            selection_weeks="5", selection_difficulty="4",
+            selection_questions="Rancang sistem pemendek URL.", selection_tips="Latihan LeetCode sebulan.",
+        )
+        row = self.db("SELECT * FROM experiences", one=True)
+        self.assertEqual(row["selection_stages"], "berkas,wawancara_hr")
+        self.assertEqual((row["selection_weeks"], row["selection_difficulty"]), (5, 4))
+        self.approve_companies()
+        page = self.client.get("/perusahaan/tokopedia").get_data(as_text=True)
+        self.assertIn("Proses seleksi di Tokopedia", page)
+        self.assertIn("Dirangkum dari 1 cerita seleksi", page)
+        self.assertIn("Latihan LeetCode sebulan.", page)
+        self.assertIn("Seleksi CV / berkas", page)
+
+    def test_lama_proses_tidak_masuk_akal_ditolak(self):
+        page = self.add_experience(selection_weeks="99").get_data(as_text=True)
+        self.assertIn("antara 1 dan 52 minggu", page)
+
+    def test_cerita_seleksi_privat_tidak_bocor(self):
+        self.add_experience(visibility="privat", selection_tips="Rahasia sekali")
+        self.approve_companies()
+        self.logout()
+        page = self.client.get("/perusahaan/tokopedia").get_data(as_text=True)
+        self.assertNotIn("Rahasia sekali", page)
+        self.assertIn("Belum ada yang menceritakan proses seleksinya", page)
+
+    def test_filter_bidang_dan_cerita_di_jelajahi(self):
+        self.add_experience(position="Data Analyst Intern", role_category="data_analyst", selection_weeks="3")
+        self.add_experience(position="Backend Intern", role_category="swe_backend")
+        self.approve_companies()
+        page = self.client.get("/pengalaman?bidang=data_analyst").get_data(as_text=True)
+        self.assertIn("Data Analyst Intern", page)
+        self.assertNotIn("Backend Intern", page)
+        page = self.client.get("/pengalaman?cerita=1").get_data(as_text=True)
+        self.assertIn("Data Analyst Intern", page)
+        self.assertNotIn("Backend Intern", page)
+
+    def test_statistik_bidang_dan_tahapan(self):
+        self.add_experience(selection_stages=["berkas", "tes_online"])
+        page = self.client.get("/statistik").get_data(as_text=True)
+        self.assertIn("Bidang yang paling banyak diambil", page)
+        self.assertIn("Tahapan seleksi yang paling sering dilalui", page)
+
+    def test_form_edit_mengingat_tahapan(self):
+        self.add_experience(selection_stages=["berkas", "psikotes"])
+        page = self.client.get("/pengalaman/1/edit").get_data(as_text=True)
+        self.assertRegex(page, r'value="psikotes" checked')
+        self.assertNotRegex(page, r'value="tes_online" checked')
 

@@ -4,7 +4,8 @@ from flask import Blueprint, abort, g, render_template, request
 
 from ..constants import INDUSTRIES
 from ..db import query
-from ..queries import EXP_SELECT, visibility_sql
+from ..constants import ROLE_CATEGORIES
+from ..queries import EXP_SELECT, selection_summary, visibility_sql
 from ..security import is_admin
 from ..utils import Page
 
@@ -119,6 +120,13 @@ def detail(slug):
             GROUP BY s.id ORDER BY n DESC, s.name COLLATE NOCASE LIMIT 10""",
         (company["id"],),
     )
+    roles = query(
+        """SELECT role_category, COUNT(*) AS n FROM experiences
+            WHERE company_id = ? AND visibility != 'privat' AND role_category IS NOT NULL
+            GROUP BY role_category ORDER BY n DESC LIMIT 8""",
+        (company["id"],),
+    )
+    roles = [{"label": ROLE_CATEGORIES[r["role_category"]], "n": r["n"]} for r in roles if r["role_category"] in ROLE_CATEGORIES]
     threads = []
     if g.user is not None:
         threads = query(
@@ -137,5 +145,7 @@ def detail(slug):
         hidden_count=counts["total"] - sum(1 for e in experiences if e["visibility"] != "privat"),
         positions=positions,
         skills=skills,
+        roles=roles,
+        selection=selection_summary(experiences),
         threads=threads,
     )

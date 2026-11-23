@@ -3,7 +3,7 @@
 from flask import Blueprint, abort, flash, g, redirect, render_template, request, url_for
 
 from ..i18n import _
-from ..constants import EXP_TYPES, PRODI
+from ..constants import EXP_TYPES, PRODI, ROLE_CATEGORIES
 from ..db import execute, query
 from ..forms import validate_experience
 from ..queries import EXP_SELECT, get_or_create_company, set_experience_skills, visibility_sql
@@ -40,6 +40,14 @@ def index():
         params.append(f"%{args['skill'].strip()}%")
     if args.get("terverifikasi"):
         where.append("e.verification = 'terverifikasi'")
+    if args.get("bidang") in ROLE_CATEGORIES:
+        where.append("e.role_category = ?")
+        params.append(args["bidang"])
+    if args.get("cerita"):
+        where.append(
+            "(e.selection_stages IS NOT NULL OR e.selection_weeks IS NOT NULL OR e.selection_difficulty IS NOT NULL"
+            " OR e.selection_questions IS NOT NULL OR e.selection_tips IS NOT NULL)"
+        )
     where_sql = " AND ".join(where)
 
     total = query(
@@ -75,8 +83,12 @@ def index():
         active_filters.append((_("Angkatan {n}", n=args["angkatan"]), "angkatan"))
     if args.get("skill", "").strip():
         active_filters.append((_("Skill: {name}", name=args["skill"].strip()), "skill"))
+    if args.get("bidang") in ROLE_CATEGORIES:
+        active_filters.append((ROLE_CATEGORIES[args["bidang"]], "bidang"))
     if args.get("terverifikasi"):
         active_filters.append(("Terverifikasi", "terverifikasi"))
+    if args.get("cerita"):
+        active_filters.append(("Ada cerita seleksi", "cerita"))
     active_filters = [(label, url_with(**{key: None})) for label, key in active_filters]
 
     return render_template(
@@ -130,13 +142,15 @@ def create():
                 ),
             )
             set_experience_skills(experience_id, data["skills"])
+            _save_details(experience_id, data)
             flash("Pengalaman ditambahkan.", "success")
             return redirect(url_for("profiles.detail", user_id=g.user["id"]))
         form = request.form
     else:
         form = {"type": "magang", "work_mode": "onsite", "visibility": "sivitas", "how_obtained": "portal"}
     return render_template(
-        "experiences/form.html", form=form, errors=errors, experience=None, company_names=_company_names()
+        "experiences/form.html", form=form, errors=errors, experience=None, company_names=_company_names(),
+        selected_stages=_stages_in(form),
     )
 
 
@@ -179,6 +193,7 @@ def edit(experience_id):
                 ),
             )
             set_experience_skills(experience_id, data["skills"])
+            _save_details(experience_id, data)
             if proof != experience["proof"]:
                 delete_upload("proofs", experience["proof"])
             flash("Pengalaman disimpan.", "success")
@@ -190,7 +205,26 @@ def edit(experience_id):
         form["end_date"] = experience["end_date"] or ""
         form["skills"] = experience["skills"] or ""
     return render_template(
-        "experiences/form.html", form=form, errors=errors, experience=experience, company_names=_company_names()
+        "experiences/form.html", form=form, errors=errors, experience=experience, company_names=_company_names(),
+        selected_stages=_stages_in(form),
+    )
+
+
+def _stages_in(form):
+    """Tahapan seleksi yang sedang dipilih: dari form yang dikirim, atau dari data tersimpan."""
+    if hasattr(form, "getlist"):
+        return set(form.getlist("selection_stages"))
+    return set((form.get("selection_stages") or "").split(","))
+
+
+def _save_details(experience_id, data):
+    """Simpan bidang pekerjaan dan cerita seleksi (terpisah supaya query utama tetap ringkas)."""
+    execute(
+        """UPDATE experiences SET role_category = ?, selection_stages = ?, selection_weeks = ?,
+                  selection_difficulty = ?, selection_questions = ?, selection_tips = ?
+            WHERE id = ?""",
+        (data["role_category"], data["selection_stages"], data["selection_weeks"], data["selection_difficulty"],
+         data["selection_questions"], data["selection_tips"], experience_id),
     )
 
 

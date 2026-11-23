@@ -77,6 +77,65 @@ DEMO_EXPERIENCES = [
     ("anisa", "DANA", "Product Manager", "fulltime", "2025-04", None, "Jakarta", "hybrid", "referral", "SQL, Product Management", "belum", "publik"),
 ]
 
+# Bidang pekerjaan tiap posisi demo (lihat ROLE_CATEGORIES di constants.py).
+DEMO_ROLES = {
+    "Software Engineer Intern": "swe_backend", "Software Engineer": "swe_backend",
+    "IT Business Analyst Intern": "business_analyst", "Associate Product Manager": "product_manager",
+    "Backend Engineer Intern": "swe_backend", "Backend Engineer": "swe_backend",
+    "Data Analyst Intern": "data_analyst", "Asisten Dosen DDP1": "researcher",
+    "Android Engineer Intern": "mobile", "Content Reviewer": "lainnya",
+    "Data Science Intern": "data_scientist", "Data Scientist": "data_scientist",
+    "UI/UX Design Intern": "ui_ux", "Frontend Engineer Intern": "swe_frontend",
+    "IT Intern": "lainnya", "Product Analyst": "data_analyst", "Asisten Riset": "researcher",
+    "Business Analyst Intern": "business_analyst", "System Analyst": "business_analyst",
+    "Product Manager": "product_manager", "Data Engineer Intern": "data_engineer",
+}
+
+# Cerita seleksi demo: (pemilik, perusahaan, posisi) -> (tahapan, minggu, kesulitan, pertanyaan, tips)
+DEMO_STORIES = {
+    ("raka", "Tokopedia", "Software Engineer Intern"): (
+        "berkas,tes_online,wawancara_teknis,wawancara_hr", 5, 4,
+        "Tes online 2 soal algoritma (graf dan dynamic programming) dalam 90 menit. "
+        "Wawancara teknis: rancang sistem pemendek URL dan jelaskan proyek terbesarmu.",
+        "Latihan soal medium di LeetCode minimal sebulan sebelumnya. Saat wawancara, pikirkan dengan suara keras.",
+    ),
+    ("farhan", "Tokopedia", "Android Engineer Intern"): (
+        "berkas,tes_online,tes_teknis,wawancara_hr", 6, 4,
+        "Take-home membuat aplikasi daftar produk dengan Kotlin dan MVVM, lalu dibahas saat live coding.",
+        "Punya satu aplikasi yang benar-benar rilis di Play Store sangat membantu. Rapikan arsitektur kodenya.",
+    ),
+    ("rizky", "Tokopedia", "Software Engineer"): (
+        "berkas,tes_online,wawancara_teknis,wawancara_teknis,wawancara_hr", 4, 3,
+        "System design: layanan keranjang belanja yang tahan lonjakan saat promo.",
+        "Pengalaman magang sebelumnya paling banyak ditanyakan. Siapkan angka dampak dari proyekmu.",
+    ),
+    ("salsa", "DANA", "Data Analyst Intern"): (
+        "berkas,tes_online,studi_kasus,wawancara_hr", 3, 3,
+        "Studi kasus: kenapa jumlah transaksi turun 15% minggu ini? Tes SQL berisi JOIN dan window function.",
+        "Latihan SQL di HackerRank, lalu siapkan cerita proyek dengan format STAR. Ikut sesi DANA di COMPFEST.",
+    ),
+    ("bagas", "Shopee", "Backend Engineer Intern"): (
+        "berkas,tes_online,wawancara_teknis,wawancara_teknis", 7, 5,
+        "Dua wawancara teknis: struktur data (heap, trie) dan desain basis data untuk sistem voucher.",
+        "Prosesnya panjang, jangan menunggu satu perusahaan saja. Pelajari dasar concurrency di Java.",
+    ),
+    ("putri", "Grab", "Data Science Intern"): (
+        "berkas,tes_online,studi_kasus,wawancara_teknis,wawancara_hr", 6, 4,
+        "Take-home membuat model prediksi waktu tiba dari data perjalanan, lalu dipresentasikan.",
+        "Jelaskan alasan memilih fitur dan metrik evaluasi, bukan hanya angka akurasinya.",
+    ),
+    ("anisa", "Gojek", "Business Analyst Intern"): (
+        "berkas,psikotes,studi_kasus,wawancara_hr", 4, 3,
+        "Studi kasus menentukan kota berikutnya untuk layanan GoFood, lengkap dengan perhitungan kasar.",
+        "Biasakan menyusun jawaban dengan kerangka. Datang ke job fair untuk kenalan dengan perekrutnya.",
+    ),
+    ("citra", "Telkom Indonesia", "Frontend Engineer Intern"): (
+        "berkas,psikotes,tes_teknis,wawancara_hr", 3, 2,
+        "Membuat halaman dari desain Figma dengan React dalam 2 jam.",
+        "Psikotesnya cukup panjang, istirahat yang cukup sehari sebelumnya.",
+    ),
+}
+
 # (penulis, kategori, perusahaan atau None, judul, isi, anonim, disematkan, [balasan], [pemberi suara])
 # balasan: (penulis, isi, anonim, [balasan anak: (penulis, isi)])
 DEMO_THREADS = [
@@ -255,6 +314,7 @@ def register_commands(app):
             for voter in voters:
                 db.execute("INSERT INTO votes (user_id, thread_id) VALUES (?, ?)", (users[voter], thread_id))
 
+        _seed_roles_and_stories(db, users)
         _seed_attachments_and_chats(db, users, thread_ids)
         _seed_notifications(db, users)
         db.commit()
@@ -365,5 +425,20 @@ def _seed_notifications(db, users):
                                           created_at, updated_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', ?), datetime('now', ?))""",
             (salsa, kind, actor, count, subject, detail, link, read, f"-{minutes} minutes", f"-{minutes} minutes"),
+        )
+
+
+def _seed_roles_and_stories(db, users):
+    """Isi bidang pekerjaan semua pengalaman demo, dan cerita seleksi untuk sebagian."""
+    for position, role in DEMO_ROLES.items():
+        db.execute("UPDATE experiences SET role_category = ? WHERE position = ?", (role, position))
+    for (owner, company, position), (stages, weeks, level, questions, tips) in DEMO_STORIES.items():
+        db.execute(
+            """UPDATE experiences SET selection_stages = ?, selection_weeks = ?, selection_difficulty = ?,
+                      selection_questions = ?, selection_tips = ?
+                WHERE user_id = ? AND position = ?
+                  AND company_id = (SELECT id FROM companies WHERE name = ?)""",
+            (",".join(dict.fromkeys(stages.split(","))), weeks, level, questions, tips,
+             users[owner], position, company),
         )
 

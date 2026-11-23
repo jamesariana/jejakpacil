@@ -8,7 +8,10 @@ import re
 from datetime import datetime
 
 from .i18n import _
-from .constants import EXP_TYPES, HOW_OBTAINED, PRODI, STATUS, VISIBILITY, WORK_MODES
+from .constants import (
+    EXP_TYPES, HOW_OBTAINED, PRODI, ROLE_CATEGORIES, SELECTION_DIFFICULTY, SELECTION_STAGES, STATUS, VISIBILITY,
+    WORK_MODES,
+)
 from .queries import parse_skills
 from .utils import current_month, valid_month, valid_url
 
@@ -104,6 +107,15 @@ def validate_experience(form):
         "how_obtained": form.get("how_obtained", ""),
         "visibility": form.get("visibility", ""),
         "skills": parse_skills(form.get("skills", "")),
+        "role_category": form.get("role_category", ""),
+        # Cerita seleksi (opsional). Tahapan disimpan dalam urutan SELECTION_STAGES.
+        "selection_stages": ",".join(
+            key for key in SELECTION_STAGES if key in set(_get_list(form, "selection_stages"))
+        ) or None,
+        "selection_weeks": _to_int(form.get("selection_weeks")),
+        "selection_difficulty": _to_int(form.get("selection_difficulty")),
+        "selection_questions": form.get("selection_questions", "").strip()[:2000] or None,
+        "selection_tips": form.get("selection_tips", "").strip()[:2000] or None,
     }
     errors = {}
     if len(data["company_name"]) < 2:
@@ -127,7 +139,21 @@ def validate_experience(form):
         errors["how_obtained"] = "Pilih cara kamu mendapatkannya."
     if data["visibility"] not in VISIBILITY:
         errors["visibility"] = "Pilih siapa yang boleh melihat."
+    if data["role_category"] not in ROLE_CATEGORIES:
+        errors["role_category"] = "Pilih bidang pekerjaan yang paling dekat."
+    if data["selection_weeks"] is not None and not 1 <= data["selection_weeks"] <= 52:
+        errors["selection_weeks"] = "Isi lama proses antara 1 dan 52 minggu, atau kosongkan."
+    if data["selection_difficulty"] is not None and data["selection_difficulty"] not in SELECTION_DIFFICULTY:
+        data["selection_difficulty"] = None
     return data, errors
+
+
+def _get_list(form, name):
+    """Nilai ganda dari form (checkbox). Bisa menerima form Flask maupun dict biasa."""
+    if hasattr(form, "getlist"):
+        return form.getlist(name)
+    value = form.get(name) or []
+    return value.split(",") if isinstance(value, str) else list(value)
 
 
 def validate_thread(form, category_ids, company_ids):

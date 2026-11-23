@@ -40,6 +40,84 @@
   </div>
 </header>
 
+{# Rangkuman cerita seleksi: dihitung dari pengalaman yang boleh dilihat pengunjung ini. #}
+{% set sel = selection %}
+<section class="selection" aria-labelledby="proses-seleksi">
+  <div class="selection-head">
+    <span class="icon-tile" aria-hidden="true">{{ icon('route', 20) }}</span>
+    <div>
+      <h2 id="proses-seleksi">{{ _("Proses seleksi di {company}", company=company.name) }}</h2>
+      <p class="muted">
+        {%- if sel.n_stories %}{{ _("Dirangkum dari {n} cerita seleksi anak Fasilkom.", n=sel.n_stories) }}
+        {%- else %}{{ _("Belum ada yang menceritakan proses seleksinya di sini.") }}{% endif -%}
+      </p>
+    </div>
+  </div>
+
+  {% if sel.n_stories %}
+    <dl class="selection-facts">
+      {% if sel.typical_n %}<div><dd>{{ sel.typical_n }}</dd><dt>{{ _("tahap biasanya") }}</dt></div>{% endif %}
+      {% if sel.median_weeks %}
+        <div><dd>{{ _('{n} minggu', n=sel.median_weeks) }}</dd>
+          <dt>{% if sel.weeks_range %}{{ _("lama proses, berkisar {a} sampai {b} minggu", a=sel.weeks_range[0], b=sel.weeks_range[1]) }}{% else %}{{ _("lama proses") }}{% endif %}</dt></div>
+      {% endif %}
+      {% if sel.difficulty %}
+        <div><dd>{{ sel.difficulty_label|t }}</dd>
+          <dt><span class="difficulty" aria-hidden="true">{% for i in range(1, 6) %}<span class="difficulty-dot{% if i <= sel.difficulty|round %} is-on{% endif %}"></span>{% endfor %}</span>
+            {{ _("tingkat kesulitan, rata-rata {n} dari 5", n=sel.difficulty) }}</dt></div>
+      {% endif %}
+    </dl>
+
+    <div class="selection-grid">
+      {% if sel.stages %}
+        <div class="selection-block">
+          <h3>{{ _("Tahapan yang dilalui") }}</h3>
+          <ul class="stage-bars">
+            {% for st in sel.stages %}
+              <li>
+                <span class="stage-bars-label">{{ st.label|t }}</span>
+                <span class="stage-bars-track" aria-hidden="true"><span style="width: {{ st.percent }}%"></span></span>
+                <span class="stage-bars-n">{{ st.percent }}% ({{ jumlah(st.n, "orang") }})</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% if sel.channels %}
+        <div class="selection-block">
+          <h3>{{ _("Jalur masuk") }}</h3>
+          <ul class="count-list">
+            {% for c in sel.channels %}<li><span>{{ c.label|t }}</span><span class="muted">{{ c.n }}</span></li>{% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if sel.tips or sel.questions %}
+      <div class="selection-quotes">
+        {% for q in sel.tips %}
+          <figure class="quote quote-tip">
+            <figcaption>{{ icon('star', 14) }}{{ _("Tips") }}</figcaption>
+            <blockquote>{{ q.text|truncate(260) }}</blockquote>
+            <a href="#pengalaman-{{ q.id }}">{{ q.name }}, {{ q.position }}</a>
+          </figure>
+        {% endfor %}
+        {% for q in sel.questions %}
+          <figure class="quote">
+            <figcaption>{{ icon('chat', 14) }}{{ _("Yang ditanyakan") }}</figcaption>
+            <blockquote>{{ q.text|truncate(260) }}</blockquote>
+            <a href="#pengalaman-{{ q.id }}">{{ q.name }}, {{ q.position }}</a>
+          </figure>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endif %}
+  {% if g.user %}
+    <p class="selection-cta">{{ _("Pernah melamar ke sini?") }}
+      <a href="{{ url_for('experiences.create') }}#bagian-seleksi">{{ _("Tambahkan cerita seleksimu") }}</a>{{ _(", sebentar saja dan sangat membantu adik tingkat.") }}</p>
+  {% endif %}
+</section>
+
 <div class="two-col">
   <section>
     <h2>{{ _("Siapa yang pernah di sini") }}</h2>
@@ -64,6 +142,14 @@
         <h2>{{ _("Posisi yang pernah diisi") }}</h2>
         <ul class="count-list">
           {% for p in positions %}<li><span>{{ p.position }}</span><span class="muted">{{ p.n }}</span></li>{% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+    {% if roles %}
+      <section class="side-block">
+        <h2>{{ _("Bidang") }}</h2>
+        <ul class="count-list">
+          {% for r in roles %}<li><span>{{ r.label|t }}</span><span class="muted">{{ r.n }}</span></li>{% endfor %}
         </ul>
       </section>
     {% endif %}

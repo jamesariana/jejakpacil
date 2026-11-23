@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template
 
-from ..constants import EXP_TYPES, HOW_OBTAINED
+from ..constants import EXP_TYPES, HOW_OBTAINED, ROLE_CATEGORIES, SELECTION_STAGES
 from ..db import query
 from ..i18n import _
 
@@ -61,6 +61,21 @@ def index():
             WHERE e.visibility != 'privat'
             GROUP BY s.id ORDER BY n DESC, s.name COLLATE NOCASE LIMIT 10"""
     )
+    by_role = query(
+        """SELECT role_category AS label, COUNT(*) AS n FROM experiences
+            WHERE visibility != 'privat' AND role_category IS NOT NULL
+            GROUP BY role_category ORDER BY n DESC LIMIT 10"""
+    )
+    # Tahapan seleksi disimpan sebagai teks "a,b,c"; dihitung di Python per tahap.
+    stage_counts = {}
+    for row in query(
+        "SELECT selection_stages FROM experiences WHERE visibility != 'privat' AND selection_stages IS NOT NULL"
+    ):
+        for key in set(row["selection_stages"].split(",")):
+            if key in SELECTION_STAGES:
+                stage_counts[key] = stage_counts.get(key, 0) + 1
+    by_stage = sorted(({"label": key, "n": n} for key, n in stage_counts.items()), key=lambda r: -r["n"])
+
     # Label angkatan dibuat di Python supaya ikut bahasa yang dipilih ("Angkatan 2023" / "Class of 2023").
     by_angkatan = [{"label": _("Angkatan {n}", n=row["label"]), "n": row["n"]} for row in by_angkatan]
     charts = [
@@ -70,12 +85,24 @@ def index():
             "unit": "orang",
             "bars": to_bars(top_companies),
         },
+        {
+            "title": "Bidang yang paling banyak diambil",
+            "icon": "briefcase",
+            "unit": "pengalaman",
+            "bars": to_bars(by_role, ROLE_CATEGORIES),
+        },
         {"title": "Pengalaman menurut jenis", "icon": "briefcase", "unit": "pengalaman", "bars": to_bars(by_type, EXP_TYPES)},
         {
             "title": "Cara mendapatkan pengalaman",
             "icon": "megaphone",
             "unit": "pengalaman",
             "bars": to_bars(by_channel, HOW_OBTAINED),
+        },
+        {
+            "title": "Tahapan seleksi yang paling sering dilalui",
+            "icon": "route",
+            "unit": "cerita seleksi",
+            "bars": to_bars(by_stage, SELECTION_STAGES),
         },
         {"title": "Skill yang paling sering dipakai", "icon": "trending", "unit": "pengalaman", "bars": to_bars(top_skills)},
         {

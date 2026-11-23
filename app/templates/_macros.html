@@ -40,6 +40,8 @@
   {%- elif name == 'more' -%}<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>
   {%- elif name == 'bell' -%}<path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Z"/><path d="M10 20a2 2 0 0 0 4 0"/>
   {%- elif name == 'thumb' -%}<path d="M7 10v11H4V10Z"/><path d="M7 10l4-7a2 2 0 0 1 3 2l-1 4h5.5a2 2 0 0 1 2 2.4l-1.4 7A2 2 0 0 1 17.1 21H7"/>
+  {%- elif name == 'route' -%}<circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H16a3.5 3.5 0 0 0 0-7H8a3.5 3.5 0 0 1 0-7h7.5"/>
+  {%- elif name == 'star' -%}<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"/>
   {%- elif name == 'sort' -%}<path d="M7 4v16"/><path d="m3 8 4-4 4 4"/><path d="M17 20V4"/><path d="m13 16 4 4 4-4"/>
   {%- elif name == 'eye-off' -%}<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6 0 9.5 7 9.5 7a17 17 0 0 1-3 3.9M6.5 6.6A17 17 0 0 0 2.5 12S6 19 12 19a9.6 9.6 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
   {%- endif -%}
@@ -106,6 +108,7 @@
           {% endif %}
         {% endif %}
         <span class="tag">{{ (C.EXP_TYPES.get(e.type, e.type))|t }}</span>
+        {% if e.role_category and e.role_category in C.ROLE_CATEGORIES %}<span class="tag tag-role">{{ C.ROLE_CATEGORIES[e.role_category]|t }}</span>{% endif %}
         {% if e.verification == 'terverifikasi' %}
           <span class="tag tag-ok"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>{{ _("Terverifikasi") }}</span>
         {% elif can_edit and e.verification == 'menunggu' %}
@@ -134,6 +137,7 @@
         </ul>
       {% endif %}
       <p class="trail-channel"><span class="muted">{{ _("Didapat lewat") }}</span> <strong>{{ (C.HOW_OBTAINED.get(e.how_obtained, _('Lainnya')))|t }}</strong></p>
+      {{ selection_story(e) }}
       {% if can_edit %}
         <div class="row-actions">
           <a href="{{ url_for('experiences.edit', experience_id=e.id) }}">{{ _("Ubah") }}</a>
@@ -178,6 +182,7 @@
       <p class="exp-card-title">
         <span class="exp-position">{{ e.position }}</span>
         <span class="tag">{{ (C.EXP_TYPES.get(e.type, e.type))|t }}</span>
+        {% if e.role_category and e.role_category in C.ROLE_CATEGORIES %}<span class="tag tag-role">{{ C.ROLE_CATEGORIES[e.role_category]|t }}</span>{% endif %}
         {% if e.verification == 'terverifikasi' %}<span class="tag tag-ok">{{ icon('check', 12) }}{{ _("Terverifikasi") }}</span>{% endif %}
         {% if not e.end_date %}<span class="tag tag-live"><span class="live-dot" aria-hidden="true"></span>{{ _("Masih berjalan") }}</span>{% endif %}
       </p>
@@ -204,6 +209,7 @@
           {% for skill in e.skills.split(', ') %}<li>{{ skill }}</li>{% endfor %}
         </ul>
       {% endif %}
+      {{ selection_story(e) }}
       {% if can_edit %}
         <dl class="exp-status">
           <div><dt>{{ _("Siapa yang bisa melihat") }}</dt><dd>{{ (C.VISIBILITY.get(e.visibility, e.visibility))|t }}</dd></div>
@@ -346,5 +352,49 @@
     </div>
     <div class="attach-preview" data-attach-preview aria-live="polite"></div>
   </div>
+{% endmacro %}
+
+{# Cerita seleksi sebuah pengalaman: tahapan, lama proses, tingkat kesulitan, contoh
+   pertanyaan, dan tips. Disembunyikan dalam <details> supaya kartu tetap ringkas. #}
+{% macro selection_story(e) %}
+  {% set stages = (e.selection_stages or '').split(',')|select|list %}
+  {% if stages or e.selection_weeks or e.selection_difficulty or e.selection_questions or e.selection_tips %}
+    <details class="story">
+      <summary>
+        <span class="story-title">{{ icon('route', 16) }}{{ _("Cerita seleksi") }}</span>
+        <span class="story-sum">
+          {%- if stages %}{{ _('{n} tahap', n=stages|length) }}{% endif -%}
+          {%- if stages and e.selection_weeks %}{{ _(", ") }}{% endif -%}
+          {%- if e.selection_weeks %}{{ _('{n} minggu', n=e.selection_weeks) }}{% endif -%}
+        </span>
+        <span class="story-chevron" aria-hidden="true">{{ icon('chevron', 16) }}</span>
+      </summary>
+      <div class="story-body">
+        {% if stages %}
+          <ol class="story-steps" aria-label="{{ _('Tahapan seleksi') }}">
+            {% for key in stages if key in C.SELECTION_STAGES %}
+              <li><span class="story-step-n" aria-hidden="true">{{ loop.index }}</span>{{ C.SELECTION_STAGES[key]|t }}</li>
+            {% endfor %}
+          </ol>
+        {% endif %}
+        {% if e.selection_weeks or e.selection_difficulty %}
+          <dl class="story-facts">
+            {% if e.selection_weeks %}<div><dt>{{ _("Lama proses") }}</dt><dd>{{ _('{n} minggu', n=e.selection_weeks) }}</dd></div>{% endif %}
+            {% if e.selection_difficulty %}
+              <div><dt>{{ _("Tingkat kesulitan") }}</dt>
+                <dd><span class="difficulty" aria-hidden="true">{% for i in range(1, 6) %}<span class="difficulty-dot{% if i <= e.selection_difficulty %} is-on{% endif %}"></span>{% endfor %}</span>
+                  {{ C.SELECTION_DIFFICULTY[e.selection_difficulty]|t }}</dd></div>
+            {% endif %}
+          </dl>
+        {% endif %}
+        {% if e.selection_questions %}
+          <div class="story-block"><h4>{{ _("Contoh pertanyaan atau soal") }}</h4><p>{{ e.selection_questions }}</p></div>
+        {% endif %}
+        {% if e.selection_tips %}
+          <div class="story-block story-tips"><h4>{{ _("Tips untuk adik tingkat") }}</h4><p>{{ e.selection_tips }}</p></div>
+        {% endif %}
+      </div>
+    </details>
+  {% endif %}
 {% endmacro %}
 
