@@ -94,7 +94,7 @@
         </p>
       {% else %}
         {# Kotak tulis punya tiga mode: pesan baru, membalas pesan, dan mengedit pesan sendiri.
-           app.js mengganti mode tanpa memuat ulang; tanpa JavaScript mode dipilih lewat ?balas= / ?edit=. #}
+           chat.js mengganti mode tanpa memuat ulang; tanpa JavaScript mode dipilih lewat ?balas= / ?edit=. #}
         {% set context = editing or reply_to %}
         <form class="dm-compose{% if editing %} is-editing{% endif %}" id="tulis-pesan" method="post"
               action="{{ url_for('messages.edit_message', message_id=editing.id) if editing else url_for('messages.send', conversation_id=conversation.id) }}"

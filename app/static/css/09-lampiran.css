@@ -1,0 +1,94 @@
+/* 09-lampiran.css: Tombol bahasa untuk tamu, lampiran foto dan PDF.
+   Dimuat berurutan oleh base.html (lihat CSS_FILES di app/__init__.py). */
+
+/* =====================================================================
+   Tombol bahasa di navbar (ID / EN)
+   ===================================================================== */
+.lang-switch {
+  display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px;
+  background: var(--muted-bg);
+}
+.lang-switch a {
+  min-width: 34px; height: 30px; padding: 0 8px; display: inline-grid; place-items: center;
+  border-radius: 999px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--ink-2); text-decoration: none; transition: background 0.15s ease, color 0.15s ease;
+}
+.lang-switch a:hover { background: var(--hover-bg-strong); color: var(--ink); }
+.lang-switch a[aria-current] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgba(30, 51, 80, 0.15); }
+:root[data-theme="dark"] .lang-switch { background: #1f3249; }
+:root[data-theme="dark"] .lang-switch a[aria-current] { background: #b9d7ea; color: #0e1a28; }
+@media (max-width: 440px) {
+  .lang-switch a { min-width: 28px; height: 26px; padding: 0 5px; font-size: 0.72rem; }
+}
+
+/* Navbar: tombol "Tambah pengalaman" disingkat jadi "+ Tambah" dan nama di menu akun
+   disembunyikan (avatar tetap ada), supaya tombol bahasa, mode gelap, dan ikon pesan
+   muat dalam satu baris. Lebar navbar dibatasi .wrap, jadi aturan ini berlaku di semua layar. */
+.account .hide-small, .account .menu-name { display: none; }
+.account { gap: 8px; }
+
+/* =====================================================================
+   Lampiran foto dan PDF (forum dan chat)
+   ===================================================================== */
+.op-files { margin: 16px 0 4px; display: grid; gap: 10px; }
+.msg-files { margin-top: 8px; display: grid; gap: 8px; }
+.att-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 560px; }
+.att-grid.att-n1 { grid-template-columns: minmax(0, 360px); }
+.att-grid.att-n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 440px; }
+.att-grid.att-n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 440px; }
+.att-grid a { display: block; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--soft-bg); }
+.att-grid img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; transition: transform 0.2s ease; }
+.att-grid.att-n1 img { aspect-ratio: auto; max-height: 420px; object-fit: contain; }
+.att-grid a:hover img { transform: scale(1.03); }
+.att-compact { max-width: 300px; }
+.att-compact.att-n1 { grid-template-columns: minmax(0, 260px); }
+.att-file {
+  display: flex; align-items: center; gap: 12px; max-width: 380px; padding: 10px 14px;
+  border-radius: 14px; background: var(--surface); border: 1px solid var(--line);
+  color: var(--ink); text-decoration: none; transition: background 0.15s ease;
+}
+.att-file:hover { background: var(--hover-bg-strong); }
+.att-ext {
+  flex: none; width: 38px; height: 44px; border-radius: 8px; display: grid; place-items: center;
+  background: #769fcd; color: #10233d; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.03em;
+}
+.att-file-text { min-width: 0; display: grid; }
+.att-file-text strong { font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.att-file-text small { color: var(--ink-3); font-size: 0.8rem; }
+.att-dl { margin-left: auto; color: var(--blue); display: inline-flex; }
+
+/* Tombol "Lampirkan" dan pratinjau sebelum dikirim */
+.attach { display: grid; gap: 8px; }
+.attach-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.attach-btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px; border-radius: 999px;
+  background: var(--muted-bg); color: var(--ink-2); font-weight: 600; font-size: 0.88rem; cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.attach-btn:hover { background: var(--hover-bg-strong); color: var(--ink); }
+.attach-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.attach-input:focus-visible + .attach-hint, .attach-row:focus-within .attach-btn { outline: 3px solid var(--blue); outline-offset: 2px; }
+.attach-hint { font-size: 0.8rem; color: var(--ink-3); }
+.attach-preview { display: flex; flex-wrap: wrap; gap: 10px; }
+.attach-preview:empty { display: none; }
+.attach-preview .pv, .attach-preview .pvf { position: relative; border-radius: 12px; border: 1px solid var(--line); }
+.attach-preview .pv { width: 76px; height: 76px; overflow: hidden; }
+.attach-preview .pv img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.attach-preview .pvf { display: flex; align-items: center; gap: 8px; height: 76px; max-width: 220px; padding: 0 34px 0 12px; background: var(--soft-bg); font-size: 0.85rem; }
+.attach-preview .pvf .att-ext { width: 30px; height: 36px; font-size: 0.6rem; }
+.pvf-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv-remove {
+  position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%;
+  background: rgba(14, 26, 40, 0.75); color: #fff; font-size: 15px; line-height: 22px; cursor: pointer;
+}
+.pv-remove:hover { background: #0e1a28; }
+.attach-error { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--red-ink); }
+.composer .attach { margin-top: 4px; }
+
+/* Lampiran di form buat/ubah thread */
+.field-label { font-weight: 600; font-size: 0.95rem; }
+.attach-drop { padding: 18px; border: 2px dashed var(--line-strong); border-radius: 16px; background: var(--soft-bg); }
+.attach-current { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.attach-current li { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.attach-current img { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; }
+.attach-current-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

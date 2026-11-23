@@ -1,0 +1,275 @@
+/* 02-komponen.css: Desain ulang v2: kartu, tombol, efek hover, dan tampilan layar kecil.
+   Dimuat berurutan oleh base.html (lihat CSS_FILES di app/__init__.py). */
+
+/* ==========================================================
+   Tambahan desain ulang (UI/UX v2)
+   ========================================================== */
+
+.icon { flex: none; vertical-align: middle; }
+.section-title { font-size: clamp(1.5rem, 3vw, 1.9rem); letter-spacing: -0.02em; margin-bottom: 6px; }
+.section-lede { color: var(--ink-2); max-width: 62ch; margin-bottom: 24px; }
+.notice { color: var(--ink-2); margin-bottom: 16px; }
+
+/* Beranda: empat fitur utama */
+.features {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); overflow: hidden;
+}
+.feature {
+  display: flex; flex-direction: column; gap: 10px; padding: 28px 24px;
+  color: var(--ink); text-decoration: none; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  margin: 0 -1px -1px 0;
+}
+.feature:hover { background: var(--soft-bg); color: var(--ink); }
+.feature:hover .feature-link { color: var(--blue-dark); }
+.icon-tile {
+  flex: none; width: 44px; height: 44px; border-radius: 10px; background: var(--blue-wash); color: var(--blue);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.feature-title { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 1.2rem; font-weight: 700; }
+.feature-desc { color: var(--ink-2); font-size: 0.95rem; }
+.feature-link { margin-top: auto; padding-top: 6px; font-weight: 600; color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Beranda: cara kerja (urutan langkah) */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 32px; }
+.steps li { display: flex; flex-direction: column; gap: 6px; padding-top: 18px; border-top: 3px solid var(--blue); }
+.step-number { font-size: 0.95rem; font-weight: 700; color: var(--blue); }
+.step-title { font-size: 1.2rem; font-weight: 700; }
+.step-desc { color: var(--ink-2); }
+
+/* Keterangan titik jejak */
+.trail-legend {
+  display: flex; flex-wrap: wrap; gap: 6px 20px; padding: 12px 0 18px; border-top: 1px solid var(--line);
+  font-size: 0.85rem; color: var(--ink-3);
+}
+.trail-legend > span { display: inline-flex; align-items: center; gap: 8px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; border: 3px solid var(--blue); }
+.legend-dot.is-current { background: var(--red); border-color: var(--red); }
+
+/* Tata letak dua kolom: isi utama + kolom samping */
+.split { display: flex; flex-wrap: wrap; gap: 32px 40px; align-items: flex-start; }
+.split-main { flex: 999 1 560px; min-width: 0; display: grid; gap: 40px; }
+.split-side { flex: 1 1 280px; min-width: 0; display: grid; gap: 32px; }
+.split-left .split-side { flex-basis: 250px; gap: 20px; }
+.split-left .split-main { gap: 16px; align-content: start; }
+.side-title { font-size: 1.15rem; margin-bottom: 10px; }
+.side-title-small { font-size: 0.95rem; color: var(--ink-2); margin-bottom: 8px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); padding: 28px; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+.panel-count { font-weight: 700; color: var(--ink-2); }
+.panel > .muted { margin: 6px 0 16px; }
+
+.progress { height: 10px; background: var(--muted-bg); border-radius: 999px; overflow: hidden; }
+.progress > span { display: block; height: 100%; background: var(--blue); border-radius: 999px; }
+
+.checklist { margin-top: 18px; }
+.checklist li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--muted-bg); }
+.checklist-label { flex: 1 1 auto; }
+.check-mark {
+  flex: none; width: 26px; height: 26px; border-radius: 50%; box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.is-done .check-mark { background: var(--green-wash); color: var(--green); }
+.is-todo .check-mark { border: 2px dashed var(--line-strong); }
+.checklist a { font-weight: 600; }
+
+.meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+
+.action-list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); overflow: hidden; }
+.action-list li + li { border-top: 1px solid var(--muted-bg); }
+.action-list a { display: flex; align-items: center; gap: 14px; padding: 16px 18px; color: var(--ink); text-decoration: none; }
+.action-list a:hover { background: var(--soft-bg); color: var(--ink); }
+.action-list a > span:last-child { display: grid; min-width: 0; }
+.action-list .muted { font-size: 0.9rem; }
+
+.company-list li { border-bottom: 1px solid var(--line); }
+.company-list a { display: flex; align-items: center; gap: 12px; padding: 10px 0; color: var(--ink); text-decoration: none; }
+.company-list a:hover .company-list-name { text-decoration: underline; }
+.company-list-name { flex: 1 1 auto; font-weight: 600; }
+.company-list .muted { font-size: 0.9rem; }
+
+/* Filter: kotak cari, chip, dan isian tambahan */
+.filter-panel {
+  display: grid; gap: 16px; margin-bottom: 24px; padding: 20px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
+}
+.filter-bare { display: grid; gap: 14px; margin-bottom: 28px; }
+.filter-search { display: flex; flex-wrap: wrap; gap: 8px; }
+.filter-search input { flex: 1 1 280px; width: auto; min-height: 48px; }
+.filter-search select { width: auto; flex: 0 1 auto; min-height: 48px; }
+.filter-search .btn { min-height: 48px; }
+.chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chip-row-label { font-size: 0.9rem; font-weight: 600; color: var(--ink-2); margin-right: 4px; }
+.chip {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+  font-size: 0.9rem; font-weight: 600; text-decoration: none; white-space: nowrap;
+}
+.chip:hover { border-color: var(--ink); color: var(--ink); }
+.chip[aria-current] { background: var(--solid); border-color: var(--solid); color: var(--on-solid); }
+.filter-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; }
+.filter-fields .field { flex: 1 1 160px; }
+.check-inline { align-self: center; min-height: 44px; align-items: center; }
+.check-inline input { margin-top: 0; }
+
+.result-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+
+/* Kartu pengalaman */
+.exp-list { display: grid; gap: 12px; }
+.exp-card {
+  display: flex; flex-wrap: wrap; gap: 16px; padding: 20px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+}
+.exp-card-body { flex: 999 1 230px; min-width: 0; display: grid; gap: 6px; justify-items: start; }
+.exp-card-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.exp-position { font-size: 1.12rem; font-weight: 700; }
+.exp-company { font-weight: 600; }
+.exp-meta { color: var(--ink-3); font-size: 0.95rem; }
+.exp-person { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 0.95rem; }
+.exp-desc { color: var(--ink-2); max-width: 68ch; white-space: pre-line; }
+.exp-status {
+  display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 6px 0 0; padding-top: 12px; width: 100%;
+  border-top: 1px solid var(--muted-bg); font-size: 0.9rem;
+}
+.exp-status dt { color: var(--ink-3); }
+.exp-status dd { margin: 0; font-weight: 600; }
+.exp-card-side {
+  flex: 1 1 170px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
+  padding-left: 16px; border-left: 1px solid var(--muted-bg); font-size: 0.92rem;
+}
+.exp-card-side strong { font-size: 0.98rem; line-height: 1.35; }
+.exp-card-actions { display: flex; align-items: center; gap: 14px; margin-top: auto; padding-top: 14px; }
+.tag-live { background: var(--red-wash); color: var(--red-ink); gap: 6px; }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+
+/* Pengingat kelengkapan di profil sendiri */
+.banner {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 28px;
+  padding: 16px 20px; background: var(--blue-wash); border-radius: var(--radius-m);
+}
+.banner .progress { flex: 0 0 120px; height: 8px; background: var(--surface); }
+.banner p { flex: 1 1 300px; }
+.banner a { font-weight: 600; }
+
+/* Kepala halaman perusahaan */
+.company-head {
+  display: flex; flex-wrap: wrap; gap: 24px; align-items: center; padding: 28px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
+}
+.company-head-body { flex: 1 1 320px; display: grid; gap: 4px; }
+.company-head-actions { display: grid; gap: 8px; justify-items: center; }
+.company-head-actions .hint { text-align: center; }
+.stat-row { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 12px 0 0; }
+.stat-row div { display: flex; align-items: baseline; gap: 6px; }
+.stat-row dd { margin: 0; font-size: 1.4rem; font-weight: 800; order: 1; }
+.stat-row dt { color: var(--ink-2); order: 2; }
+
+/* Forum: daftar kategori di samping */
+.category-list { display: grid; gap: 4px; }
+.category-list a { display: grid; padding: 10px 14px; border-radius: var(--radius-m); color: var(--ink); text-decoration: none; }
+.category-list a:hover { background: var(--surface); color: var(--ink); }
+.category-list a[aria-current] { background: var(--solid); color: var(--on-solid); }
+.category-name { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
+.category-count { font-weight: 600; color: var(--ink-3); }
+.category-desc { font-size: 0.82rem; color: var(--ink-3); line-height: 1.45; }
+.category-list a[aria-current] .category-count,
+.category-list a[aria-current] .category-desc { color: var(--on-solid); opacity: 0.8; }
+.info-box {
+  display: flex; gap: 12px; align-items: flex-start; padding: 16px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m);
+  font-size: 0.88rem; color: var(--ink-2);
+}
+.info-box strong { color: var(--ink); }
+.split-left .threads {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+}
+.split-left .thread-row { padding: 18px 20px; border-bottom-color: var(--muted-bg); }
+.split-left .thread-row:last-child { border-bottom: 0; }
+.split-left .thread-votes { background: var(--bg); border-radius: var(--radius-m); padding: 6px 0; }
+
+/* ---------- Layar kecil ---------- */
+
+@media (max-width: 860px) {
+  .hero, .two-col, .charts { grid-template-columns: 1fr; }
+  .category-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .category-list a { padding: 6px 12px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); }
+  .category-name { gap: 8px; font-size: 0.9rem; }
+  .category-desc { display: none; }
+  .exp-card-side { padding-left: 0; border-left: 0; padding-top: 10px; border-top: 1px solid var(--muted-bg); }
+  .hero { gap: 32px; }
+  .topbar-row { padding-block: 10px 0; }
+  .mainnav { order: 3; flex-basis: 100%; }
+  .mainnav a { padding: 10px 0 9px; }
+  .account { margin-left: auto; }
+  .menu-name { display: none; }
+}
+
+@media (max-width: 560px) {
+  .hide-small { display: none; }
+  .feature { padding: 20px; }
+  .panel, .company-head { padding: 20px; }
+  .filter-search select { flex: 1 1 100%; }
+  .field-row { grid-template-columns: 1fr; }
+  .wrap { width: calc(100% - 28px); }
+  .thread-row { gap: 10px; }
+  .thread-votes { width: 44px; }
+  .callout { padding: 24px; }
+}
+
+/* ==========================================================
+   Efek hover: semua yang bisa diklik memberi tanda saat ditunjuk kursor
+   ========================================================== */
+
+a, button, .btn, .chip, select, input[type="checkbox"], summary { cursor: pointer; }
+
+/* Perubahan dibuat halus dan cepat. */
+.btn, .chip, .feature, .company-tile, .person, .exp-card, .action-list a, .category-list a,
+.logo-row a, .company-list a, .mainnav a, .tabs a, .menu summary, .thread-row, .tag-company,
+.link-button, .link-danger, .icon-tile {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+              box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+/* Tombol: warna lebih gelap, sedikit terangkat, dan berbayang */
+.btn-primary:hover { background: var(--blue-dark); box-shadow: 0 4px 12px rgba(48, 71, 94, 0.3); transform: translateY(-1px); }
+.btn-quiet:hover { background: var(--blue-wash); border-color: var(--blue); color: var(--blue-dark); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); box-shadow: none; }
+.callout .btn-primary:hover { background: var(--blue-wash); color: var(--ink); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
+
+/* Chip filter */
+.chip:hover { background: var(--blue-wash); border-color: var(--blue); color: var(--blue-dark); }
+.chip[aria-current]:hover { background: var(--solid); border-color: var(--solid); color: var(--on-solid); }
+
+/* Kartu yang seluruhnya bisa diklik */
+.company-tile:hover, .person:hover {
+  border-color: var(--blue); box-shadow: 0 8px 20px rgba(20, 33, 61, 0.1); transform: translateY(-2px);
+}
+.feature:hover { background: var(--blue-wash); }
+.feature:hover .icon-tile, .action-list a:hover .icon-tile { background: var(--blue); color: var(--on-blue); }
+.action-list a:hover { background: var(--blue-wash); }
+.exp-card:hover { border-color: var(--line-strong); box-shadow: 0 6px 16px rgba(20, 33, 61, 0.08); }
+.logo-row a:hover { background: var(--surface); box-shadow: 0 6px 16px rgba(20, 33, 61, 0.1); }
+.company-list a:hover { background: var(--surface); }
+.company-list a { padding-inline: 8px; margin-inline: -8px; border-radius: var(--radius-s); }
+
+/* Menu, tab, dan kategori: garis bawah muncul saat ditunjuk */
+.mainnav a:hover, .tabs a:hover { border-bottom-color: var(--line-strong); }
+.mainnav a[aria-current]:hover, .tabs a[aria-current]:hover { border-bottom-color: var(--blue); }
+.menu summary:hover { border-color: var(--blue); background: var(--blue-wash); }
+.category-list a:hover { background: var(--blue-wash); }
+.category-list a[aria-current]:hover { background: var(--solid); }
+
+/* Baris forum */
+.thread-row:hover { background: var(--soft-bg); }
+.split-left .thread-row:hover .thread-votes { background: var(--blue-wash); }
+
+/* Tautan teks dan tombol berbentuk tautan */
+.link-button:hover { color: var(--blue-dark); }
+.link-danger:hover { color: var(--red-ink); }
+
+/* Pengguna yang mematikan animasi di sistemnya tidak melihat gerakan */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+  .btn:hover, .company-tile:hover, .person:hover { transform: none !important; }
+}

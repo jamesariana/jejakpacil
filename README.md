@@ -3,6 +3,8 @@
 Website untuk mencatat dan menelusuri riwayat magang dan kerja mahasiswa serta alumni Fasilkom UI.
 Proyek kelompok Dasar-Dasar Pemrograman 1, Semester Gasal 2026/2027.
 
+![Tes](https://github.com/USERNAME/REPO/actions/workflows/tes.yml/badge.svg)
+
 ## Masalah yang diangkat
 
 Info "siapa pernah magang di mana, lewat jalur apa" tersebar di grup chat, cerita dari mulut ke mulut,
@@ -95,11 +97,21 @@ dicetak di terminal. Admin juga bisa memverifikasi email pengguna secara manual 
 ## Tes
 
 ```bash
-python -m unittest -v
+python -m unittest discover -s tests -v
 ```
 
-Ada 45 tes yang mencakup pendaftaran, login, CSRF, pengalaman dan aturan privasinya, unggahan,
-perusahaan dan panel admin, pengambilan logo (dengan balasan tiruan), serta forum.
+Ada 100 tes yang mencakup pendaftaran, login, lupa dan ganti kata sandi, CSRF, pengalaman dan
+aturan privasinya, cerita seleksi, unggahan, perusahaan dan panel admin, pengambilan logo (dengan
+balasan tiruan), forum dan lampirannya, chat pribadi, notifikasi, terjemahan Inggris, serta file
+CSS dan JavaScript.
+
+### Tes otomatis di GitHub (GitHub Actions)
+
+Setiap kali ada `git push` atau pull request, GitHub menjalankan `.github/workflows/tes.yml`:
+memasang dependensi, memeriksa sintaks Python dan JavaScript, menjalankan semua tes di Python
+3.11, 3.12, dan 3.13, lalu mencoba mengisi data demo. Hasilnya ada di tab **Actions**, dan setiap
+commit diberi tanda centang hijau (lulus) atau silang merah (ada yang gagal). Kalau merah, buka
+tab Actions untuk melihat tes mana yang gagal, perbaiki, lalu push lagi.
 
 ## Struktur folder
 
@@ -136,7 +148,10 @@ jejakpacil/
 │   │   ├── home_member.html   beranda setelah masuk
 │   │   ├── _macros.html       potongan tampilan yang dipakai ulang (kartu, ikon, chip)
 │   │   └── _jelajahi_head.html  judul dan tab halaman Jelajahi
-│   └── static/             CSS, JavaScript, ikon
+│   └── static/
+│       ├── css/            12 file CSS, dimuat berurutan (01-dasar.css ... 12-cerita-seleksi.css)
+│       └── js/             satu file per fitur: form, navigasi, filter, lampiran, chat, kata sandi, notifikasi
+├── .github/workflows/tes.yml  tes otomatis di GitHub setiap push
 ├── tests/test_app.py       tes otomatis
 └── instance/               database, unggahan, kunci rahasia (tidak masuk Git)
 ```
@@ -153,6 +168,14 @@ jejakpacil/
 Aturan privasi pengalaman ada di satu tempat, `visibility_sql()` di `queries.py`, dan dipakai oleh
 semua halaman yang menampilkan pengalaman.
 
+### CSS dan JavaScript
+
+Daftar file ada di `CSS_FILES` dan `JS_FILES` di `app/__init__.py`, dan `base.html` memuatnya sesuai
+urutan itu. Urutan CSS penting karena aturan di file belakang menimpa file depan, jadi file baru
+ditambahkan di akhir daftar. Setiap alamat file diberi `?v=<waktu ubah>`, sehingga browser langsung
+memakai versi terbaru setelah file diubah tanpa perlu Cmd+Shift+R. Tes `StaticFilesTest` memastikan
+tidak ada file yang lupa didaftarkan dan tidak ada komentar atau kurung kurawal yang tidak ditutup.
+
 ### Dua bahasa (`i18n.py`)
 
 Semua teks ditulis dalam bahasa Indonesia dan dibungkus `_()`, misalnya `{{ _('Perusahaan') }}`
@@ -165,7 +188,7 @@ Tes `LanguageTest` gagal kalau ada teks di halaman utama yang belum punya terjem
 ### Chat pribadi (`blueprints/messages.py`)
 
 Setiap pasangan pengguna punya satu percakapan (tabel `conversations`). Pesan baru muncul tanpa
-memuat ulang halaman: `app.js` menanyakan ke `/pesan/<id>/baru?setelah=<id pesan terakhir>` setiap
+memuat ulang halaman: `chat.js` menanyakan ke `/pesan/<id>/baru?setelah=<id pesan terakhir>` setiap
 4 detik (polling) dan menempelkan HTML pesan yang dikirim server. Cara ini sengaja dipilih supaya
 tetap sederhana dan sepenuhnya Python, tanpa server WebSocket terpisah.
 

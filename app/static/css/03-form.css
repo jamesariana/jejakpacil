@@ -1,0 +1,119 @@
+/* 03-form.css: Isian form: kolom teks, pilihan, kotak centang.
+   Dimuat berurutan oleh base.html (lihat CSS_FILES di app/__init__.py). */
+
+/* ==========================================================
+   Isian form yang lebih menarik
+   ========================================================== */
+
+/* Menu pilihan (select) dengan panah sendiri */
+select {
+  -webkit-appearance: none; appearance: none; padding-right: 40px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233d4763' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea {
+  border-radius: 10px; transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover, select:hover, textarea:hover { border-color: var(--blue); }
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-wash); border-radius: 10px;
+}
+input[type="file"]::file-selector-button {
+  font: inherit; font-weight: 600; margin-right: 12px; padding: 8px 14px; cursor: pointer;
+  border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--ink);
+}
+input[type="file"]::file-selector-button:hover { background: var(--blue-wash); border-color: var(--blue); }
+
+/* Radio yang disembunyikan tapi tetap bisa dipilih dengan keyboard */
+.choice input, .pill input, .seg input, .switch input, .mini-switch input {
+  position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0;
+}
+.choice input:focus-visible, .pill input:focus-visible, .seg input:focus-visible,
+.switch input:focus-visible, .mini-switch input:focus-visible { outline: none; box-shadow: none; }
+
+.choice-group { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 10px; }
+.choice-group legend { padding: 0; margin-bottom: 10px; font-weight: 600; font-size: 0.95rem; }
+
+/* Kartu pilihan (kategori forum, siapa yang boleh melihat) */
+.choice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 10px; }
+.choice-grid-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+.choice { position: relative; display: block; cursor: pointer; font-weight: 400; }
+.choice-body {
+  display: grid; gap: 6px; align-content: start; height: 100%; box-sizing: border-box; padding: 14px 16px;
+  background: var(--surface); border: 2px solid var(--line); border-radius: 14px;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.choice:hover .choice-body { border-color: var(--blue-line); transform: translateY(-1px); box-shadow: 0 6px 14px rgba(20, 33, 61, 0.08); }
+.choice input:checked + .choice-body { border-color: var(--blue); background: var(--selected-bg); box-shadow: 0 0 0 3px var(--blue-wash); }
+.choice input:focus-visible + .choice-body { outline: 3px solid var(--blue); outline-offset: 2px; }
+.choice-title { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.choice-desc { font-size: 0.85rem; color: var(--ink-3); line-height: 1.45; }
+.choice-icon {
+  flex: none; width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--muted-bg); color: var(--ink-2);
+}
+.choice input:checked + .choice-body .choice-icon { background: var(--blue); color: var(--on-blue); }
+.choice-check {
+  margin-left: auto; flex: none; width: 22px; height: 22px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid var(--line); color: transparent; transition: all 0.15s ease;
+}
+.choice input:checked + .choice-body .choice-check { background: var(--blue); border-color: var(--blue); color: var(--on-blue); }
+
+/* Tombol pilihan bulat */
+.pill-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { position: relative; cursor: pointer; font-weight: 400; }
+.pill-body {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 16px; border-radius: 999px;
+  border: 1.5px solid var(--line-strong); background: var(--surface); color: var(--ink);
+  font-size: 0.92rem; font-weight: 600; transition: all 0.15s ease;
+}
+.pill:hover .pill-body { border-color: var(--blue); background: var(--blue-wash); color: var(--blue-dark); }
+.pill input:checked + .pill-body { background: var(--solid); border-color: var(--solid); color: var(--on-solid); }
+.pill input:checked + .pill-body::before {
+  content: ""; width: 7px; height: 12px; margin: -3px 2px 0 0;
+  border: solid var(--on-solid); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg);
+}
+.pill input:focus-visible + .pill-body { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+/* Pilihan bersegmen (on-site / hybrid / remote) */
+.segmented { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--muted-bg); border-radius: 12px; width: fit-content; }
+.seg { position: relative; cursor: pointer; font-weight: 400; }
+.seg-body {
+  display: inline-flex; align-items: center; min-height: 40px; padding: 0 18px; border-radius: 9px;
+  font-weight: 600; color: var(--ink-2); transition: all 0.15s ease;
+}
+.seg:hover .seg-body { background: var(--seg-hover); color: var(--ink); }
+.seg input:checked + .seg-body { background: var(--surface); color: var(--blue-dark); box-shadow: 0 1px 4px rgba(20, 33, 61, 0.18); }
+.seg input:focus-visible + .seg-body { outline: 3px solid var(--blue); outline-offset: 1px; }
+
+/* Saklar */
+.switch, .mini-switch { position: relative; display: inline-flex; align-items: center; gap: 12px; cursor: pointer; font-weight: 400; }
+.mini-switch { gap: 8px; font-size: 0.88rem; color: var(--ink-2); font-weight: 600; }
+.switch-track {
+  position: relative; flex: none; width: 46px; height: 26px; border-radius: 999px; background: var(--switch-off);
+  transition: background-color 0.2s ease;
+}
+.mini-switch .switch-track { width: 36px; height: 20px; }
+.switch-track::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(20, 33, 61, 0.3); transition: transform 0.2s ease;
+}
+.mini-switch .switch-track::after { width: 14px; height: 14px; }
+.switch:hover .switch-track, .mini-switch:hover .switch-track { background: var(--switch-off-hover); }
+.switch input:checked + .switch-track, .mini-switch input:checked + .switch-track { background: var(--blue); }
+.switch input:checked + .switch-track::after { transform: translateX(20px); }
+.mini-switch input:checked + .switch-track::after { transform: translateX(16px); }
+.switch input:focus-visible + .switch-track, .mini-switch input:focus-visible + .switch-track { outline: 3px solid var(--blue); outline-offset: 2px; }
+.switch-text { display: grid; gap: 1px; }
+.switch-text span { font-size: 0.86rem; color: var(--ink-3); }
+.option-card { padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+
+/* Halaman form dibagi per bagian */
+.form-page { max-width: 760px; }
+.form-page-head { display: grid; gap: 6px; }
+.form-section {
+  display: grid; gap: 18px; padding: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
+}
+.form-section-title { display: flex; align-items: center; gap: 12px; font-size: 1.1rem; }
+.form-section-title .icon-tile { width: 36px; height: 36px; border-radius: 9px; }

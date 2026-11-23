@@ -1052,3 +1052,36 @@ class SelectionStoryTest(BaseTest):
         self.assertRegex(page, r'value="psikotes" checked')
         self.assertNotRegex(page, r'value="tes_online" checked')
 
+
+
+class StaticFilesTest(BaseTest):
+    """CSS dan JavaScript yang dipecah per bagian harus semuanya termuat."""
+
+    def test_semua_file_css_dan_js_termuat(self):
+        from app import CSS_FILES, JS_FILES
+        page = self.client.get("/").get_data(as_text=True)
+        links = re.findall(r'href="(/static/css/[^"]+)"', page)
+        scripts = re.findall(r'src="(/static/js/[^"]+)"', page)
+        self.assertEqual(len(links), len(CSS_FILES))
+        self.assertEqual(len(scripts), len(JS_FILES))
+        for url in links + scripts:
+            self.assertIn("?v=", url)  # versi ikut berubah saat file diubah
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200, url)
+            response.close()
+
+    def test_setiap_file_css_utuh(self):
+        """Komentar atau kurung kurawal yang tidak ditutup akan merusak file sesudahnya."""
+        from app import CSS_FILES
+        for name in CSS_FILES:
+            with open(os.path.join(self.app.static_folder, "css", name), encoding="utf-8") as f:
+                text = f.read()
+            self.assertEqual(text.count("/*"), text.count("*/"), f"komentar tidak tertutup di {name}")
+            text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+            self.assertEqual(text.count("{"), text.count("}"), f"kurung kurawal tidak seimbang di {name}")
+
+    def test_tidak_ada_file_yang_lupa_didaftarkan(self):
+        from app import CSS_FILES, JS_FILES
+        static = self.app.static_folder
+        self.assertEqual(sorted(os.listdir(os.path.join(static, "css"))), sorted(CSS_FILES))
+        self.assertEqual(sorted(os.listdir(os.path.join(static, "js"))), sorted(JS_FILES))

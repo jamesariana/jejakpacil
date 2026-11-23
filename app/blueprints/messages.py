@@ -2,7 +2,7 @@
 
 - Satu percakapan untuk tiap pasangan pengguna (tabel conversations, user_low < user_high).
 - Pesan bisa berisi teks, foto, dan PDF (lampiran disimpan di folder "chat").
-- Pesan baru muncul tanpa memuat ulang halaman: app.js menanyakan ke server setiap
+- Pesan baru muncul tanpa memuat ulang halaman: chat.js menanyakan ke server setiap
   beberapa detik (polling) lewat /pesan/<id>/baru. Cara ini cukup untuk skala kampus
   dan tidak perlu server WebSocket terpisah.
 - Hanya dua orang di percakapan yang bisa membaca pesannya. Admin hanya melihat
@@ -159,7 +159,7 @@ def _render_one(message_id):
 
 
 def _db_now():
-    """Waktu server menurut SQLite, dipakai app.js untuk menanyakan "ada yang berubah sejak kapan?"."""
+    """Waktu server menurut SQLite, dipakai chat.js untuk menanyakan "ada yang berubah sejak kapan?"."""
     return query("SELECT CURRENT_TIMESTAMP AS now", one=True)["now"]
 
 
@@ -225,7 +225,7 @@ def conversation(conversation_id):
     )
     messages = _with_day_labels(_load_messages(conversation_id))
     # ?balas=<id> dan ?edit=<id> membuat kotak tulis langsung dalam mode balas/edit.
-    # app.js melakukan hal yang sama tanpa memuat ulang halaman; ini cadangan bila JavaScript mati.
+    # chat.js melakukan hal yang sama tanpa memuat ulang halaman; ini cadangan bila JavaScript mati.
     by_id = {m["id"]: m for m in messages}
     reply_to = by_id.get(int(request.args["balas"])) if request.args.get("balas", "").isdigit() else None
     editing = by_id.get(int(request.args["edit"])) if request.args.get("edit", "").isdigit() else None
@@ -319,7 +319,7 @@ def send(conversation_id):
 @bp.route("/<int:conversation_id>/baru")
 @login_required
 def new_messages(conversation_id):
-    """Dipanggil app.js setiap beberapa detik: kirim pesan setelah id tertentu dalam bentuk HTML."""
+    """Dipanggil chat.js setiap beberapa detik: kirim pesan setelah id tertentu dalam bentuk HTML."""
     _get_conversation(conversation_id)
     _mark_read(conversation_id)
     return _new_messages_json(conversation_id)

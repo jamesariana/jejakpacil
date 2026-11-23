@@ -21,7 +21,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% for name in CSS_FILES %}
+  <link rel="stylesheet" href="{{ asset_url('css/' ~ name) }}">
+  {% endfor %}
 </head>
 <body data-counts-url="{{ url_for('notifications.counts') if g.user else '' }}">
   <a class="skip-link" href="#isi">{{ _("Langsung ke isi") }}</a>
@@ -38,7 +40,7 @@
       </a>
 
       {# Menu utama hanya empat bagian. "Jelajahi" menggabungkan pencarian pengalaman dan orang. #}
-      {# Dua "pil" di belakang menu digeser oleh app.js: satu mengikuti kursor, satu menandai menu aktif. #}
+      {# Dua "pil" di belakang menu digeser oleh navigasi.js: satu mengikuti kursor, satu menandai menu aktif. #}
       <nav class="mainnav" aria-label="{{ _("Menu utama") }}" data-slider>
         <span class="nav-pill nav-pill-hover" aria-hidden="true"></span>
         <span class="nav-pill nav-pill-active" aria-hidden="true"></span>
@@ -152,6 +154,8 @@
     </div>
   </footer>
 
-  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  {% for name in JS_FILES %}
+  <script src="{{ asset_url('js/' ~ name) }}" defer></script>
+  {% endfor %}
 </body>
 </html>

@@ -1,0 +1,98 @@
+/* 12-cerita-seleksi.css: Bidang pekerjaan dan cerita seleksi.
+   Dimuat berurutan oleh base.html (lihat CSS_FILES di app/__init__.py). */
+
+/* =====================================================================
+   Bidang pekerjaan dan cerita seleksi
+   ===================================================================== */
+.tag-role { background: #e8f0f9; color: #2c4f78; border-color: transparent; }
+:root[data-theme="dark"] .tag-role { background: #2e4d70; color: #d6e6f2; }
+
+/* Form */
+.form-section-intro { margin: -4px 0 4px; color: var(--ink-2); }
+.form-section-title .optional { font-size: 0.85rem; font-weight: 500; color: var(--ink-3); }
+.input-suffix { display: flex; align-items: center; gap: 10px; max-width: 220px; }
+.input-suffix input { flex: 1; min-width: 0; }
+.input-suffix span { color: var(--ink-2); font-weight: 600; }
+.stage-picks .pill-body { font-size: 0.88rem; }
+.dir-verified { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.dir-verified .dir-label { flex-basis: 100%; }
+
+/* Cerita seleksi di kartu pengalaman */
+.story { margin-top: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft-bg); }
+.story summary {
+  list-style: none; display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer;
+  border-radius: 14px; font-weight: 700; font-size: 0.9rem; color: var(--ink);
+}
+.story summary::-webkit-details-marker { display: none; }
+.story summary:hover { background: var(--hover-bg); }
+.story-title { display: inline-flex; align-items: center; gap: 8px; color: var(--blue); }
+.story-sum { color: var(--ink-3); font-weight: 600; font-size: 0.84rem; }
+.story-chevron { margin-left: auto; display: inline-flex; color: var(--ink-3); transition: transform 0.2s ease; }
+.story[open] .story-chevron { transform: rotate(90deg); }
+.story-body { display: grid; gap: 14px; padding: 4px 14px 14px; }
+.story-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: none; }
+.story-steps li {
+  position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px;
+  border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 0.85rem; font-weight: 600;
+}
+.story-steps li:not(:last-child)::after { content: "›"; position: absolute; right: -10px; color: var(--ink-3); font-weight: 700; }
+.story-steps li:not(:last-child) { margin-right: 8px; }
+.story-step-n {
+  width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%;
+  background: #769fcd; color: #10233d; font-size: 0.72rem; font-weight: 800;
+}
+.story-facts { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 0; }
+.story-facts div { display: grid; gap: 2px; }
+.story-facts dt { font-size: 0.78rem; color: var(--ink-3); font-weight: 600; }
+.story-facts dd { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+.story-block h4 { margin: 0 0 4px; font-size: 0.82rem; color: var(--ink-3); }
+.story-block p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.story-tips { padding: 10px 12px; border-left: 3px solid #769fcd; border-radius: 8px; background: var(--surface); }
+
+.difficulty { display: inline-flex; gap: 3px; }
+.difficulty-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); opacity: 0.5; }
+.difficulty-dot.is-on { background: #769fcd; opacity: 1; }
+
+/* Rangkuman proses seleksi di halaman perusahaan */
+.selection {
+  display: grid; gap: 18px; margin-bottom: 28px; padding: 22px 24px; border-radius: 22px;
+  background: var(--surface); border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(30, 51, 80, 0.06);
+}
+.selection-head { display: flex; align-items: center; gap: 14px; }
+.selection-head h2 { margin: 0 0 2px; }
+.selection-head p { margin: 0; }
+.selection-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0; }
+.selection-facts div { padding: 14px 16px; border-radius: 16px; background: var(--soft-bg); display: grid; gap: 4px; align-content: start; }
+.selection-facts dd { margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--ink); }
+.selection-facts dt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.84rem; color: var(--ink-2); }
+.selection-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; }
+.selection-block h3 { margin: 0 0 10px; font-size: 1rem; }
+.stage-bars { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.stage-bars li { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(0, 1.4fr) auto; align-items: center; gap: 12px; font-size: 0.9rem; }
+.stage-bars-track { height: 10px; border-radius: 999px; background: var(--muted-bg); overflow: hidden; }
+.stage-bars-track span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #769fcd, #b9d7ea); }
+.stage-bars-n { font-size: 0.8rem; color: var(--ink-3); white-space: nowrap; }
+.selection-quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.quote { margin: 0; padding: 14px 16px; border-radius: 16px; background: var(--soft-bg); display: grid; gap: 8px; align-content: start; }
+.quote figcaption { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; color: var(--ink-3); }
+.quote-tip { background: #eef5fc; }
+.quote-tip figcaption { color: #3f6a9e; }
+.quote blockquote { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.quote a { font-size: 0.82rem; font-weight: 600; }
+.selection-cta { margin: 0; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink-2); }
+
+:root[data-theme="dark"] .story { background: #1f3249; border-color: #34506f; }
+:root[data-theme="dark"] .story-steps li, :root[data-theme="dark"] .story-tips { background: #263c57; border-color: #3a5878; }
+:root[data-theme="dark"] .story-step-n, :root[data-theme="dark"] .difficulty-dot.is-on { background: #b9d7ea; color: #0e1a28; }
+:root[data-theme="dark"] .story-title { color: #b9d7ea; }
+:root[data-theme="dark"] .selection { background: linear-gradient(180deg, #2a4260 0%, #263c57 100%); border-color: #34506f; }
+:root[data-theme="dark"] .selection-facts div, :root[data-theme="dark"] .quote { background: #1f3249; }
+:root[data-theme="dark"] .quote-tip { background: #23405f; }
+:root[data-theme="dark"] .quote-tip figcaption { color: #b9d7ea; }
+
+@media (max-width: 760px) {
+  .selection { padding: 18px; }
+  .selection-grid { grid-template-columns: 1fr; }
+  .stage-bars li { grid-template-columns: 1fr auto; }
+  .stage-bars-track { grid-column: 1 / -1; grid-row: 2; }
+}

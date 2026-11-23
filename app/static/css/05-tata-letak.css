@@ -1,0 +1,429 @@
+/* 05-tata-letak.css: Penyegaran v3: daftar perusahaan, logo, navbar melayang, hover seragam.
+   Dimuat berurutan oleh base.html (lihat CSS_FILES di app/__init__.py). */
+
+/* ==========================================================
+   Penyegaran tampilan (v3): satu gaya untuk semua halaman
+   Ciri khasnya: panel navy dengan motif "jejak" (garis putus-putus
+   dari titik biru ke titik merah), dipakai di kepala halaman,
+   sampul profil/perusahaan, halaman masuk, dan kaki halaman.
+   ========================================================== */
+
+:root {
+  --navy: #222831;
+  --navy-2: #1c2c50;
+  --shadow-s: 0 1px 2px rgba(20, 33, 61, 0.06);
+  --shadow-m: 0 8px 24px rgba(20, 33, 61, 0.08);
+  --trail: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 440 220'%3E%3Cpath d='M20 200 C 140 200, 150 60, 280 80 S 410 40, 425 18' fill='none' stroke='%23ffffff' stroke-opacity='0.28' stroke-width='3' stroke-linecap='round' stroke-dasharray='2 12'/%3E%3Ccircle cx='20' cy='200' r='10' fill='%23dddddd'/%3E%3Ccircle cx='280' cy='80' r='6' fill='%23ffffff' fill-opacity='0.55'/%3E%3Ccircle cx='425' cy='18' r='10' fill='%23f05454'/%3E%3C/svg%3E");
+  --dots: radial-gradient(rgba(255,255,255,0.09) 1.2px, transparent 1.4px);
+}
+
+/* Bilah atas menempel saat halaman digulir */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--glass); backdrop-filter: saturate(1.4) blur(10px);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+}
+.page { padding-top: 28px; }
+
+/* Panel navy bermotif jejak */
+.page-head, .auth-side, .cover, .callout {
+  background-color: var(--navy);
+  background-image: var(--trail), var(--dots);
+  background-repeat: no-repeat, repeat;
+  background-size: 420px auto, 18px 18px;
+  background-position: right -10px center, 0 0;
+}
+
+/* Kepala halaman */
+.page-head {
+  color: #fff; padding: 36px 40px; border-radius: 24px; margin-bottom: 28px; gap: 10px;
+  box-shadow: var(--shadow-m);
+}
+.page-head h1 { color: #fff; }
+.page-head .lede { color: #c9d1ea; max-width: 58ch; }
+.page-head a:not(.btn) { color: #fff; }
+.page-head .btn-primary { background: #fff; color: var(--navy); }
+.page-head .btn-primary:hover { background: var(--blue-wash); color: var(--navy); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); }
+.page-head-split { align-items: center; }
+.page-head + .tabs { margin-top: -4px; }
+
+/* Tab: bentuk pil di atas latar abu-abu */
+.tabs {
+  gap: 6px; padding: 6px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface);
+  width: fit-content; max-width: 100%; box-shadow: var(--shadow-s);
+}
+.tabs a { padding: 8px 16px; border-bottom: 0; margin-bottom: 0; border-radius: 10px; }
+.tabs a:hover { background: var(--blue-wash); color: var(--blue-dark); }
+.tabs a[aria-current], .tabs a[aria-current]:hover { background: var(--navy); color: #fff; }
+.tabs a[aria-current] .tag-muted { background: rgba(255, 255, 255, 0.18); color: #fff; }
+
+/* Kartu dan panel umum sedikit lebih lembut */
+.panel, .filter-panel, .exp-card, .company-tile, .person, .chart, .table-wrap, .form-section, .op-card, .thread-card {
+  box-shadow: var(--shadow-s);
+}
+.filter-panel { border-radius: 18px; }
+
+/* Pesan pemberitahuan dengan ikon */
+.flash {
+  display: flex; gap: 12px; align-items: flex-start; border-left-width: 0; border-radius: 12px;
+  padding: 14px 16px; box-shadow: var(--shadow-s); border: 1px solid rgba(48, 71, 94, 0.18);
+}
+.flash::before {
+  content: "i"; flex: none; width: 22px; height: 22px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.8rem; color: var(--on-blue); background: var(--blue);
+}
+.flash-success { border-color: rgba(11, 107, 78, 0.22); }
+.flash-success::before { content: "\2713"; background: var(--green); }
+.flash-error { border-color: rgba(200, 30, 54, 0.22); }
+.flash-error::before { content: "!"; background: var(--red); }
+
+.empty { background: var(--surface); border-radius: 16px; }
+
+/* Halaman masuk, daftar, minta tautan */
+.auth {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); max-width: 980px; margin: 8px auto 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; box-shadow: var(--shadow-m);
+}
+.auth-wide { max-width: 1080px; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
+.auth-side {
+  color: #fff; padding: 44px 40px; display: flex; flex-direction: column; gap: 28px;
+  background-position: right -60px bottom -30px, 0 0;
+}
+.auth-side h2 { font-size: 1.7rem; line-height: 1.2; letter-spacing: -0.02em; max-width: 18ch; }
+.auth-points { display: grid; gap: 16px; }
+.auth-points li { display: flex; gap: 12px; align-items: flex-start; color: #d5dbee; }
+.auth-point-icon {
+  flex: none; width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.1); color: #fff;
+}
+.auth-side-note { margin-top: auto; display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: #aeb8d6; }
+.auth-card { padding: 44px 40px; display: grid; gap: 22px; align-content: start; }
+.auth-card-head { display: grid; gap: 6px; }
+.auth-card h1 { font-size: 2rem; }
+.auth-foot { display: grid; gap: 6px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 0.95rem; }
+.btn-block { width: 100%; min-height: 48px; }
+.field-row-center { align-items: end; }
+
+/* Kartu sampul: profil dan perusahaan */
+.cover-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; box-shadow: var(--shadow-m);
+}
+.cover { height: 130px; background-position: right 24px center, 0 0; background-size: 380px auto, 18px 18px; }
+.cover-body { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 0 32px 28px; }
+.cover-media { margin-top: -56px; flex: none; }
+.cover-media .avatar-xl { width: 112px; height: 112px; border: 5px solid var(--surface); box-shadow: var(--shadow-m); box-sizing: content-box; }
+.cover-media .logo-xxl { width: 108px; height: 108px; border: 5px solid var(--surface); box-shadow: var(--shadow-m); border-radius: 22px; box-sizing: content-box; }
+.cover-media img.logo-xxl { background: #fff; }
+.cover-main { flex: 1 1 360px; display: grid; gap: 8px; padding-top: 18px; min-width: 0; }
+.cover-main h1 { font-size: clamp(1.7rem, 3.5vw, 2.3rem); }
+.cover-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: var(--ink-2); }
+.cover-action, .cover-actions { align-self: flex-start; margin-top: 18px; }
+.cover-actions { display: grid; gap: 8px; justify-items: center; }
+.link-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.link-pills a {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--line-strong); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 0.9rem;
+  transition: all 0.15s ease;
+}
+.link-pills a:hover { border-color: var(--blue); background: var(--blue-wash); color: var(--blue-dark); }
+.cover-card + .banner { margin-top: 20px; }
+
+/* Unggah foto profil dengan pratinjau */
+.photo-field { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; }
+.photo-field .field { flex: 1 1 260px; }
+
+/* Statistik: kotak angka dan grafik batang */
+.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 14px; margin: 0 0 24px; }
+.stat-tile {
+  display: flex; flex-direction: column; gap: 2px; padding: 20px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-s);
+}
+.stat-tile .icon-tile { margin-bottom: 10px; }
+.stat-tile dd { order: 1; margin: 0; font-size: 2.1rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+.stat-tile dt { order: 2; color: var(--ink-2); }
+.stat-tile .icon-tile { order: 0; }
+.chart { border-radius: 18px; }
+.chart-title { display: flex; align-items: center; gap: 12px; font-size: 1.05rem; line-height: 1.35; }
+.chart-title .icon-tile { width: 38px; height: 38px; border-radius: 10px; }
+.bars { gap: 12px; }
+.bar-track { height: 14px; background: var(--muted-bg); border-radius: 999px; overflow: hidden; }
+.bar-fill { border-radius: 999px; }
+
+/* Panel admin */
+.admin-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; }
+.admin-card {
+  display: flex; flex-direction: column; gap: 6px; height: 100%; box-sizing: border-box; padding: 22px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px; color: var(--ink);
+  text-decoration: none; box-shadow: var(--shadow-s); transition: all 0.15s ease;
+}
+.admin-card:hover { border-color: var(--blue); transform: translateY(-2px); box-shadow: var(--shadow-m); color: var(--ink); }
+.admin-card .icon-tile { margin-bottom: 6px; }
+.admin-card-count { font-size: 2.2rem; font-weight: 800; line-height: 1; color: var(--ink-3); }
+.admin-card.has-work .admin-card-count { color: var(--blue-dark); }
+.admin-card-title { font-weight: 700; font-size: 1.05rem; }
+.admin-card .muted { font-size: 0.9rem; }
+.export-box {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-top: 20px;
+  padding: 20px 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+}
+.export-box h2 { font-size: 1.05rem; }
+.table-wrap { border-radius: 16px; }
+.table th { background: var(--soft-bg); font-size: 0.85rem; }
+.table tbody tr { transition: background-color 0.15s ease; }
+.table tbody tr:hover { background: var(--soft-bg); }
+
+/* Halaman error */
+.error-page { max-width: 620px; margin: 40px auto; text-align: center; display: grid; gap: 14px; justify-items: center; }
+.error-trail { width: 220px; color: var(--line-strong); }
+.error-code {
+  padding: 4px 12px; border-radius: 999px; background: var(--blue-wash); color: var(--blue-dark); font-weight: 700; font-size: 0.9rem;
+}
+.error-page .form-actions { justify-content: center; margin-top: 8px; }
+
+/* Navigasi halaman */
+.pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 24px; }
+
+/* Kaki halaman navy */
+.footer { border-top: 0; background-color: var(--navy); background-image: var(--dots); background-size: 18px 18px; color: #aeb8d6; padding-block: 36px; margin-top: 24px; }
+.footer-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px 40px; align-items: start; }
+.footer-brand { display: grid; gap: 10px; }
+.footer-brand p { color: #c9d1ea; max-width: 40ch; }
+.brand-light { color: #fff; }
+.brand-light .brand-mark { color: #dddddd; }
+.footer-links { display: flex; flex-wrap: wrap; gap: 8px 22px; justify-self: end; }
+.footer-links a { color: #fff; font-weight: 600; text-decoration: none; }
+.footer-links a:hover { color: #fff; text-decoration: underline; }
+.footer-note { grid-column: 1 / -1; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-size: 0.85rem; }
+
+/* Callout di beranda ikut motif jejak */
+.callout { background-position: right -40px center, 0 0; }
+
+@media (max-width: 860px) {
+  .auth, .auth-wide { grid-template-columns: 1fr; }
+  .auth-side { order: 2; padding: 28px; gap: 18px; }
+  .auth-side-note { margin-top: 0; }
+  .auth-card { padding: 28px; }
+  .page-head { padding: 28px; background-size: 300px auto, 18px 18px; background-position: right -110px bottom -40px, 0 0; }
+  .footer-grid { grid-template-columns: 1fr; }
+  .footer-links { justify-self: start; }
+}
+@media (max-width: 560px) {
+  .cover { height: 100px; background-size: 280px auto, 18px 18px; }
+  .cover-body { padding: 0 20px 22px; }
+  .cover-media { margin-top: -48px; }
+  .cover-media .avatar-xl, .cover-media .logo-xxl { width: 88px; height: 88px; }
+  .cover-actions, .cover-action { margin-top: 4px; justify-items: start; }
+  .tabs { width: 100%; }
+  .page-head { border-radius: 18px; padding: 24px 20px; }
+  .stat-tile dd { font-size: 1.7rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-card:hover { transform: none; }
+}
+
+/* Motif jejak diukur dari tinggi panel supaya titik merah dan biru selalu terlihat utuh */
+.page-head { background-size: auto 86%, 18px 18px; background-position: right 28px center, 0 0; }
+.cover { background-size: auto 84%, 18px 18px; background-position: right 32px center, 0 0; }
+.auth-side { background-size: auto 34%, 18px 18px; background-position: right 28px bottom 28px, 0 0; }
+.callout { background-size: auto 80%, 18px 18px; background-position: right 260px center, 0 0; }
+.footer .footer-note { max-width: none; }
+@media (max-width: 860px) {
+  .page-head { background-size: auto 60%, 18px 18px; background-position: right 16px bottom 14px, 0 0; padding-bottom: 72px; }
+  .callout { background-size: auto 50%, 18px 18px; background-position: right 16px top 16px, 0 0; }
+}
+@media (max-width: 860px) {
+  .auth-side { background-image: var(--dots); background-size: 18px 18px; background-position: 0 0; }
+}
+
+/* ==========================================================
+   Daftar perusahaan berbentuk baris
+   ========================================================== */
+.company-rows {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow-s);
+}
+.company-row {
+  position: relative; display: flex; align-items: center; gap: 18px; padding: 18px 22px;
+  transition: background-color 0.15s ease;
+}
+.company-row + .company-row { border-top: 1px solid var(--muted-bg); }
+.company-row:hover { background: var(--soft-bg); }
+.company-row-main { flex: 1 1 auto; min-width: 0; display: grid; gap: 4px; }
+.company-row-name { font-size: 1.1rem; line-height: 1.3; }
+.company-row-name a { color: var(--ink); text-decoration: none; }
+/* Seluruh baris bisa diklik lewat nama perusahaan */
+.company-row-name a::after { content: ""; position: absolute; inset: 0; }
+.company-row:hover .company-row-name a { color: var(--blue-dark); text-decoration: underline; }
+.company-row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 0.88rem; }
+.company-row-desc { color: var(--ink-2); font-size: 0.95rem; max-width: 70ch; }
+.company-row-positions { font-size: 0.88rem; color: var(--ink); }
+.company-row-side { flex: none; display: grid; justify-items: end; gap: 6px; text-align: right; min-width: 150px; }
+.company-row-total { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; }
+.company-row-split { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.company-row-arrow {
+  flex: none; width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink-3); transition: all 0.15s ease;
+}
+.company-row:hover .company-row-arrow { background: var(--blue); color: var(--on-blue); transform: translateX(2px); }
+
+@media (max-width: 680px) {
+  .company-row { flex-wrap: wrap; align-items: flex-start; gap: 12px 14px; padding: 16px; }
+  .company-row-main { flex: 1 1 200px; }
+  .company-row-side { flex: 1 1 100%; justify-items: start; text-align: left; min-width: 0; padding-left: 74px; grid-auto-flow: column; align-items: center; justify-content: start; }
+  .company-row-arrow { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .company-row:hover .company-row-arrow { transform: none; }
+}
+@media (max-width: 860px) {
+  /* Di layar kecil motif jejak dibuat kecil di pojok bawah supaya tidak menimpa teks */
+  .page-head { background-size: 130px auto, 18px 18px; background-position: right 18px bottom 12px, 0 0; padding-bottom: 80px; }
+}
+
+/* ==========================================================
+   Logo perusahaan berbentuk bulat
+   Gambar logo asli tetap dipakai; diberi ruang di dalam lingkaran
+   supaya bagian logonya tidak terpotong.
+   ========================================================== */
+.logo, .logo-sm, .logo-md, .logo-lg, .logo-xl, .logo-xxl,
+.cover-media .logo-xxl { border-radius: 50%; }
+img.logo { object-fit: contain; background: #fff; border: 1px solid var(--line); box-sizing: border-box; }
+img.logo-sm { padding: 4px; }
+img.logo-md { padding: 6px; }
+img.logo-lg { padding: 8px; }
+img.logo-xl { padding: 10px; }
+img.logo-xxl { padding: 14px; }
+.cover-media img.logo-xxl { padding: 16px; box-sizing: content-box; }
+
+/* ==========================================================
+   Bilah atas melayang berbentuk pil, transparan dan buram,
+   dengan "pil" menu yang bergeser.
+   Warna pil menu aktif diatur oleh --nav-active.
+   ========================================================== */
+:root {
+  --nav-active: #f05454;
+  --nav-active-ink: #222831;
+  --nav-hover: rgba(48, 71, 94, 0.1);
+}
+
+.topbar {
+  top: 12px; margin-top: 12px; background: transparent; border-bottom: 0;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.topbar-row {
+  gap: 8px 20px; min-height: 0; padding: 8px 8px 8px 22px; border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: blur(16px) saturate(1.6); -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 30px rgba(20, 33, 61, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.mainnav {
+  position: relative; flex: 0 1 auto; margin-inline: auto; overflow: visible;
+  display: flex; align-items: center; gap: 4px; padding: 0;
+}
+.mainnav a {
+  position: relative; z-index: 1; padding: 10px 22px; border-bottom: 0; border-radius: 999px;
+  font-size: 0.95rem; font-weight: 700; color: var(--ink-2); white-space: nowrap;
+  transition: color 0.2s ease;
+}
+.mainnav a:hover, .mainnav a:focus-visible { color: var(--ink); border-bottom: 0; }
+/* Tanpa JavaScript: menu aktif diberi latar langsung */
+.mainnav a[aria-current="page"] { color: var(--nav-active-ink); background: var(--nav-active); border-bottom: 0; }
+/* Dengan JavaScript: latar diganti pil yang bergeser */
+.mainnav.js-slider a[aria-current="page"] { background: transparent; color: var(--ink-2); }
+.mainnav.js-slider a.is-active { color: var(--nav-active-ink); }
+.mainnav a:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+.nav-pill {
+  position: absolute; top: 0; left: 0; width: 0; height: 0; border-radius: 999px; opacity: 0;
+  pointer-events: none;
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              height 0.32s ease, opacity 0.2s ease, background-color 0.2s ease;
+}
+.nav-pill-hover { background: var(--nav-hover); }
+.nav-pill-active { background: var(--nav-active); box-shadow: 0 2px 8px rgba(48, 71, 94, 0.18); }
+.mainnav.no-anim .nav-pill { transition: none; }
+
+.account { flex: none; }
+.account .btn, .menu summary { border-radius: 999px; }
+
+@media (max-width: 860px) {
+  .topbar-row { border-radius: 26px; padding: 10px 10px 8px 16px; }
+  .mainnav { order: 3; flex-basis: 100%; margin-inline: 0; justify-content: space-between; }
+  .mainnav a { padding: 8px 12px; font-size: 0.9rem; }
+}
+@media (max-width: 400px) {
+  .mainnav a { padding: 8px 9px; font-size: 0.86rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-pill { transition: opacity 0.01s; }
+}
+.nav-pill.no-anim { transition: none; }
+
+/* Daftar perusahaan: tiap perusahaan jadi kartu terpisah, sama seperti kartu di Jelajahi */
+.company-rows {
+  display: grid; gap: 12px; background: none; border: 0; border-radius: 0; overflow: visible; box-shadow: none;
+}
+.company-row {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-s);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+}
+.company-row + .company-row { border-top: 1px solid var(--line); }
+.company-row-name a::after { border-radius: 14px; }
+.company-row:hover {
+  background: var(--surface); border-color: var(--blue); box-shadow: var(--shadow-m); transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .company-row:hover { transform: none; }
+}
+
+/* ==========================================================
+   Hover seragam di semua halaman: tanpa garis tepi biru.
+   Yang ditunjuk kursor berubah ke latar biru lembut, sedikit
+   terangkat, dan berbayang (seperti kartu perusahaan).
+   ========================================================== */
+:root {
+  --hover-bg: #f1f4f7;        /* latar kartu saat ditunjuk */
+  --hover-bg-strong: #e1e8ef; /* latar tombol dan pilihan kecil saat ditunjuk */
+  --hover-ink: #30475e;
+  --hover-shadow: 0 10px 24px rgba(48, 71, 94, 0.12);
+}
+
+/* Kartu besar */
+.company-row:hover, .exp-card:hover, .company-tile:hover, .person:hover,
+.thread-card:hover, .admin-card:hover, .stat-tile:hover {
+  background: var(--hover-bg); border-color: var(--hover-bg); box-shadow: var(--hover-shadow);
+}
+.company-row:hover, .company-tile:hover, .person:hover, .thread-card:hover, .admin-card:hover {
+  transform: translateY(-2px);
+}
+.exp-card, .stat-tile { transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease; }
+.thread-card.is-pinned:hover { border-color: var(--hover-bg); }
+.company-row:hover .company-row-name a, .thread-card:hover .thread-card-title a { color: var(--hover-ink); }
+.exp-card:hover .preview-bubble, .thread-card:hover .preview-bubble { background: var(--surface); }
+.company-row:hover .tag-muted, .exp-card:hover .chips li, .thread-card:hover .tag-company { background: var(--surface); }
+
+/* Baris dan daftar kecil */
+.logo-row a:hover, .company-list a:hover { background: var(--hover-bg); box-shadow: none; }
+.action-list a:hover, .category-list a:hover, .feature:hover { background: var(--hover-bg); }
+.thread-row:hover, .table tbody tr:hover { background: var(--hover-bg); }
+
+/* Tombol putih, pil, dan chip: latar berwarna, bukan garis biru */
+.btn-quiet:hover, .chip:hover, .link-pills a:hover, .vote-btn:hover, .menu summary:hover {
+  background: var(--hover-bg-strong); border-color: var(--hover-bg-strong); color: var(--hover-ink);
+}
+.chip[aria-current]:hover { background: var(--solid); border-color: var(--solid); color: var(--on-solid); }
+.vote-btn[aria-pressed="true"]:hover { background: var(--blue-dark); border-color: var(--blue-dark); color: var(--on-blue); }
+input[type="file"]::file-selector-button:hover { background: var(--hover-bg-strong); border-color: var(--hover-bg-strong); color: var(--hover-ink); }
+
+/* Pilihan di form */
+.choice:hover .choice-body { background: var(--hover-bg); border-color: var(--hover-bg); box-shadow: var(--hover-shadow); }
+.pill:hover .pill-body { background: var(--hover-bg-strong); border-color: var(--hover-bg-strong); color: var(--hover-ink); }
+.seg:hover .seg-body { background: var(--seg-hover); }
+
+/* Isian: latar sedikit berwarna saat ditunjuk; garis biru hanya saat sedang diketik (fokus) */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover, select:hover, textarea:hover {
+  border-color: var(--line-strong); background-color: var(--soft-bg);
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible { background-color: var(--surface); }

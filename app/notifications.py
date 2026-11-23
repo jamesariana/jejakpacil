@@ -122,7 +122,7 @@ def mark_all_read():
 @bp.route("/jumlah")
 @login_required
 def counts():
-    """Dipanggil app.js berkala supaya angka di ikon lonceng dan pesan tetap terbaru."""
+    """Dipanggil notifikasi.js berkala supaya angka di ikon lonceng dan pesan tetap terbaru."""
     from .blueprints.messages import unread_count as unread_messages
 
     return jsonify(notifications=unread_count(g.user["id"]), messages=unread_messages(g.user["id"]))

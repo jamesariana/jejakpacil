@@ -1,0 +1,137 @@
+/* 06-mode-gelap.css: Mode gelap.
+   Dimuat berurutan oleh base.html (lihat CSS_FILES di app/__init__.py). */
+
+/* ==========================================================
+   Mode gelap
+   Diaktifkan lewat atribut data-theme="dark" di <html> (lihat base.html dan navigasi.js).
+   Sebagian besar halaman ikut berubah karena warnanya memakai variabel di atas;
+   di sini cukup mengganti nilai variabelnya, plus beberapa penyesuaian kecil.
+   ========================================================== */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #222831;          /* palet: arang */
+  --surface: #2a313c;
+  --ink: #dddddd;         /* palet: abu-abu terang */
+  --ink-2: #bcc1c8;
+  --ink-3: #98a0ab;
+  --line: #39414e;
+  --line-strong: #5f6876;
+
+  /* Warna utama dibuat lebih terang supaya terbaca di latar gelap; teks di atasnya jadi gelap */
+  --blue: #9db6cf;
+  --blue-dark: #c2d3e4;
+  --blue-wash: #30475e;   /* palet: biru batu */
+  --on-blue: #222831;
+  --red: #f05454;         /* palet: merah koral */
+  --red-wash: #4a2b31;
+  --red-ink: #ff8f8f;
+  --green: #6fd0a8;
+  --green-wash: #1d3b33;
+  --amber: #f0c36e;
+  --amber-wash: #403419;
+
+  --solid: #dddddd;
+  --on-solid: #222831;
+  --muted-bg: #353d4a;
+  --soft-bg: #303844;
+  --selected-bg: #30475e;
+  --blue-line: #4b6580;
+  --switch-off: #4a5260;
+  --switch-off-hover: #5a6372;
+  --seg-hover: rgba(255, 255, 255, 0.08);
+  --glass: rgba(42, 49, 60, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  --navy: #30475e;        /* panel kepala halaman memakai biru batu */
+  --shadow-s: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-m: 0 10px 28px rgba(0, 0, 0, 0.35);
+
+  --hover-bg: #323c4a;
+  --hover-bg-strong: #3b4d62;
+  --hover-ink: #e4ebf2;
+  --hover-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  --nav-active: #f05454;
+  --nav-active-ink: #222831;
+  --nav-hover: rgba(255, 255, 255, 0.08);
+}
+
+/* Warna kategori forum versi gelap */
+:root[data-theme="dark"] .cat-magang { --cat-bg: #30475e; --cat-fg: #d6e2ee; }
+:root[data-theme="dark"] .cat-karier { --cat-bg: #1d3b33; --cat-fg: #8fdcbc; }
+:root[data-theme="dark"] .cat-tanya-alumni { --cat-bg: #3a2f4f; --cat-fg: #d3c2f2; }
+:root[data-theme="dark"] .cat-lowongan { --cat-bg: #4a2b31; --cat-fg: #ffb0a0; }
+
+/* Panah menu pilihan yang lebih terang */
+:root[data-theme="dark"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23b6c0d8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+/* Panel biru tua diberi garis tipis supaya tidak menyatu dengan latar gelap */
+:root[data-theme="dark"] .page-head,
+:root[data-theme="dark"] .auth-side,
+:root[data-theme="dark"] .callout { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+:root[data-theme="dark"] .footer { background-color: #1b2027; }
+:root[data-theme="dark"] .page-head .btn-primary { background: #dddddd; color: #222831; }
+:root[data-theme="dark"] .callout .btn-primary { background: #dddddd; color: #222831; }
+:root[data-theme="dark"] .tabs a[aria-current] { background: var(--nav-active); color: var(--nav-active-ink); }
+:root[data-theme="dark"] .bubble { box-shadow: none; }
+:root[data-theme="dark"] .msg-op .bubble { background: var(--selected-bg); }
+:root[data-theme="dark"] .error-trail { color: var(--line-strong); }
+:root[data-theme="dark"] .btn-primary:hover { box-shadow: 0 4px 14px rgba(240, 84, 84, 0.25); }
+:root[data-theme="dark"] .topbar-row { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); }
+:root[data-theme="dark"] .menu-list { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45); }
+/* Logo perusahaan tetap di atas latar putih supaya warnanya benar */
+:root[data-theme="dark"] img.logo { border-color: transparent; }
+
+/* Peralihan warna yang halus hanya saat tombol tema dipencet */
+.theme-switching, .theme-switching *, .theme-switching *::before, .theme-switching *::after {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+/* Tombol ganti tema */
+.theme-toggle {
+  position: relative; flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--muted-bg); color: var(--ink);
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.3s ease;
+}
+.theme-toggle:hover { background: var(--hover-bg-strong); color: var(--hover-ink); }
+.theme-toggle:active { transform: rotate(-20deg) scale(0.94); }
+.theme-toggle:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.theme-toggle .icon { position: absolute; transition: opacity 0.25s ease, transform 0.35s ease; }
+.theme-toggle .icon-sun { opacity: 0; transform: rotate(-90deg) scale(0.6); }
+:root[data-theme="dark"] .theme-toggle .icon-moon { opacity: 0; transform: rotate(90deg) scale(0.6); }
+:root[data-theme="dark"] .theme-toggle .icon-sun { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle .icon, .theme-toggle { transition: none; }
+}
+@media (max-width: 440px) {
+  /* Logo, tombol tema, dan tombol akun tetap muat dalam satu baris di HP */
+  .topbar-row { gap: 8px 8px; padding-left: 14px; }
+  .brand { font-size: 1.05rem; gap: 6px; }
+  .brand-mark { width: 24px; height: 24px; }
+  .account { gap: 6px; }
+  .account .btn-small { padding: 7px 10px; font-size: 0.82rem; }
+  .theme-toggle { width: 34px; height: 34px; }
+}
+
+/* ==========================================================
+   Penyesuaian untuk palet #DDDDDD / #222831 / #30475E / #F05454
+   ========================================================== */
+/* Tab aktif dan pil menu memakai aksen koral, sama seperti navbar */
+.tabs a[aria-current], .tabs a[aria-current]:hover { background: var(--nav-active); color: var(--nav-active-ink); }
+.tabs a[aria-current] .tag-muted { background: rgba(34, 40, 49, 0.15); color: var(--nav-active-ink); }
+.nav-pill-active { box-shadow: 0 4px 12px rgba(240, 84, 84, 0.3); }
+/* Tombol utama: biru batu, saat ditunjuk jadi arang */
+.btn-primary:hover { box-shadow: 0 4px 12px rgba(34, 40, 49, 0.25); }
+/* Garis bawah aksen koral di judul bagian beranda */
+.section-title::after {
+  content: ""; display: block; width: 44px; height: 4px; margin-top: 10px; border-radius: 999px; background: var(--red);
+}
+/* Langkah "Cara kerjanya" diberi garis atas koral */
+.steps li { border-top-color: var(--red); }
+.step-number { color: var(--red-ink); }
+/* Batang grafik pertama (nilai terbesar) diberi aksen koral */
+.bars .bar:first-child .bar-fill { background: var(--red); }
+/* Hero beranda: panel jejak terbaru di atas latar abu-abu */
+.hero-trail { box-shadow: var(--shadow-m); }

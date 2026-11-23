@@ -7,9 +7,46 @@ Flask dari bagian-bagiannya (konfigurasi, database, blueprint, template).
 import os
 import secrets
 
-from flask import Flask, g, render_template
+from flask import Flask, current_app, g, render_template, url_for
 
 from . import attachments, constants, db, i18n, notifications, security, utils
+
+
+# File CSS dan JavaScript, dimuat sesuai urutan daftar ini.
+# Urutan CSS penting: aturan di file belakang menimpa aturan di file depan.
+CSS_FILES = [
+    "01-dasar.css",          # warna, tipografi, tata letak dasar
+    "02-komponen.css",       # kartu, tombol, hover, layar kecil
+    "03-form.css",           # isian form
+    "04-forum.css",          # forum
+    "05-tata-letak.css",     # daftar perusahaan, navbar melayang
+    "06-mode-gelap.css",     # mode gelap
+    "07-palet.css",          # palet biru (terang dan gelap)
+    "08-filter.css",         # panel filter Perusahaan dan Jelajahi
+    "09-lampiran.css",       # lampiran foto dan PDF
+    "10-chat.css",           # chat pribadi
+    "11-akun.css",           # kata sandi, notifikasi, menu akun
+    "12-cerita-seleksi.css", # bidang pekerjaan dan cerita seleksi
+]
+JS_FILES = [
+    "form.js",        # isian bersyarat, konfirmasi hapus, menu akun
+    "navigasi.js",    # pil menu dan mode gelap
+    "filter.js",      # filter yang langsung diterapkan
+    "lampiran.js",    # pilih lampiran
+    "chat.js",        # chat pribadi
+    "kata-sandi.js",  # tombol Tampilkan kata sandi
+    "notifikasi.js",  # angka di ikon lonceng dan pesan
+]
+
+
+def asset_url(filename):
+    """URL file statis dengan ?v=<waktu ubah>, supaya browser langsung memakai versi terbaru."""
+    path = os.path.join(current_app.static_folder, filename)
+    try:
+        version = int(os.path.getmtime(path))
+    except OSError:
+        version = 0
+    return url_for("static", filename=filename, v=version)
 
 
 def _load_secret_key(instance_path):
@@ -76,6 +113,9 @@ def create_app(test_config=None):
         current_language=i18n.current_language,
         jumlah=i18n.count,
         LANGUAGES=i18n.LANGUAGES,
+        asset_url=asset_url,
+        CSS_FILES=CSS_FILES,
+        JS_FILES=JS_FILES,
     )
     app.jinja_env.filters.update(
         bulan=utils.format_month,

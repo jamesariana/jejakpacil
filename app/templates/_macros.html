@@ -299,7 +299,7 @@
   </fieldset>
 {% endmacro %}
 
-{# Pilihan status mahasiswa aktif / alumni. Isian tahun lulus hanya tampil untuk alumni (lihat app.js). #}
+{# Pilihan status mahasiswa aktif / alumni. Isian tahun lulus hanya tampil untuk alumni (lihat form.js). #}
 {% macro status_choice(selected, errors) %}
   <fieldset class="choice-group{% if errors.get('status') %} has-error{% endif %}" data-toggle-target="grad-year-field" data-toggle-value="alumni">
     <legend>{{ _("Status") }}</legend>
@@ -338,7 +338,7 @@
   {% endfor %}
 {% endmacro %}
 
-{# Tombol "Lampirkan" beserta tempat pratinjau. app.js mengisi pratinjau dan
+{# Tombol "Lampirkan" beserta tempat pratinjau. lampiran.js mengisi pratinjau dan
    membatasi jumlah file; server tetap memeriksa ulang semuanya. #}
 {% macro file_picker(id, label=None) %}
   <div class="attach" data-attach>

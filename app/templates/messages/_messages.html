@@ -1,11 +1,11 @@
-{# Daftar gelembung pesan. Dipakai saat halaman dibuka, saat app.js mengambil pesan baru,
+{# Daftar gelembung pesan. Dipakai saat halaman dibuka, saat chat.js mengambil pesan baru,
    dan saat satu pesan diedit atau dihapus (daftar berisi satu pesan tanpa pemisah hari). #}
 {% from "_macros.html" import attachment_list, icon %}
 {% for m in messages %}
   {% if m.day %}<p class="dm-day"><span>{{ m.day }}</span></p>{% endif %}
   {% set mine = m.sender_id == g.user.id %}
   {% set gone = m.deleted_at or m.is_hidden %}
-  {# Ringkasan pesan untuk kutipan balasan dan untuk app.js (atribut data-*). #}
+  {# Ringkasan pesan untuk kutipan balasan dan untuk chat.js (atribut data-*). #}
   {% set summary = m.body|truncate(90) if m.body else (_('Foto') if m.files and m.files[0].kind == 'image' else (_('File PDF') if m.files else '')) %}
   <div class="b {{ 'b-out' if mine else 'b-in' }}{% if gone %} b-gone{% endif %}" id="pesan-{{ m.id }}"
        data-message-id="{{ m.id }}" data-sender="{{ _('Kamu') if mine else m.full_name.split(' ')[0] }}"
