@@ -1,1 +1,41 @@
-~/Desktop/tes.yml
+# Menjalankan semua tes otomatis setiap ada push atau pull request.
+# Hasilnya terlihat di tab "Actions" di GitHub, dan tanda centang hijau / silang merah di setiap commit.
+name: Tes
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tes:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Ambil kode
+        uses: actions/checkout@v4
+
+      - name: Pasang Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Pasang dependensi
+        run: pip install -r requirements.txt
+
+      - name: Periksa semua file Python bisa dibaca
+        run: python -m compileall -q app tests run.py
+
+      - name: Periksa sintaks JavaScript
+        run: for f in app/static/js/*.js; do node --check "$f"; done
+
+      - name: Jalankan tes
+        run: python -m unittest discover -s tests -v
+
+      - name: Coba isi data demo
+        run: |
+          flask --app run.py seed-demo
