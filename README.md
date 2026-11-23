@@ -3,7 +3,7 @@
 Website untuk mencatat dan menelusuri riwayat magang dan kerja mahasiswa serta alumni Fasilkom UI.
 Proyek kelompok Dasar-Dasar Pemrograman 1, Semester Gasal 2026/2027.
 
-![Tes](https://github.com/USERNAME/REPO/actions/workflows/tes.yml/badge.svg)
+![Tes](https://github.com/jamesariana/jejakpacil/actions/workflows/tes.yml/badge.svg)
 
 ## Masalah yang diangkat
 
@@ -30,6 +30,7 @@ JejakPacil mengumpulkan riwayat itu di satu tempat yang khusus untuk sivitas Fas
 | Notifikasi | Ikon lonceng dengan jumlah belum dibaca: balasan forum, suara (digabung), keputusan verifikasi, perusahaan disetujui, konten disembunyikan |
 | Cerita seleksi | Tahapan yang dilalui, lama proses, tingkat kesulitan, contoh pertanyaan, dan tips untuk adik tingkat, dirangkum per perusahaan ("Proses seleksi di ...") |
 | Bidang pekerjaan | Posisi dengan nama berbeda ("BE Intern", "Backend Engineer") dikelompokkan ke satu bidang; bisa difilter di Jelajahi dan muncul di Statistik |
+| Buat CV | Riwayat di profil diunduh jadi CV PDF (Indonesia atau Inggris) dengan foto profil dan pratinjau langsung. Bisa ditambah proyek, organisasi dan kepanitiaan, prestasi, serta sertifikasi yang tersimpan di akun. Pengalaman yang sudah diverifikasi admin diberi tanda ✓ |
 | Chat pribadi | Kirim pesan ke siapa saja dari profil atau thread; teks, foto, dan PDF; penanda belum dibaca; blokir dan laporkan |
 | Statistik | Perusahaan terbanyak, jenis pengalaman, jalur mendapatkan, skill, per angkatan |
 | Panel admin | Verifikasi, setujui dan gabungkan perusahaan, moderasi forum, kelola pengguna, ekspor CSV |
@@ -43,12 +44,13 @@ JejakPacil mengumpulkan riwayat itu di satu tempat yang khusus untuk sivitas Fas
 - **Jinja2** untuk template HTML, CSS dan sedikit JavaScript tanpa framework
 - **Pillow** untuk memeriksa dan mengecilkan gambar unggahan
 - **requests** untuk memanggil layanan logo
+- **ReportLab** untuk membuat CV PDF
 - **unittest** untuk tes otomatis
 
 Hal yang tidak diajarkan di kelas DDP1 dan dipakai di sini: aplikasi web dengan routing dan blueprint,
 database relasional dan SQL (JOIN, GROUP BY, subquery), template HTML, sesi login dan hashing kata
-sandi, token bertanda tangan, perlindungan CSRF, unggah file, memanggil API luar, decorator, dan tes
-otomatis dengan objek tiruan (mock).
+sandi, token bertanda tangan, perlindungan CSRF, unggah file, memanggil API luar, membuat PDF,
+mengirim email lewat SMTP, decorator, dan tes otomatis dengan objek tiruan (mock).
 
 ## Cara menjalankan
 
@@ -91,8 +93,14 @@ hanya supaya fitur logo bisa dicoba.
 flask --app app create-admin     # buat akun admin pertama
 ```
 
-Belum ada pengiriman email sungguhan. Tautan verifikasi ditampilkan di halaman setelah mendaftar dan
-dicetak di terminal. Admin juga bisa memverifikasi email pengguna secara manual di panel admin.
+Di laptop, email tidak dikirim: tautan verifikasi dan atur ulang kata sandi ditampilkan di halaman
+dan dicetak di terminal. Admin juga bisa memverifikasi email pengguna secara manual di panel admin.
+
+## Menaruh website online
+
+Langkah lengkap untuk PythonAnywhere (gratis), termasuk pengiriman email lewat Gmail, ada di
+[DEPLOY.md](DEPLOY.md). Pengaturan server disimpan di `instance/config.py` (contohnya di
+`config.example.py`), jadi kata sandi email tidak ikut masuk ke GitHub.
 
 ## Tes
 
@@ -132,7 +140,10 @@ jejakpacil/
 │   ├── attachments.py      lampiran foto/PDF untuk forum dan chat
 │   ├── i18n.py             dua bahasa: fungsi _() dan tombol ID/EN
 │   ├── translations_en.py  kamus terjemahan Inggris
-│   ├── cli.py              perintah create-admin dan seed-demo
+│   ├── cli.py              perintah create-admin, seed-demo, dan test-email
+│   ├── cv.py               menyusun CV PDF
+│   ├── mailer.py           mengirim email lewat SMTP (Gmail)
+│   ├── fonts/              font DejaVu Sans untuk CV PDF (beserta lisensinya)
 │   ├── blueprints/         satu file per fitur
 │   │   ├── main.py         beranda, penyajian file unggahan
 │   │   ├── auth.py         daftar, verifikasi, masuk, keluar
@@ -141,6 +152,7 @@ jejakpacil/
 │   │   ├── companies.py    direktori perusahaan
 │   │   ├── forum.py        forum
 │   │   ├── messages.py     chat pribadi (/pesan)
+│   │   ├── cv.py           buat CV (/akun/cv), unduh PDF-nya, dan isian tambahan CV
 │   │   ├── stats.py        statistik
 │   │   └── admin.py        panel admin
 │   ├── templates/          HTML (Jinja2), satu folder per fitur
@@ -175,6 +187,18 @@ urutan itu. Urutan CSS penting karena aturan di file belakang menimpa file depan
 ditambahkan di akhir daftar. Setiap alamat file diberi `?v=<waktu ubah>`, sehingga browser langsung
 memakai versi terbaru setelah file diubah tanpa perlu Cmd+Shift+R. Tes `StaticFilesTest` memastikan
 tidak ada file yang lupa didaftarkan dan tidak ada komentar atau kurung kurawal yang tidak ditutup.
+
+### CV PDF (`cv.py`)
+
+`/akun/cv` menampilkan pilihan isi CV dan pratinjaunya. Setiap pilihan berubah, `cv.js` meminta
+`/akun/cv.pdf?pratinjau=1&...` dan menampilkannya di `<iframe>`. PDF disusun dengan ReportLab dari
+potongan-potongan (`Paragraph`, `Table`, `Spacer`, `Image`), dan ReportLab yang membaginya ke beberapa
+halaman. Foto profil dipotong bulat dengan Pillow sebelum dimasukkan. CV hanya bisa memuat
+pengalaman dan isian milik sendiri; id milik orang lain di alamat diabaikan.
+
+Proyek, organisasi, prestasi, dan sertifikasi disimpan di tabel `cv_items` dengan kolom `section`.
+Daftar bagian beserta label dan isiannya ada di `CV_SECTIONS` (`constants.py`), jadi menambah bagian
+baru cukup dengan menambah satu entri di sana.
 
 ### Dua bahasa (`i18n.py`)
 
@@ -216,10 +240,11 @@ tetap sederhana dan sepenuhnya Python, tanpa server WebSocket terpisah.
 
 ## Batasan saat ini
 
-- Belum ada pengiriman email sungguhan (lihat `send_verification` di `auth.py`).
-- Belum ada pembatasan percobaan login, fitur lupa kata sandi, dan hapus akun.
-- Untuk dipasang di internet: jalankan di belakang HTTPS, setel `SESSION_COOKIE_SECURE=True` dan
-  `SHOW_VERIFY_LINK=False`, pakai server WSGI seperti gunicorn atau waitress, bukan `python run.py`.
+- Email baru terkirim kalau `MAIL_*` diisi di `instance/config.py`. Tanpa itu, tautan verifikasi
+  hanya tampil di layar (mode pengembangan), dan di website online akun baru belum bisa diverifikasi.
+- Belum ada fitur hapus akun.
+- Di website online, `SHOW_DEV_LINKS` wajib `False` dan aplikasi dijalankan lewat server WSGI
+  (lihat [DEPLOY.md](DEPLOY.md)), bukan `python run.py`.
 - Logo adalah merek dagang pemiliknya. Di sini logo dipakai hanya sebagai penanda perusahaan.
 
 ## Ide pengembangan

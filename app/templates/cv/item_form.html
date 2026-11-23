@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, icon, switch %}
+{% set heading = _("Ubah {label}", label=_(config.label)|lower) if item else _(config.add) %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="{{ url_for('cv.options') }}#bagian-{{ section }}">{{ _("Buat CV") }}</a> / {{ heading }}</p>
+<div class="page-head">
+  <h1>{{ heading }}</h1>
+  <p class="lede">{{ _("Tersimpan di akunmu dan bisa dipakai lagi setiap kali membuat CV. Tidak tampil di profil.") }}</p>
+</div>
+
+<form method="post" class="form form-narrow panel" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  {% call field(config.title, 'title', errors) %}
+    <input id="title" name="title" maxlength="150" value="{{ form.get('title') or '' }}" placeholder="{{ _(config.title_ph) }}" required autofocus>
+  {% endcall %}
+
+  {% call field(config.subtitle, 'subtitle', errors, optional=True) %}
+    <input id="subtitle" name="subtitle" maxlength="150" value="{{ form.get('subtitle') or '' }}" placeholder="{{ _(config.subtitle_ph) }}">
+  {% endcall %}
+
+  {% if config.single_date %}
+    {% call field('Bulan', 'end_date', errors, optional=True) %}
+      <input id="end_date" type="month" name="end_date" value="{{ form.get('end_date') or '' }}" placeholder="2025-08">
+    {% endcall %}
+  {% else %}
+    <div class="field-row">
+      {% call field('Bulan mulai', 'start_date', errors, optional=True) %}
+        <input id="start_date" type="month" name="start_date" value="{{ form.get('start_date') or '' }}" placeholder="2025-06">
+      {% endcall %}
+      {% call field('Bulan selesai', 'end_date', errors, optional=True) %}
+        <input id="end_date" type="month" name="end_date" value="{{ form.get('end_date') or '' }}" placeholder="2025-08">
+      {% endcall %}
+    </div>
+    {{ switch('is_current', _('Masih berjalan'), _('Bulan selesai tidak perlu diisi.'), checked=form.get('is_current'), attrs='data-disables="end_date"') }}
+  {% endif %}
+
+  {% if config.tools %}
+    {% call field('Teknologi yang dipakai', 'tools', errors, hint='Pisahkan dengan koma.', optional=True) %}
+      <input id="tools" name="tools" maxlength="200" value="{{ form.get('tools') or '' }}" placeholder="{{ _('misalnya Python, Flask, SQLite') }}">
+    {% endcall %}
+  {% endif %}
+
+  {% call field(config.url, 'url', errors, optional=True) %}
+    <input id="url" type="url" name="url" maxlength="200" value="{{ form.get('url') or '' }}" placeholder="https://">
+  {% endcall %}
+
+  {% call field('Deskripsi', 'description', errors, hint='Awali baris dengan tanda - supaya jadi poin di CV. Tulis apa yang kamu kerjakan dan hasilnya.', optional=True) %}
+    <textarea id="description" name="description" rows="5" maxlength="1500" placeholder="{{ _('- Membuat fitur pencarian dan filter\n- Menulis tes otomatis sampai cakupan 80%') }}">{{ form.get('description') or '' }}</textarea>
+  {% endcall %}
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">{{ icon('check', 16) }}{{ _("Simpan") }}</button>
+    <a class="btn btn-quiet" href="{{ url_for('cv.options') }}#bagian-{{ section }}">{{ _("Batal") }}</a>
+  </div>
+</form>
+
+{% if item %}
+  <form class="form-narrow cv-item-delete" method="post" action="{{ url_for('cv.delete_item', item_id=item.id) }}" data-confirm="{{ _('Hapus isian ini dari CV? Tindakan ini tidak bisa dibatalkan.') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-quiet btn-danger" type="submit">{{ icon('trash', 16) }}{{ _("Hapus isian ini") }}</button>
+  </form>
+{% endif %}
+{% endblock %}

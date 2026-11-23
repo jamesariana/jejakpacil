@@ -107,3 +107,33 @@ SELECTION_STAGES = {
 
 SELECTION_DIFFICULTY = {1: "Mudah", 2: "Agak mudah", 3: "Sedang", 4: "Sulit", 5: "Sangat sulit"}
 
+
+# Bagian tambahan CV yang diisi sendiri (di luar pengalaman kerja). Urutannya = urutan di CV.
+# single_date: cukup satu bulan (tanggal didapat), bukan rentang mulai-selesai.
+CV_SECTIONS = {
+    "proyek": {
+        "label": "Proyek", "add": "Tambah proyek", "single_date": False, "tools": True,
+        "title": "Nama proyek", "title_ph": "misalnya Aplikasi antrean klinik",
+        "subtitle": "Peran atau konteks", "subtitle_ph": "misalnya Proyek kelompok PBP, tim 4 orang",
+        "url": "Tautan repo atau demo",
+    },
+    "organisasi": {
+        "label": "Organisasi dan kepanitiaan", "add": "Tambah organisasi", "single_date": False, "tools": False,
+        "title": "Nama organisasi atau acara", "title_ph": "misalnya COMPFEST 17",
+        "subtitle": "Jabatan", "subtitle_ph": "misalnya Staf divisi Data",
+        "url": "Tautan",
+    },
+    "prestasi": {
+        "label": "Prestasi dan lomba", "add": "Tambah prestasi", "single_date": True, "tools": False,
+        "title": "Nama prestasi", "title_ph": "misalnya Finalis GEMASTIK 2026, divisi Data Mining",
+        "subtitle": "Penyelenggara", "subtitle_ph": "misalnya Pusat Prestasi Nasional",
+        "url": "Tautan",
+    },
+    "sertifikasi": {
+        "label": "Sertifikasi dan kursus", "add": "Tambah sertifikasi", "single_date": True, "tools": False,
+        "title": "Nama sertifikasi atau kursus", "title_ph": "misalnya Google Data Analytics",
+        "subtitle": "Penerbit", "subtitle_ph": "misalnya Coursera",
+        "url": "Tautan kredensial",
+    },
+}
+CV_ITEMS_MAX = 60  # per orang, supaya CV tidak bisa dipakai sebagai tempat menimbun teks

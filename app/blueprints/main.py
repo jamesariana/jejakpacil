@@ -57,6 +57,13 @@ def home():
     )
 
 
+@bp.route("/favicon.ico")
+def favicon():
+    """Sebagian browser (terutama Safari) selalu meminta /favicon.ico, apa pun isi <link rel="icon">."""
+    return send_from_directory(current_app.static_folder, "favicon.ico", mimetype="image/vnd.microsoft.icon",
+                               max_age=60 * 60 * 24 * 7)
+
+
 @bp.route("/media/<kind>/<filename>")
 def media(kind, filename):
     """Sajikan file unggahan dengan aturan akses per jenis file.

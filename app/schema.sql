@@ -225,3 +225,19 @@ CREATE INDEX IF NOT EXISTS idx_attachments_message ON attachments (message_id);
 CREATE INDEX IF NOT EXISTS idx_messages_conv       ON messages (conversation_id, id);
 CREATE INDEX IF NOT EXISTS idx_rate_limits ON rate_limits (kind, key, created_at);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id, is_read, updated_at);
+
+-- Isian tambahan CV yang ditulis sendiri: proyek, organisasi, prestasi, sertifikasi.
+CREATE TABLE IF NOT EXISTS cv_items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    section     TEXT    NOT NULL,                        -- kunci CV_SECTIONS di constants.py
+    title       TEXT    NOT NULL,
+    subtitle    TEXT    NOT NULL DEFAULT '',             -- peran, jabatan, penyelenggara, atau penerbit
+    start_date  TEXT,                                    -- YYYY-MM, boleh kosong
+    end_date    TEXT,                                    -- YYYY-MM; kosong + start_date terisi = masih berjalan
+    url         TEXT    NOT NULL DEFAULT '',
+    tools       TEXT    NOT NULL DEFAULT '',             -- teknologi yang dipakai (khusus proyek)
+    description TEXT    NOT NULL DEFAULT '',
+    created_at  TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_cv_items_user ON cv_items (user_id, section);

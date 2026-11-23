@@ -174,3 +174,37 @@ def validate_thread(form, category_ids, company_ids):
     if data["company_id"] is not None and data["company_id"] not in company_ids:
         data["company_id"] = None  # tag perusahaan tidak dikenal: abaikan
     return data, errors
+
+
+def validate_cv_item(form, section):
+    """Isian tambahan CV. Hanya judul yang wajib; sisanya boleh kosong."""
+    from .constants import CV_SECTIONS
+
+    config = CV_SECTIONS[section]
+    ongoing = form.get("is_current") == "1" and not config["single_date"]
+    data = {
+        "title": form.get("title", "").strip()[:150],
+        "subtitle": form.get("subtitle", "").strip()[:150],
+        "start_date": None if config["single_date"] else (form.get("start_date", "").strip() or None),
+        "end_date": None if ongoing else (form.get("end_date", "").strip() or None),
+        "url": form.get("url", "").strip()[:200],
+        "tools": ", ".join(parse_skills(form.get("tools", "")))[:200] if config["tools"] else "",
+        "description": form.get("description", "").strip()[:1500],
+        "is_current": ongoing,
+    }
+    errors = {}
+    if not data["title"]:
+        errors["title"] = "Isi judulnya dulu."
+    for field in ("start_date", "end_date"):
+        if data[field] and not valid_month(data[field]):
+            errors[field] = "Isi bulan dengan format TTTT-BB, misalnya 2025-06."
+    if data["start_date"] and "start_date" not in errors and data["start_date"] > current_month():
+        errors["start_date"] = "Bulan mulai belum terjadi."
+    if ongoing and not data["start_date"]:
+        errors["start_date"] = "Isi bulan mulai kalau masih berjalan."
+    if (data["start_date"] and data["end_date"] and not errors
+            and data["end_date"] < data["start_date"]):
+        errors["end_date"] = "Bulan selesai tidak boleh sebelum bulan mulai."
+    if data["url"] and not valid_url(data["url"]):
+        errors["url"] = "Tautan harus diawali http:// atau https://."
+    return data, errors

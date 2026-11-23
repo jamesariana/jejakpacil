@@ -27,6 +27,7 @@ CSS_FILES = [
     "10-chat.css",           # chat pribadi
     "11-akun.css",           # kata sandi, notifikasi, menu akun
     "12-cerita-seleksi.css", # bidang pekerjaan dan cerita seleksi
+    "13-cv.css",             # buat CV dan halaman cek keaslian
 ]
 JS_FILES = [
     "form.js",        # isian bersyarat, konfirmasi hapus, menu akun
@@ -36,6 +37,7 @@ JS_FILES = [
     "chat.js",        # chat pribadi
     "kata-sandi.js",  # tombol Tampilkan kata sandi
     "notifikasi.js",  # angka di ikon lonceng dan pesan
+    "cv.js",          # pratinjau CV yang langsung diperbarui
 ]
 
 
@@ -71,9 +73,18 @@ def create_app(test_config=None):
         CSRF_ENABLED=True,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
-        # Belum ada server email, jadi tautan verifikasi ditampilkan di layar dan terminal.
-        # Ubah ke False saat pengiriman email sungguhan sudah dipasang.
-        SHOW_VERIFY_LINK=True,
+        # Tanpa server email, tautan verifikasi dan atur ulang kata sandi ditampilkan di layar.
+        # Hanya untuk laptop sendiri: di website online set False (lihat config.example.py).
+        SHOW_DEV_LINKS=True,
+        # Pengiriman email (lihat mailer.py). Kosong berarti email tidak dikirim.
+        MAIL_SERVER="",
+        MAIL_PORT=587,
+        MAIL_USERNAME="",
+        MAIL_PASSWORD="",
+        MAIL_SENDER="",
+        # True kalau aplikasi berjalan di belakang proxy (misalnya PythonAnywhere), supaya
+        # alamat IP pengunjung dan https terbaca benar.
+        BEHIND_PROXY=False,
         # Penyedia logo dicoba berurutan; {domain} diganti domain perusahaan.
         LOGO_FETCH_ENABLED=True,
         LOGO_PROVIDERS=[
@@ -83,6 +94,13 @@ def create_app(test_config=None):
     )
     if test_config:
         app.config.update(test_config)
+    else:
+        # Pengaturan server (kata sandi email, dsb.) di instance/config.py, tidak masuk Git.
+        app.config.from_pyfile("config.py", silent=True)
+    if app.config["BEHIND_PROXY"]:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     if not app.config.get("SECRET_KEY"):
         app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or _load_secret_key(app.instance_path)
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
@@ -91,10 +109,10 @@ def create_app(test_config=None):
     app.before_request(security.load_logged_in_user)
     app.before_request(security.check_csrf)
 
-    from .blueprints import admin, auth, companies, experiences, forum, main, messages, profiles, stats
+    from .blueprints import admin, auth, companies, cv, experiences, forum, main, messages, profiles, stats
     from .cli import register_commands
 
-    for module in (main, auth, profiles, experiences, companies, forum, messages, stats, admin):
+    for module in (main, auth, profiles, experiences, companies, forum, messages, stats, admin, cv):
         app.register_blueprint(module.bp)
     app.register_blueprint(i18n.bp)
     app.register_blueprint(notifications.bp)
@@ -177,6 +195,11 @@ def create_app(test_config=None):
     @app.errorhandler(413)
     def too_large(error):
         return error_page(413, i18n._("File terlalu besar"), i18n._("Ukuran maksimal 5 MB per file dan 20 MB sekali kirim. Perkecil file lalu coba lagi."))
+
+    @app.errorhandler(500)
+    def server_error(error):
+        # Detail galat tidak ditampilkan ke pengunjung; tercatat di log server.
+        return error_page(500, i18n._("Ada yang salah di server"), i18n._("Bukan salahmu. Coba muat ulang halaman sebentar lagi."))
 
     with app.app_context():
         db.init_db()

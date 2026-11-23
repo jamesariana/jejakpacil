@@ -1,0 +1,70 @@
+/* 13-cv.css: Buat CV (pilihan + pratinjau PDF). */
+
+/* Tombol di sampul profil sendiri */
+.cover-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Kiri: pilihan. Kanan: pratinjau yang menempel saat menggulir. */
+.cv-layout { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 24px; align-items: start; }
+.cv-form { display: grid; gap: 22px; }
+.cv-form .choice-group { margin: 0; }
+.cv-form .hint { margin-top: 6px; }
+
+.cv-preview { position: sticky; top: 96px; }
+.cv-preview iframe {
+  display: block; width: 100%; aspect-ratio: 210 / 297; max-height: calc(100vh - 120px);
+  border: 1px solid var(--line); border-radius: 14px; background: #fff;
+  box-shadow: var(--shadow-m);
+}
+
+/* Daftar pengalaman yang bisa dicentang */
+.cv-picks { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+.cv-pick {
+  display: flex; gap: 12px; align-items: flex-start; padding: 11px 14px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+}
+.cv-pick:hover { border-color: var(--blue); }
+.cv-pick:has(input:checked) { border-color: var(--blue); background: var(--blue-wash); }
+.cv-pick input { margin-top: 4px; flex: none; }
+.cv-pick-body { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: 0.92rem; }
+.cv-pick-body strong { flex-basis: 100%; font-weight: 600; }
+.cv-pick-body > span:not(.cv-tag) { color: var(--ink-2); }
+.cv-tag {
+  display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px; border-radius: 999px;
+  font-size: 0.74rem; font-weight: 600; background: var(--line); color: var(--ink-2);
+}
+.cv-tag-ok { background: var(--green-wash); color: var(--green); }
+.cv-empty { margin: 6px 0 0; color: var(--ink-2); }
+
+.cv-toggles { display: grid; gap: 10px; margin-top: 6px; }
+.cv-toggles .check span { display: grid; gap: 1px; }
+.cv-toggles small { color: var(--ink-3); font-size: 0.82rem; }
+.cv-toggles input:disabled + span { color: var(--ink-3); }
+
+.cv-actions { margin-top: 0; }
+
+.cv-open-preview { display: none; }
+
+@media (max-width: 860px) {
+  .cv-layout { grid-template-columns: 1fr; }
+  .cv-preview { display: none; }
+  .cv-open-preview { display: inline-flex; }
+}
+
+/* ---------- Bagian tambahan: proyek, organisasi, prestasi, sertifikasi ---------- */
+.cv-extra { display: grid; gap: 18px; padding-top: 20px; border-top: 1px solid var(--line); }
+.cv-extra-title { margin: 0; font-size: 1.05rem; }
+.cv-extra > .hint { margin: -12px 0 0; }
+.cv-extra-group { display: grid; gap: 8px; }
+.cv-extra-group .cv-picks { margin: 0; }
+.cv-add { justify-self: start; }
+.cv-pick-row { display: flex; gap: 6px; align-items: stretch; }
+.cv-pick-row .cv-pick { flex: 1; min-width: 0; }
+.cv-pick-edit {
+  flex: none; display: grid; place-items: center; width: 44px; border-radius: 12px;
+  border: 1px solid var(--line); color: var(--ink-2); background: var(--surface);
+}
+.cv-pick-edit:hover { border-color: var(--blue); color: var(--blue); }
+
+.cv-item-delete { margin-top: 16px; }
+.btn-danger { color: var(--red-ink, #b42318); }
+.btn-danger:hover { border-color: currentColor; }

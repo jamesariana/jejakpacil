@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}{{ _("Buat CV") }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ _("Buat CV dari riwayatmu") }}</h1>
+  <p class="lede">{{ _("Pilih isi CV, lihat hasilnya di sebelah kanan, lalu unduh sebagai PDF. Pilihan di sini tidak mengubah profilmu.") }}</p>
+</div>
+
+<div class="cv-layout">
+  <form class="form panel cv-form" method="get" action="{{ url_for('cv.pdf') }}" data-cv-form>
+    <fieldset class="choice-group">
+      <legend>{{ _("Bahasa CV") }}</legend>
+      <div class="segmented">
+        {% for value, label in [('id', 'Indonesia'), ('en', 'English')] %}
+          <label class="seg">
+            <input type="radio" name="bahasa" value="{{ value }}"{% if value == current_language() %} checked{% endif %}>
+            <span class="seg-body">{{ label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+      <p class="hint">{{ _("Judul bagian, nama bulan, dan label ikut diterjemahkan. Ringkasan dan deskripsi tetap seperti yang kamu tulis.") }}</p>
+    </fieldset>
+
+    <div class="field">
+      <label for="ringkasan">{{ _("Ringkasan") }} <span class="optional">{{ _("(opsional)") }}</span></label>
+      <textarea id="ringkasan" name="ringkasan" rows="4" maxlength="{{ summary_max }}" placeholder="{{ _('misalnya: Mahasiswa Sistem Informasi yang tertarik pada analisis data dan pengembangan produk.') }}">{{ summary }}</textarea>
+      <p class="hint">{{ _("Diambil dari bio profilmu. Ubahan di sini hanya untuk CV ini.") }}</p>
+    </div>
+
+    <fieldset class="choice-group">
+      <legend>{{ _("Pengalaman yang dimasukkan") }}</legend>
+      {% if experiences %}
+        <ul class="cv-picks">
+          {% for e in experiences %}
+            <li>
+              <label class="cv-pick">
+                <input type="checkbox" name="pengalaman" value="{{ e.id }}"{% if e.id in checked %} checked{% endif %}>
+                <span class="cv-pick-body">
+                  <strong>{{ e.position }}</strong>
+                  <span>{{ e.company_name }}, {{ periode(e.start_date, e.end_date) }}</span>
+                  {% if e.verification == 'terverifikasi' %}<span class="cv-tag cv-tag-ok">{{ icon('check', 12) }}{{ _("Terverifikasi") }}</span>{% endif %}
+                  {% if e.visibility == 'privat' %}<span class="cv-tag">{{ _("Privat") }}</span>{% endif %}
+                </span>
+              </label>
+            </li>
+          {% endfor %}
+        </ul>
+        <p class="hint">{{ _("Pengalaman privat tidak dicentang dulu, tetapi tetap bisa kamu masukkan.") }}</p>
+      {% else %}
+        <p class="cv-empty">{{ _("Belum ada pengalaman yang tercatat.") }} <a href="{{ url_for('experiences.create') }}">{{ _("Tambah pengalaman pertamamu") }}</a></p>
+      {% endif %}
+    </fieldset>
+
+    <div class="cv-extra">
+      <h2 class="cv-extra-title">{{ _("Bagian tambahan") }}</h2>
+      <p class="hint">{{ _("Proyek, organisasi, prestasi, dan sertifikat yang tidak tercatat sebagai pengalaman kerja. Tersimpan di akunmu, jadi cukup diisi sekali.") }}</p>
+      {% for key, config in C.CV_SECTIONS.items() %}
+        <fieldset class="choice-group cv-extra-group" id="bagian-{{ key }}">
+          <legend>{{ config.label|t }}</legend>
+          {% if items[key] %}
+            <ul class="cv-picks">
+              {% for i in items[key] %}
+                <li class="cv-pick-row">
+                  <label class="cv-pick">
+                    <input type="checkbox" name="isian" value="{{ i.id }}" checked>
+                    <span class="cv-pick-body">
+                      <strong>{{ i.title }}</strong>
+                      <span>{{ [i.subtitle, periode(i.start_date, i.end_date) if i.start_date else (i.end_date|bulan if i.end_date else '')]|select|join(', ') }}</span>
+                    </span>
+                  </label>
+                  <a class="cv-pick-edit" href="{{ url_for('cv.edit_item', item_id=i.id) }}" aria-label="{{ _('Ubah {title}', title=i.title) }}">{{ icon('edit', 16) }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+          <a class="btn btn-quiet btn-small cv-add" href="{{ url_for('cv.add_item', section=key) }}">{{ icon('plus', 16) }}{{ config.add|t }}</a>
+        </fieldset>
+      {% endfor %}
+    </div>
+
+    <fieldset class="choice-group">
+      <legend>{{ _("Tampilkan juga") }}</legend>
+      <div class="cv-toggles">
+        <label class="check"><input type="checkbox" name="email" value="1" checked>
+          <span>{{ _("Email") }}<small>{{ g.user.email }}</small></span></label>
+        <label class="check"><input type="checkbox" name="tautan" value="1"{% if has_links %} checked{% else %} disabled{% endif %}>
+          <span>{{ _("LinkedIn, GitHub, dan portofolio") }}
+            {% if not has_links %}<small>{{ _("Belum diisi.") }} <a href="{{ url_for('profiles.edit') }}">{{ _("Isi di profil") }}</a></small>{% endif %}</span></label>
+        <label class="check"><input type="checkbox" name="skill" value="1" checked>
+          <span>{{ _("Daftar keterampilan dari profil") }}</span></label>
+        <label class="check"><input type="checkbox" name="foto" value="1"{% if g.user.photo %} checked{% else %} disabled{% endif %}>
+          <span>{{ _("Foto profil") }}
+            {% if not g.user.photo %}<small>{{ _("Belum ada foto.") }} <a href="{{ url_for('profiles.edit') }}">{{ _("Unggah di profil") }}</a></small>{% endif %}</span></label>
+      </div>
+    </fieldset>
+
+    <div class="form-actions cv-actions">
+      <button class="btn btn-primary" type="submit">{{ icon('download', 16) }}{{ _("Unduh PDF") }}</button>
+      <button class="btn btn-quiet cv-refresh" type="submit" name="pratinjau" value="1" formtarget="pratinjau-cv">{{ _("Perbarui pratinjau") }}</button>
+      {# Browser di HP umumnya tidak bisa menampilkan PDF di dalam halaman, jadi dibuka di tab baru. #}
+      <button class="btn btn-quiet cv-open-preview" type="submit" name="pratinjau" value="1" formtarget="_blank">{{ _("Lihat pratinjau") }}</button>
+    </div>
+  </form>
+
+  <section class="cv-preview" aria-label="{{ _('Pratinjau CV') }}">
+    <iframe name="pratinjau-cv" title="{{ _('Pratinjau CV') }}" data-cv-preview
+            src="{{ url_for('cv.pdf', pratinjau=1, bahasa=current_language(), ringkasan=summary, pengalaman=checked|list, email=1, tautan=1 if has_links else none, skill=1, foto=1 if g.user.photo else none, isian=item_ids) }}#toolbar=0&view=FitH"></iframe>
+  </section>
+</div>
+{% endblock %}

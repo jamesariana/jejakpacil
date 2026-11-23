@@ -17,10 +17,14 @@
     })();
   </script>
   <title>{% block title %}{% endblock %}{% if self.title() %} | {% endif %}JejakPacil</title>
+  {# SVG untuk Chrome/Firefox; PNG untuk Safari yang tidak menampilkan favicon SVG di tab. #}
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  {% block head %}{% endblock %}
   {% for name in CSS_FILES %}
   <link rel="stylesheet" href="{{ asset_url('css/' ~ name) }}">
   {% endfor %}
@@ -90,6 +94,7 @@
               <a href="{{ url_for('main.home') }}">{{ _("Beranda saya") }}</a>
               <a href="{{ url_for('profiles.detail', user_id=g.user.id) }}">{{ _("Profil saya") }}</a>
               <a href="{{ url_for('profiles.edit') }}">{{ _("Edit profil") }}</a>
+              <a href="{{ url_for('cv.options') }}">{{ _("Buat CV") }}</a>
               <a href="{{ url_for('auth.change_password') }}">{{ _("Ganti kata sandi") }}</a>
               {% if g.user.role == 'admin' %}
                 <a href="{{ url_for('admin.dashboard') }}">{{ _("Panel admin") }}{% if admin_pending %} ({{ admin_pending }}){% endif %}</a>

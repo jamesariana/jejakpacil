@@ -129,4 +129,5 @@
 /* Label "Langkah" dan aksen kecil lain mengikuti palet biru */
 .step-number { color: #3f6a9e; }
 :root[data-theme="dark"] .step-number { color: #b9d7ea; }
-.bars .bar:first-child .bar-fill { background: #769fcd; }
+/* Batang pertama = nilai terbesar, jadi dibuat paling tegas (bukan paling pudar). */
+.bars .bar:first-child .bar-fill { background: var(--blue-dark); }

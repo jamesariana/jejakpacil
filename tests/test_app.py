@@ -1070,6 +1070,16 @@ class StaticFilesTest(BaseTest):
             self.assertEqual(response.status_code, 200, url)
             response.close()
 
+    def test_ikon_tab_tersedia_untuk_semua_browser(self):
+        page = self.client.get("/").get_data(as_text=True)
+        self.assertIn('rel="icon" type="image/svg+xml"', page)
+        self.assertIn('rel="icon" type="image/png"', page)  # Safari tidak memakai favicon SVG
+        self.assertIn('rel="apple-touch-icon"', page)
+        for path in ("/favicon.ico", "/static/favicon-32.png", "/static/apple-touch-icon.png"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200, path)
+            response.close()
+
     def test_setiap_file_css_utuh(self):
         """Komentar atau kurung kurawal yang tidak ditutup akan merusak file sesudahnya."""
         from app import CSS_FILES
@@ -1085,3 +1095,271 @@ class StaticFilesTest(BaseTest):
         static = self.app.static_folder
         self.assertEqual(sorted(os.listdir(os.path.join(static, "css"))), sorted(CSS_FILES))
         self.assertEqual(sorted(os.listdir(os.path.join(static, "js"))), sorted(JS_FILES))
+
+
+class MailTest(BaseTest):
+    """Pengiriman email dan pengaturan untuk website online."""
+
+    def setUp(self):
+        super().setUp()
+        self.register(verify=False)
+
+    def use_mail(self):
+        self.app.config.update(MAIL_SERVER="smtp.contoh.test", MAIL_USERNAME="kirim@contoh.test",
+                               MAIL_PASSWORD="sandi", SHOW_DEV_LINKS=False)
+
+    def test_tautan_atur_ulang_tidak_tampil_di_website_online(self):
+        self.app.config["SHOW_DEV_LINKS"] = False
+        self.client.post("/lupa-kata-sandi", data={"email": "budi@ui.ac.id"})
+        page = self.client.get("/masuk").get_data(as_text=True)
+        self.assertNotIn("atur-ulang-kata-sandi/", page)
+        self.assertIn("Jika email itu terdaftar", page)
+
+    def test_email_atur_ulang_terkirim_lewat_smtp(self):
+        self.use_mail()
+        with mock.patch("smtplib.SMTP") as smtp:
+            self.client.post("/lupa-kata-sandi", data={"email": "budi@ui.ac.id"})
+        server = smtp.return_value.__enter__.return_value
+        server.login.assert_called_once_with("kirim@contoh.test", "sandi")
+        message = server.send_message.call_args[0][0]
+        self.assertEqual(message["To"], "budi@ui.ac.id")
+        self.assertIn("/atur-ulang-kata-sandi/", message.get_content())
+        page = self.client.get("/masuk").get_data(as_text=True)
+        self.assertNotIn("atur-ulang-kata-sandi/", page)  # tautan hanya lewat email
+
+    def test_email_verifikasi_terkirim_saat_mendaftar(self):
+        self.use_mail()
+        with mock.patch("smtplib.SMTP") as smtp:
+            self.register(email="sari@ui.ac.id", name="Sari Dewi", verify=False)
+        message = smtp.return_value.__enter__.return_value.send_message.call_args[0][0]
+        self.assertEqual(message["To"], "sari@ui.ac.id")
+        self.assertIn("/verifikasi/", message.get_content())
+
+    def test_server_email_gagal_tidak_membuat_error(self):
+        self.use_mail()
+        with mock.patch("smtplib.SMTP", side_effect=OSError("jaringan mati")):
+            response = self.client.post("/daftar", data={
+                "full_name": "Sari Dewi", "email": "sari@ui.ac.id", "password": "rahasia123",
+                "password2": "rahasia123", "prodi": "Sistem Informasi", "angkatan": "2024", "status": "aktif",
+            }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Email verifikasi belum bisa dikirim", response.get_data(as_text=True))
+
+    def fresh_app(self, **config):
+        base = {"TESTING": True, "SECRET_KEY": "kunci-tes", "DATABASE": os.path.join(self.tmp, "tes.sqlite3"),
+                "UPLOAD_FOLDER": os.path.join(self.tmp, "uploads"), "CSRF_ENABLED": False,
+                "LOGO_FETCH_ENABLED": False}
+        base.update(config)
+        return create_app(base)
+
+    def test_halaman_error_500(self):
+        app = self.fresh_app(PROPAGATE_EXCEPTIONS=False)
+
+        @app.route("/coba-rusak")
+        def rusak():
+            raise RuntimeError("sengaja")
+
+        response = app.test_client().get("/coba-rusak")
+        page = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 500)
+        self.assertIn("Ada yang salah di server", page)
+        self.assertNotIn("sengaja", page)
+
+    def test_ip_pengunjung_terbaca_di_belakang_proxy(self):
+        """Tanpa ProxyFix, semua pengunjung PythonAnywhere terlihat ber-IP sama dan saling memblokir."""
+        app = self.fresh_app(BEHIND_PROXY=True)
+        app.test_client().post("/masuk", data={"email": "budi@ui.ac.id", "password": "salah"},
+                               headers={"X-Forwarded-For": "203.0.113.7"})
+        with app.app_context():
+            keys = [row["key"] for row in query("SELECT key FROM rate_limits WHERE kind = 'login-gagal-ip'")]
+        self.assertEqual(keys, ["203.0.113.7"])
+
+
+class CvTest(BaseTest):
+    """Ekspor CV ke PDF."""
+
+    def setUp(self):
+        super().setUp()
+        self.register()
+        self.login()
+        self.add_experience(position="Data Analyst Intern", description="- Membuat dasbor penjualan")
+        self.add_experience(position="Proyek Rahasia", visibility="privat")
+        with self.app.app_context():
+            execute("UPDATE experiences SET verification = 'terverifikasi' WHERE position = 'Data Analyst Intern'")
+        self.ids = {r["position"]: r["id"] for r in self.db("SELECT id, position FROM experiences")}
+
+    def pdf(self, **params):
+        base = {"bahasa": "id", "pengalaman": [self.ids["Data Analyst Intern"]], "email": "1", "skill": "1"}
+        base.update(params)
+        return self.client.get("/akun/cv.pdf", query_string=base)
+
+    def upload_photo(self):
+        image = io.BytesIO()
+        Image.new("RGB", (300, 400), (90, 140, 200)).save(image, format="PNG")
+        image.seek(0)
+        self.client.post("/profil/edit", data={
+            "full_name": "Budi Santoso", "prodi": "Sistem Informasi", "angkatan": "2024", "status": "aktif",
+            "photo": (image, "foto.png"),
+        }, content_type="multipart/form-data")
+        return self.db("SELECT photo FROM users WHERE email = 'budi@ui.ac.id'", one=True)["photo"]
+
+    def test_halaman_pilihan_tidak_mencentang_pengalaman_privat(self):
+        page = self.client.get("/akun/cv").get_data(as_text=True)
+        self.assertRegex(page, rf'value="{self.ids["Data Analyst Intern"]}" checked')
+        self.assertNotRegex(page, rf'value="{self.ids["Proyek Rahasia"]}" checked')
+
+    def test_unduh_pdf(self):
+        response = self.pdf()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "application/pdf")
+        self.assertTrue(response.get_data().startswith(b"%PDF"))
+        self.assertIn('attachment; filename="CV-Budi-Santoso.pdf"', response.headers["Content-Disposition"])
+        self.assertIn("inline", self.pdf(pratinjau="1").headers["Content-Disposition"])
+
+    def test_cv_harus_masuk(self):
+        self.logout()
+        self.assertEqual(self.client.get("/akun/cv.pdf").status_code, 302)
+
+    def test_pengalaman_orang_lain_tidak_bisa_dimasukkan(self):
+        own = self.ids["Data Analyst Intern"]
+        self.logout()
+        self.register(email="sari@ui.ac.id", name="Sari Dewi")
+        self.login(email="sari@ui.ac.id")
+        with mock.patch("app.blueprints.cv.build_cv_pdf", return_value=b"%PDF") as build:
+            self.client.get("/akun/cv.pdf", query_string={"pengalaman": [own]})
+        self.assertEqual(build.call_args[0][1], [])  # milik Budi diabaikan
+
+    def test_tanpa_foto_pilihan_foto_dimatikan(self):
+        page = self.client.get("/akun/cv").get_data(as_text=True)
+        self.assertRegex(page, r'name="foto" value="1" disabled')
+        with mock.patch("app.blueprints.cv.build_cv_pdf", return_value=b"%PDF") as build:
+            self.pdf(foto="1")
+        self.assertIsNone(build.call_args[0][4])
+
+    def test_foto_profil_masuk_ke_cv(self):
+        name = self.upload_photo()
+        self.assertTrue(name)
+        page = self.client.get("/akun/cv").get_data(as_text=True)
+        self.assertRegex(page, r'name="foto" value="1" checked')
+        with mock.patch("app.blueprints.cv.build_cv_pdf", return_value=b"%PDF") as build:
+            self.pdf(foto="1")
+        self.assertTrue(build.call_args[0][4].endswith(name))
+        with_photo = self.pdf(foto="1").get_data()
+        without = self.pdf().get_data()
+        self.assertIn(b"/Subtype /Image", with_photo)
+        self.assertNotIn(b"/Subtype /Image", without)
+
+    def test_foto_hilang_tidak_membuat_error(self):
+        name = self.upload_photo()
+        os.remove(os.path.join(self.app.config["UPLOAD_FOLDER"], "photos", name))
+        response = self.pdf(foto="1")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_data().startswith(b"%PDF"))
+
+    def test_isi_pdf_mengikuti_bahasa_cv(self):
+        from flask import g
+
+        from app.cv import build_cv_pdf
+        from app.queries import EXP_SELECT
+
+        with self.app.test_request_context():
+            person = self.db("SELECT * FROM users WHERE email = 'budi@ui.ac.id'", one=True)
+            exps = self.db(f"{EXP_SELECT} WHERE e.user_id = ?", (person["id"],))
+            for lang in ("id", "en"):
+                data = build_cv_pdf(person, exps, ["Python"], {"lang": lang, "show_skills": True})
+                self.assertTrue(data.startswith(b"%PDF"))
+            self.assertNotIn("lang", g)  # bahasa situs tidak ikut berubah
+
+
+class CvItemTest(BaseTest):
+    """Isian tambahan CV: proyek, organisasi, prestasi, sertifikasi."""
+
+    def setUp(self):
+        super().setUp()
+        self.register()
+        self.login()
+
+    def add(self, section="proyek", **extra):
+        data = {"title": "Aplikasi antrean klinik", "subtitle": "Proyek PBP", "start_date": "2025-02",
+                "end_date": "2025-05", "tools": "Python, flask, Python", "url": "https://github.com/budi/antrean",
+                "description": "- Membuat fitur antrean"}
+        data.update(extra)
+        return self.client.post(f"/akun/cv/tambah/{section}", data=data)
+
+    def items(self):
+        return self.db("SELECT * FROM cv_items ORDER BY id")
+
+    def test_tambah_proyek_lalu_tampil_di_halaman_cv(self):
+        response = self.add()
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("#bagian-proyek", response.headers["Location"])
+        item = self.items()[0]
+        self.assertEqual(item["tools"], "Python, flask")  # duplikat dibuang
+        page = self.client.get("/akun/cv").get_data(as_text=True)
+        self.assertIn("Aplikasi antrean klinik", page)
+        self.assertRegex(page, rf'name="isian" value="{item["id"]}" checked')
+
+    def test_validasi(self):
+        page = self.add(title="", url="github.com/budi", start_date="2025-06", end_date="2025-01").get_data(as_text=True)
+        self.assertIn("Isi judulnya dulu.", page)
+        self.assertIn("Tautan harus diawali http://", page)
+        self.assertEqual(self.items(), [])
+        page = self.add(end_date="2025-01").get_data(as_text=True)
+        self.assertIn("Bulan selesai tidak boleh sebelum bulan mulai.", page)
+
+    def test_prestasi_cukup_satu_bulan(self):
+        self.add("prestasi", title="Finalis GEMASTIK", start_date="2024-01", end_date="2025-10")
+        item = self.items()[0]
+        self.assertIsNone(item["start_date"])  # bagian bertanggal tunggal mengabaikan bulan mulai
+        self.assertEqual(item["end_date"], "2025-10")
+        self.assertEqual(item["tools"], "")
+
+    def test_masih_berjalan(self):
+        self.add("organisasi", title="BEM Fasilkom", is_current="1", end_date="")
+        self.assertIsNone(self.items()[0]["end_date"])
+        page = self.add("organisasi", title="RISTEK", is_current="1", start_date="").get_data(as_text=True)
+        self.assertIn("Isi bulan mulai kalau masih berjalan.", page)
+
+    def test_bagian_tidak_dikenal(self):
+        self.assertEqual(self.client.get("/akun/cv/tambah/hobi").status_code, 404)
+
+    def test_ubah_dan_hapus(self):
+        self.add()
+        item_id = self.items()[0]["id"]
+        self.client.post(f"/akun/cv/isian/{item_id}/edit", data={"title": "Antrean v2", "start_date": "2025-02"})
+        self.assertEqual(self.items()[0]["title"], "Antrean v2")
+        self.client.post(f"/akun/cv/isian/{item_id}/hapus")
+        self.assertEqual(self.items(), [])
+
+    def test_isian_orang_lain_tidak_bisa_diubah_atau_dipakai(self):
+        self.add()
+        item_id = self.items()[0]["id"]
+        self.logout()
+        self.register(email="sari@ui.ac.id", name="Sari Dewi")
+        self.login(email="sari@ui.ac.id")
+        self.assertEqual(self.client.get(f"/akun/cv/isian/{item_id}/edit").status_code, 404)
+        self.assertEqual(self.client.post(f"/akun/cv/isian/{item_id}/hapus").status_code, 404)
+        with mock.patch("app.blueprints.cv.build_cv_pdf", return_value=b"%PDF") as build:
+            self.client.get("/akun/cv.pdf", query_string={"isian": [item_id]})
+        self.assertTrue(all(group == [] for group in build.call_args.kwargs["items"].values()))
+        self.assertEqual(len(self.items()), 1)
+
+    def test_isian_yang_dipilih_masuk_ke_pdf(self):
+        self.add()
+        self.add("sertifikasi", title="Google Data Analytics", end_date="2024-06")
+        ids = [i["id"] for i in self.items()]
+        with mock.patch("app.blueprints.cv.build_cv_pdf", return_value=b"%PDF") as build:
+            self.client.get("/akun/cv.pdf", query_string={"isian": [ids[1]]})
+        items = build.call_args.kwargs["items"]
+        self.assertEqual(items["proyek"], [])
+        self.assertEqual([i["title"] for i in items["sertifikasi"]], ["Google Data Analytics"])
+        response = self.client.get("/akun/cv.pdf", query_string={"isian": ids, "bahasa": "en"})
+        self.assertTrue(response.get_data().startswith(b"%PDF"))
+
+    def test_batas_jumlah_isian(self):
+        with self.app.app_context():
+            user_id = query("SELECT id FROM users WHERE email = 'budi@ui.ac.id'", one=True)["id"]
+            for n in range(60):
+                execute("INSERT INTO cv_items (user_id, section, title) VALUES (?, 'proyek', ?)", (user_id, f"P{n}"))
+        self.add(title="Satu lagi")
+        self.assertEqual(len(self.items()), 60)

@@ -204,6 +204,166 @@ DEMO_THREADS = [
 ]
 
 
+# ---------- Data demo tambahan: supaya statistik, direktori, dan ringkasan seleksi lebih terisi ----------
+# Semua orang di bawah fiktif. Formatnya sama dengan daftar di atas.
+
+DEMO_COMPANIES += [
+    ("Xendit", "xendit.co", "Fintech", "Infrastruktur pembayaran untuk bisnis di Asia Tenggara."),
+    ("Accenture", "accenture.com", "Konsultan", "Perusahaan konsultan teknologi dan bisnis."),
+    ("Halodoc", "halodoc.com", "Kesehatan", "Aplikasi konsultasi dokter, apotek, dan janji temu rumah sakit."),
+    ("Vidio", "vidio.com", "Media & Hiburan", "Platform streaming video dan siaran olahraga."),
+    ("Pertamina", "pertamina.com", "Pemerintahan & BUMN", "BUMN energi."),
+]
+
+DEMO_USERS += [
+    ("dimas", "Dimas Aryaguna", "Ilmu Komputer", 2018, "alumni", 2022, "Go, AWS, Terraform"),
+    ("intan", "Intan Permatasari", "Sistem Informasi", 2018, "alumni", 2022, "SQL, Power BI, Excel"),
+    ("kevin", "Kevin Hartanto", "Ilmu Komputer", 2019, "alumni", 2023, "Python, PyTorch, MLOps"),
+    ("laras", "Laras Kusumawardhani", "Sistem Informasi", 2020, "alumni", 2024, "Figma, UX Research, HTML"),
+    ("hendra", "Hendra Gunawan", "Ilmu Komputer", 2020, "alumni", 2024, "Linux, Python, Penetration Testing"),
+    ("maya", "Maya Puspitasari", "Ilmu Komputer KKI", 2021, "alumni", 2025, "TypeScript, Node.js, React"),
+    ("arief", "Arief Nugroho", "Sistem Informasi", 2021, "alumni", 2025, "SAP, SQL, Business Process"),
+    ("gita", "Gita Lestari", "Kecerdasan Artifisial", 2023, "aktif", None, "Python, PyTorch, NLP"),
+    ("bima", "Bima Prakoso", "Ilmu Komputer", 2022, "aktif", None, "Flutter, Dart, Firebase"),
+    ("sekar", "Sekar Ayuningtyas", "Sistem Informasi", 2022, "aktif", None, "SQL, Python, Looker"),
+    ("reza", "Reza Mahendra", "Ilmu Komputer", 2023, "aktif", None, "Java, Selenium, Postman"),
+    ("wulan", "Wulan Safitri", "Sistem Informasi", 2024, "aktif", None, "Figma, Notion"),
+    ("daffa", "Daffa Alghifari", "Ilmu Komputer", 2024, "aktif", None, "Python, C++"),
+    ("nabila", "Nabila Zahra", "Kecerdasan Artifisial", 2024, "aktif", None, "Python, scikit-learn"),
+]
+
+DEMO_EXPERIENCES += [
+    ("dimas", "Traveloka", "Site Reliability Engineer Intern", "magang", "2021-06", "2021-12", "Jakarta", "hybrid", "portal", "Kubernetes, Prometheus", "terverifikasi", "publik"),
+    ("dimas", "Xendit", "Site Reliability Engineer", "fulltime", "2022-08", "2024-06", "Jakarta", "remote", "referral", "AWS, Terraform, Go", "terverifikasi", "publik"),
+    ("dimas", "Gojek", "Senior Site Reliability Engineer", "fulltime", "2024-07", None, "Jakarta", "hybrid", "referral", "Kubernetes, AWS", "belum", "publik"),
+    ("intan", "Bank Central Asia", "IT Business Analyst Intern", "magang", "2021-07", "2021-12", "Jakarta", "onsite", "kampus", "SQL, Excel", "terverifikasi", "publik"),
+    ("intan", "Accenture", "Technology Analyst", "fulltime", "2022-09", "2024-08", "Jakarta", "hybrid", "jobfair", "SQL, SAP", "terverifikasi", "publik"),
+    ("intan", "Bank Mandiri", "Data Analyst", "fulltime", "2024-09", None, "Jakarta", "onsite", "portal", "SQL, Power BI", "belum", "sivitas"),
+    ("kevin", "Gojek", "Data Science Intern", "magang", "2022-01", "2022-06", "Jakarta", "hybrid", "acara", "Python, SQL", "terverifikasi", "publik"),
+    ("kevin", "Halodoc", "Machine Learning Engineer", "fulltime", "2023-08", None, "Jakarta", "hybrid", "portal", "Python, PyTorch, MLOps", "terverifikasi", "publik"),
+    ("laras", "Traveloka", "UI/UX Design Intern", "magang", "2023-02", "2023-07", "Jakarta", "hybrid", "portal", "Figma, UX Research", "terverifikasi", "publik"),
+    ("laras", "Ruangguru", "Product Designer", "fulltime", "2024-08", None, "Jakarta", "hybrid", "referral", "Figma, UX Research", "belum", "publik"),
+    ("hendra", "Telkom Indonesia", "Cyber Security Intern", "magang", "2023-01", "2023-06", "Bandung", "onsite", "kampus", "Linux, Wireshark", "terverifikasi", "publik"),
+    ("hendra", "Bank Central Asia", "Security Engineer", "fulltime", "2024-09", None, "Jakarta", "onsite", "portal", "Penetration Testing, Python", "belum", "sivitas"),
+    ("maya", "Vidio", "Fullstack Engineer Intern", "magang", "2024-01", "2024-06", "Jakarta", "hybrid", "portal", "React, Node.js", "terverifikasi", "publik"),
+    ("maya", "Xendit", "Software Engineer", "fulltime", "2025-08", None, "Jakarta", "remote", "acara", "TypeScript, Node.js", "belum", "publik"),
+    ("arief", "Pertamina", "IT Intern", "magang", "2024-02", "2024-06", "Jakarta", "onsite", "kampus", "SAP, SQL", "belum", "publik"),
+    ("arief", "Accenture", "Technology Consultant", "fulltime", "2025-08", None, "Jakarta", "hybrid", "jobfair", "SAP, Business Process", "terverifikasi", "publik"),
+    ("gita", "Fasilkom UI", "Asisten Riset", "riset", "2025-09", None, "Depok", "onsite", "kampus", "Python, NLP", "belum", "sivitas"),
+    ("gita", "Gojek", "Machine Learning Intern", "magang", "2026-06", "2026-08", "Jakarta", "hybrid", "acara", "Python, PyTorch", "belum", "publik"),
+    ("bima", "Bukalapak", "Mobile Engineer Intern", "magang", "2025-06", "2025-08", "Jakarta", "remote", "portal", "Flutter, Dart", "terverifikasi", "publik"),
+    ("bima", "Halodoc", "Mobile Engineer Intern", "magang", "2026-06", "2026-09", "Jakarta", "hybrid", "referral", "Flutter, Firebase", "belum", "publik"),
+    ("sekar", "Shopee", "Business Intelligence Intern", "magang", "2025-06", "2025-09", "Jakarta", "onsite", "portal", "SQL, Looker", "terverifikasi", "publik"),
+    ("sekar", "Blibli", "Data Analyst Intern", "magang", "2026-06", "2026-08", "Jakarta", "hybrid", "jobfair", "SQL, Python", "belum", "publik"),
+    ("reza", "Traveloka", "QA Engineer Intern", "magang", "2026-06", "2026-08", "Jakarta", "hybrid", "portal", "Selenium, Postman", "belum", "publik"),
+    ("reza", "Fasilkom UI", "Asisten Dosen SDA", "asdos", "2025-08", "2025-12", "Depok", "onsite", "kampus", "Java", "belum", "sivitas"),
+    ("wulan", "Fasilkom UI", "Asisten Dosen PSI", "asdos", "2025-08", "2025-12", "Depok", "onsite", "kampus", "Figma", "belum", "sivitas"),
+    ("daffa", "Fasilkom UI", "Asisten Dosen DDP1", "asdos", "2025-08", "2025-12", "Depok", "onsite", "kampus", "Python", "belum", "sivitas"),
+    ("nabila", "Fasilkom UI", "Asisten Riset", "riset", "2025-10", None, "Depok", "onsite", "kampus", "Python, scikit-learn", "belum", "sivitas"),
+    ("salsa", "Xendit", "Data Analyst Intern", "magang", "2026-06", "2026-08", "Jakarta", "hybrid", "referral", "SQL, Python", "belum", "publik"),
+    ("farhan", "Gojek", "Android Engineer Intern", "magang", "2026-06", "2026-09", "Jakarta", "hybrid", "acara", "Kotlin, Jetpack Compose", "belum", "publik"),
+    ("tiara", "Halodoc", "Data Analyst Intern", "magang", "2024-06", "2024-08", "Jakarta", "hybrid", "web", "SQL, Python", "terverifikasi", "publik"),
+    ("citra", "Vidio", "Frontend Engineer Intern", "magang", "2025-06", "2025-08", "Jakarta", "remote", "portal", "React, TypeScript", "belum", "publik"),
+]
+
+DEMO_ROLES.update({
+    "Site Reliability Engineer Intern": "devops", "Site Reliability Engineer": "devops",
+    "Senior Site Reliability Engineer": "devops", "Technology Analyst": "it_consultant",
+    "Data Analyst": "data_analyst", "Machine Learning Engineer": "ml_engineer",
+    "Product Designer": "ui_ux", "Cyber Security Intern": "security", "Security Engineer": "security",
+    "Fullstack Engineer Intern": "swe_fullstack", "Technology Consultant": "it_consultant",
+    "Machine Learning Intern": "ml_engineer", "Mobile Engineer Intern": "mobile",
+    "Business Intelligence Intern": "data_analyst", "QA Engineer Intern": "qa",
+    "Asisten Dosen SDA": "researcher", "Asisten Dosen PSI": "researcher",
+})
+
+DEMO_STORIES.update({
+    ("dimas", "Xendit", "Site Reliability Engineer"): (
+        "berkas,wawancara_hr,tes_teknis,wawancara_teknis", 4, 4,
+        "Debugging langsung: server yang lambat karena disk penuh, lalu jelaskan cara memantaunya. "
+        "Ditanya juga beda readiness dan liveness probe di Kubernetes.",
+        "Biasakan membaca log dan metrik. Satu proyek pribadi yang di-deploy sungguhan lebih meyakinkan "
+        "daripada sertifikat.",
+    ),
+    ("intan", "Accenture", "Technology Analyst"): (
+        "berkas,tes_online,psikotes,wawancara_hr,presentasi", 6, 3,
+        "Studi kasus kelompok: merancang ulang proses klaim asuransi, dipresentasikan 10 menit.",
+        "Latih presentasi dan cara menjawab pertanyaan klien. Tes logikanya mirip TPA, cukup latihan beberapa set.",
+    ),
+    ("kevin", "Halodoc", "Machine Learning Engineer"): (
+        "berkas,studi_kasus,wawancara_teknis,wawancara_hr", 5, 4,
+        "Take-home: model rekomendasi dokter dari data riwayat konsultasi, lalu jelaskan metrik evaluasinya.",
+        "Tunjukkan cara berpikir soal data yang tidak seimbang dan cara memantau model setelah rilis.",
+    ),
+    ("laras", "Traveloka", "UI/UX Design Intern"): (
+        "berkas,studi_kasus,presentasi,wawancara_hr", 5, 3,
+        "Design challenge 3 hari: memperbaiki alur pemesanan hotel untuk pengguna pertama kali.",
+        "Portofolio yang menjelaskan proses (riset, iterasi, alasan keputusan) lebih penting dari visual yang cantik.",
+    ),
+    ("hendra", "Telkom Indonesia", "Cyber Security Intern"): (
+        "berkas,tes_teknis,wawancara_teknis", 3, 3,
+        "Soal CTF sederhana: SQL injection, cari flag di file pcap, dan decode beberapa encoding.",
+        "Ikut CTF (misalnya yang diadakan RISTEK atau COMPFEST) dan tulis write-up-nya. Itu yang ditanyakan.",
+    ),
+    ("maya", "Vidio", "Fullstack Engineer Intern"): (
+        "berkas,tes_online,tes_teknis,wawancara_hr", 4, 3,
+        "Live coding membuat halaman daftar video dengan pencarian dan paginasi di React, plus endpoint-nya.",
+        "Kuasai dasar HTTP dan state management. Mereka lebih peduli kode rapi daripada fitur banyak.",
+    ),
+    ("bima", "Bukalapak", "Mobile Engineer Intern"): (
+        "berkas,tes_online,wawancara_teknis,wawancara_hr", 4, 3,
+        "Pertanyaan tentang siklus hidup widget Flutter dan cara menangani state saat koneksi putus.",
+        "Siapkan satu aplikasi yang bisa didemokan langsung dari HP saat wawancara.",
+    ),
+    ("sekar", "Shopee", "Business Intelligence Intern"): (
+        "berkas,tes_online,studi_kasus,wawancara_hr", 3, 4,
+        "Tes SQL 60 menit (window function, join bertingkat) lalu studi kasus menurunnya konversi checkout.",
+        "Latih window function dan cara menyusun jawaban studi kasus: masalah, hipotesis, data, rekomendasi.",
+    ),
+    ("arief", "Accenture", "Technology Consultant"): (
+        "berkas,tes_online,psikotes,wawancara_hr,wawancara_teknis", 7, 3,
+        "Ditanya pengalaman organisasi dan cara menghadapi klien yang mengubah kebutuhan di tengah proyek.",
+        "Ceritakan pengalaman kepanitiaan atau organisasi dengan format STAR. Itu porsi besar penilaian.",
+    ),
+    ("reza", "Traveloka", "QA Engineer Intern"): (
+        "berkas,tes_online,tes_teknis,wawancara_hr", 4, 2,
+        "Menulis test case untuk form pemesanan tiket, lalu otomatisasi satu skenario dengan Selenium.",
+        "Pahami beda unit, integration, dan end-to-end test. Contoh bug yang pernah kamu temukan jadi nilai plus.",
+    ),
+    ("salsa", "Xendit", "Data Analyst Intern"): (
+        "berkas,tes_online,wawancara_teknis", 3, 3,
+        "Analisis data transaksi: cari penyebab naiknya pembayaran gagal di satu bank.",
+        "Referral dari alumni mempercepat proses. Jawaban yang rapi dan singkat lebih dihargai.",
+    ),
+})
+
+
+# Isian tambahan CV: (pemilik, bagian, judul, subjudul, mulai, selesai, tautan, teknologi, deskripsi)
+DEMO_CV_ITEMS = [
+    ("salsa", "proyek", "Dasbor penjualan UMKM batik", "Proyek mata kuliah Basis Data, tim 3 orang", "2024-09", "2024-12",
+     "https://github.com/contoh/dasbor-umkm", "Python, SQL, Tableau",
+     "- Merancang skema basis data penjualan dari catatan Excel milik pemilik usaha\n"
+     "- Membuat dasbor stok dan omzet mingguan yang dipakai pemilik toko"),
+    ("salsa", "proyek", "JejakPacil", "Proyek kelompok DDP1", "2026-10", None, "", "Python, Flask, SQLite",
+     "- Membuat fitur statistik dan filter perusahaan"),
+    ("salsa", "organisasi", "COMPFEST 16", "Staf divisi Data", "2024-03", "2024-10", "", "",
+     "- Mengolah data pendaftar dan peserta untuk laporan panitia inti"),
+    ("salsa", "prestasi", "Finalis GEMASTIK XVII, divisi Data Mining", "Pusat Prestasi Nasional", None, "2025-10", "", "", ""),
+    ("salsa", "sertifikasi", "Google Data Analytics", "Coursera", None, "2024-06", "https://coursera.org/verify/contoh", "", ""),
+    ("farhan", "proyek", "Aplikasi jadwal kuliah", "Proyek pribadi", "2024-01", "2024-04", "", "Kotlin, Android", ""),
+    ("bima", "proyek", "Aplikasi donor darah", "Proyek PBP, tim 5 orang", "2024-09", "2024-12", "", "Flutter, Firebase", ""),
+]
+
+
+def _seed_cv_items(db, users):
+    for owner, section, title, subtitle, start, end, url, tools, description in DEMO_CV_ITEMS:
+        db.execute(
+            "INSERT INTO cv_items (user_id, section, title, subtitle, start_date, end_date, url, tools, description)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (users[owner], section, title, subtitle, start, end, url, tools, description),
+        )
+
+
 def register_commands(app):
     @app.cli.command("create-admin")
     @click.option("--email", prompt="Email admin (@ui.ac.id)")
@@ -228,6 +388,18 @@ def register_commands(app):
             )
             click.echo(f"Admin {email} dibuat. Lengkapi profilnya setelah masuk.")
         db.commit()
+
+    @app.cli.command("test-email")
+    @click.argument("to")
+    def test_email(to):
+        """Kirim email percobaan untuk memeriksa pengaturan MAIL_* di instance/config.py."""
+        from .mailer import mail_enabled, send_mail
+
+        if not mail_enabled():
+            raise click.ClickException("MAIL_SERVER belum diisi di instance/config.py.")
+        if not send_mail(to, "Percobaan email JejakPacil", "Kalau email ini sampai, pengiriman email sudah berfungsi."):
+            raise click.ClickException("Gagal mengirim. Periksa MAIL_USERNAME, MAIL_PASSWORD (sandi aplikasi), dan log di atas.")
+        click.echo(f"Email percobaan terkirim ke {to}.")
 
     @app.cli.command("seed-demo")
     @click.option("--with-logos", is_flag=True, help="Ambil logo perusahaan dari internet.")
@@ -315,6 +487,7 @@ def register_commands(app):
                 db.execute("INSERT INTO votes (user_id, thread_id) VALUES (?, ?)", (users[voter], thread_id))
 
         _seed_roles_and_stories(db, users)
+        _seed_cv_items(db, users)
         _seed_attachments_and_chats(db, users, thread_ids)
         _seed_notifications(db, users)
         db.commit()

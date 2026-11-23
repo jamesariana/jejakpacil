@@ -23,7 +23,10 @@
       {% endif %}
     </div>
     {% if is_owner %}
-      <a class="btn btn-quiet cover-action" href="{{ url_for('profiles.edit') }}">{{ icon('edit', 16) }}{{ _("Edit profil") }}</a>
+      <div class="cover-action cover-actions">
+        <a class="btn btn-quiet" href="{{ url_for('cv.options') }}">{{ icon('download', 16) }}{{ _("Buat CV") }}</a>
+        <a class="btn btn-quiet" href="{{ url_for('profiles.edit') }}">{{ icon('edit', 16) }}{{ _("Edit profil") }}</a>
+      </div>
     {% elif g.user %}
       <form class="cover-action" method="post" action="{{ url_for('messages.start', user_id=person.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

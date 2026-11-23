@@ -5,6 +5,7 @@ from markupsafe import Markup
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..i18n import _
+from ..mailer import send_mail
 from ..db import execute, query
 from ..forms import is_allowed_email, validate_identity, validate_new_password
 from ..security import (
@@ -18,21 +19,28 @@ bp = Blueprint("auth", __name__)
 
 
 def send_verification(email):
-    """"Kirim" tautan verifikasi.
+    """Kirim tautan verifikasi ke email pendaftar.
 
-    Proyek ini belum punya server email, jadi tautan dicetak di terminal dan
-    (selama SHOW_VERIFY_LINK aktif) ditampilkan di halaman. Untuk produksi,
-    ganti isi fungsi ini dengan pengiriman email sungguhan, misalnya lewat smtplib.
+    Kalau server email belum diatur (MAIL_SERVER kosong) dan SHOW_DEV_LINKS aktif, tautan
+    ditampilkan di layar sebagai gantinya, supaya aplikasi tetap bisa dicoba di laptop.
     """
     link = url_for("auth.verify", token=make_verify_token(email), _external=True)
+    body = _(
+        "Halo,\n\nKlik tautan ini untuk memverifikasi akun JejakPacil kamu:\n{link}\n\n"
+        "Kalau kamu tidak merasa mendaftar, abaikan email ini.",
+        link=link,
+    )
+    sent = send_mail(email, _("Verifikasi akun JejakPacil"), body)
     if not current_app.testing:
         print(f"\n[JejakPacil] Tautan verifikasi untuk {email}:\n{link}\n", flush=True)
-    if current_app.config["SHOW_VERIFY_LINK"]:
+    if not sent and current_app.config["SHOW_DEV_LINKS"]:
         # Markup.format() meng-escape isinya, jadi aman dari sisipan HTML.
         flash(
             Markup(_('Mode pengembangan, belum ada pengiriman email. <a href="{}">Verifikasi akun ini</a>.')).format(link),
             "info",
         )
+    elif not sent:
+        flash(_("Email verifikasi belum bisa dikirim. Coba lagi nanti atau hubungi admin."), "error")
 
 
 @bp.route("/daftar", methods=("GET", "POST"))
@@ -137,15 +145,22 @@ def logout():
 # ---------- Lupa dan ganti kata sandi ----------
 
 def send_reset_link(user):
-    """"Kirim" tautan atur ulang kata sandi (berlaku 1 jam, sekali pakai).
+    """Kirim tautan atur ulang kata sandi (berlaku 1 jam, sekali pakai).
 
-    Sama seperti verifikasi: tanpa server email, tautan dicetak di terminal dan,
-    selama SHOW_VERIFY_LINK aktif, ditampilkan di halaman.
+    Tautan ini hanya boleh tampil di layar saat SHOW_DEV_LINKS aktif. Jangan aktifkan itu di
+    website yang bisa dibuka orang lain: siapa pun bisa mengganti kata sandi akun mana pun.
     """
     link = url_for("auth.reset_password", token=make_reset_token(user), _external=True)
+    body = _(
+        "Halo {name},\n\nAda permintaan untuk mengatur ulang kata sandi akun JejakPacil kamu. "
+        "Klik tautan ini dalam 1 jam:\n{link}\n\n"
+        "Kalau kamu tidak memintanya, abaikan email ini. Kata sandimu tidak berubah.",
+        name=user["full_name"], link=link,
+    )
+    sent = send_mail(user["email"], _("Atur ulang kata sandi JejakPacil"), body)
     if not current_app.testing:
         print(f"\n[JejakPacil] Tautan atur ulang kata sandi untuk {user['email']}:\n{link}\n", flush=True)
-    if current_app.config["SHOW_VERIFY_LINK"]:
+    if not sent and current_app.config["SHOW_DEV_LINKS"]:
         flash(
             Markup(_('Mode pengembangan, belum ada pengiriman email. <a href="{}">Atur ulang kata sandi</a>.')).format(link),
             "info",
