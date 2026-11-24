@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS users (
     github_url    TEXT    NOT NULL DEFAULT '',
     linkedin_url  TEXT    NOT NULL DEFAULT '',
     portfolio_url TEXT    NOT NULL DEFAULT '',
-    created_at    TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
     open_to_questions INTEGER NOT NULL DEFAULT 0,       -- 1 = bersedia ditanya adik tingkat
     open_note         TEXT    NOT NULL DEFAULT '',      -- topik yang bisa ditanyakan, maks. 120 karakter
     created_at    TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
